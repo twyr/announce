@@ -1,0 +1,36 @@
+{
+	"allowUncaught": false,
+	"asyncOnly": false,
+	"bail": false,
+	"checkLeaks": true,
+	"clearRequireCache": false,
+	"color": true,
+	"delay": false,
+	"diff": true,
+	"exit": false,
+	"forbidOnly": false,
+	"forbidPending": false,
+	"fullTrace": false,
+	"noFail": false,
+	"package": "./package.json",
+	"quiet": false,
+	"recursive": true,
+	"reporter": "mocha-junit-reporter",
+	"slow": 75,
+	"sort": false,
+	"spec": "test/**/*.spec.js",
+	"timeout": 50000,
+	"trace-warnings": true,
+	"ui": "bdd",
+	"v8-stack-trace-limit": 100,
+	"watch": false,
+
+	"extension": ["js"],
+	"global": ["snooze", "twyrEnv"],
+	"reporterOptions": {
+		"mochaFile": "./buildresults/tests.xml"
+	},
+	"require": ["./test/setup_mocks"],
+	"watch-files": [],
+	"watch-ignore": []
+}

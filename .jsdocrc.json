@@ -1,0 +1,84 @@
+{
+	"tags": {
+		"allowUnknownTags": true,
+		"dictionaries": ["jsdoc"]
+	},
+	"source": {
+		"include": "./",
+		"exclude": [
+			".circleci",
+			".github",
+			".nyc_output",
+			".vscode",
+			"buildresults",
+			"coverage",
+			"deploy",
+			"docs",
+			"logs",
+			"node_modules",
+			"ecosystem.config.js",
+			"gruntfile.js"
+		],
+		"includePattern": ".+\\.js(doc)?$",
+		"excludePattern": "jsdoc_default/"
+	},
+	"openGraph": {
+		"title": "Announce CLI API Documentation",
+		"type": "website",
+		"image": "https://twyr.github.io/logo",
+		"site_name": "Announce CLI - API Reference",
+		"url": "https://twyr.github.io/announce/"
+	},
+	"opts": {
+		"template": "./node_modules/docdash",
+		"destination": "./jsdoc_default",
+		"readme": "./README.md",
+		"package": "./package.json",
+		"encoding": "utf8",
+		"recurse": true,
+		"verbose": true
+	},
+	"plugins": [
+		"plugins/markdown",
+		"plugins/summarize"
+	],
+	"templates": {
+		"cleverLinks": false,
+		"collapse": true,
+		"disableSort": false,
+		"monospaceLinks": false,
+		"referenceTitle": "Twy'r Announce",
+		"default": {
+			"outputSourceFiles": true,
+			"includeDate": true,
+			"useLongnameInNav": true
+		}
+	},
+	"docdash": {
+		"sectionOrder": [
+			"Modules",
+			"Namespaces",
+			"Classes",
+			"Externals",
+			"Events",
+			"Mixins",
+			"Tutorials",
+			"Interfaces"
+		],
+		"meta": {
+			"title": "Announce CLI - API Reference",
+			"description": "Announce CLI - API Reference",
+			"keyword": "automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version"
+		},
+		"search": true,
+		"wrap": true,
+		"menu": {
+			"GitHub": {
+				"href": "https://github.com/twyr/announce",
+				"target": "_blank",
+				"class": "menu-item",
+				"id": "github_link"
+			}
+		}
+	}
+}

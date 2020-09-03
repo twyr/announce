@@ -1,0 +1,9 @@
+.circleci/
+.github/
+buildresults/
+coverage/
+docs/
+jsdoc_default/
+logs/
+node_modules/
+test/mocha.*
