@@ -1,4 +1,4 @@
-The MIT +no-false-attribs License (MIT)
+The MIT +no-false-attribs License (MITNFA)
 
 Copyright (c) 2016-2020
 
