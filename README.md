@@ -4,7 +4,7 @@
 <div align="center">
     <a href="https://spdx.org/licenses/MITNFA.html"><img src="https://img.shields.io/badge/License-MIT%20%2Bno--false--attribs-blue" /></a>
     <a href="https://github.com/twyr/announce/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" /></a>
-    <a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=1IAiD3aXzBOoqeNPAAIXLB1fe8YSiUh5Y" /></a>
+    <a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=5b5a717014a209604624b6e25cee1552e6174315" /></a>
 </div>
 <hr />
 
