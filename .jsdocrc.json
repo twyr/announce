@@ -50,7 +50,7 @@
 		"referenceTitle": "Twy'r Announce",
 		"default": {
 			"outputSourceFiles": true,
-			"includeDate": true,
+			"includeDate": false,
 			"useLongnameInNav": true
 		}
 	},
