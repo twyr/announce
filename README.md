@@ -9,7 +9,10 @@
 <hr />
 
 <div align="center">
-    node.js CLI for the most common workflow - Semantic Versioning, Tagging/Releasing on Github/Gitlab, and NPM Publishing
+    node.js CLI for the most common release workflow
+</div>
+<div align="center">
+	Semantic Versioning, Tagging/Releasing on Bitbucket/Github/Gitlab, and Publishing to the NPM Registry
 </div>
 <div align="center">
     Built as part of the <a href="https://github.com/twyr">Twy&apos;r</a> effort by <a href="https://github.com/shadyvd">Vish Desai</a> and <a href="https://github.com/twyr/announce/graphs/contributors">contributors</a>
