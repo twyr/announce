@@ -70,7 +70,10 @@
 		"cosmiconfig": "7.0.0",
 		"debug": "4.1.1",
 		"fdir": "4.1.0",
-		"please-upgrade-node": "3.2.0"
+		"gitignore-parser": "0.0.2",
+		"please-upgrade-node": "3.2.0",
+		"replace-in-file": "6.1.0",
+		"semver": "7.3.2"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
