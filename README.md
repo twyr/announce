@@ -47,15 +47,14 @@
 - [See Also](#see-also)
 
 #### WHY ANNOUNCE
-Most node.js projects follow a fairly simple set of steps during development - bump the (semantic) version for the next release, commit code, author a changelog, tag/release
-on Github/Gitlab (with release notes), and publish to the NPM Registry.
+Most node.js projects follow a fairly simple set of steps during development - bump the (semantic) version for the next release, commit code,
+author a changelog, tag/release on Github/Gitlab (with release notes), and publish to the NPM Registry.
 
-While there are several tools that help with each of these steps, they fall into one of two categories - they either do one of the steps correctly, or they try to do
-everything and end up being extremely complex.
-
-A good example of the first category is [npm-version](https://docs.npmjs.com/cli/version), which takes responsibility only for bumping up the versions, and nothing else.
-On the other hand, tools such as [semantic-release](https://www.npmjs.com/package/semantic-release) provide functionality (via plugins) to push not only to NPM,
-but also several other registries/endpoints - see [semantic-release plugins](https://github.com/semantic-release/semantic-release/blob/HEAD/docs/extending/plugins-list.md) for example.
+While there are several tools that help with each of these steps, they fall into one of two categories - they either perform only one of the steps,
+or they try to do everything and end up being extremely complex. A good example of the first category of tool is [npm-version](https://docs.npmjs.com/cli/version),
+which takes responsibility only for bumping up the versions, and nothing else. On the other hand, tools such as [semantic-release](https://www.npmjs.com/package/semantic-release)
+provide functionality (via plugins) to push not only to NPM, but also several other registries/endpoints - see [semantic-release plugins](https://github.com/semantic-release/semantic-release/blob/HEAD/docs/extending/plugins-list.md)
+for example.
 
 For the [Twy'r Project](https://github.com/twyr), neither of these categories of tools is "exactly right" - they provide either too little,
 or too much, functionality. The Announce CLI/Module tries to fill in that "sweet spot" - providing exactly the functionality required.
@@ -74,7 +73,7 @@ extensively to maintain the versioning, changelog, and release notes - as well a
 #### USING THE CLI
 
 ##### CLI Installation
-Assuming that node.js and npm have already been installed on the system, [Annouce](https://github.com/twyr/announce) can be installed
+Assuming that node.js and npm have already been installed on the system, [Announce](https://github.com/twyr/announce) can be installed
 via the following commands:
 
 | Install Type | Command  |
@@ -89,7 +88,7 @@ via the following commands:
 #### INTEGRATING ANNOUNCE INTO ANOTHER MODULE
 
 ##### Module Installation
-Assuming that node.js and npm have already been installed on the system, [Annouce](https://github.com/twyr/announce) can be installed
+Assuming that node.js and npm have already been installed on the system, [Announce](https://github.com/twyr/announce) can be installed
 via the following command: `npm install @twyr/announce --save-dev`
 
 ##### Module API
