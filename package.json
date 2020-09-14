@@ -74,7 +74,7 @@
 	},
 	"devDependencies": {
 		"@commitlint/cli": "9.1.2",
-		"@commitlint/config-conventional": "9.1.2",
+		"@commitlint/config-conventional": "11.0.0",
 		"chai": "4.2.0",
 		"chai-arrays": "2.2.0",
 		"chai-bignumber": "3.0.0",
