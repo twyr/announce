@@ -1,5 +1,7 @@
 {
-  "files": ["README.md"],
+  "files": [
+    "README.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 4,
   "contributorsSortAlphabetically": false,
@@ -12,7 +14,20 @@
       "link": "[<%= symbol %>](<%= url %> \"<%= description %>\"),"
     }
   },
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "shadyvd",
+      "name": "Vish Desai",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/5027975?v=4",
+      "profile": "http://twyr.github.io",
+      "contributions": [
+        "projectManagement"
+      ]
+    }
+  ],
+  "projectName": "announce",
+  "projectOwner": "twyr",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
-
