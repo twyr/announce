@@ -4,7 +4,7 @@
  * @version		0.0.1-dev.0
  *
  * @author		Vish Desai <shadyvd@hotmail.com>
- * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r} 2016-2020
+ * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2020
  *
  * @license		MITNFA
  */
