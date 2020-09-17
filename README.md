@@ -9,7 +9,10 @@
 <hr />
 
 <div align="center">
-    node.js CLI for the most common workflow - Semantic Versioning, Tagging/Releasing on Github/Gitlab, and NPM Publishing
+    node.js CLI for the most common release workflow
+</div>
+<div align="center">
+	Semantic Versioning, Tagging/Releasing on Bitbucket/Github/Gitlab, and Publishing to the NPM Registry
 </div>
 <div align="center">
     Built as part of the <a href="https://github.com/twyr">Twy&apos;r</a> effort by <a href="https://github.com/shadyvd">Vish Desai</a> and <a href="https://github.com/twyr/announce/graphs/contributors">contributors</a>
@@ -36,7 +39,7 @@
 - [Using the CLI](#using-the-cli)
    - [Installation](#cli-installation)
    - [Commands](#cli-commands)
-- [Integrating with another Module](#integrating-announce-into-another-module)
+- [Integrating with another Module](#integrating-announce-cli-into-another-module)
    - [Installation](#module-installation)
    - [API](#module-api)
 - [Contributing](#contributing)
@@ -83,9 +86,24 @@ via the following commands:
 |   |   |
 
 ##### CLI Commands
-- [ ] TODO: Added along with the commands
+The list of commands, and the options each command supports, can be accessed from the terminal by:
 
-#### INTEGRATING ANNOUNCE INTO ANOTHER MODULE
+| Install Type | Command  |
+| --- | --- |
+| Local | npx announce -h  |
+| Global  | announce -h  |
+|   |   |
+
+The Announce CLI list of commands, and a brief description of each, is given below:
+
+| Announce Command | Usage | Description |
+| --- | --- | --- |
+| Prepare | announce prepare  | Increments the version as necessary. See [Prepare Command](PREPARE_COMMAND.md) for details |
+|   |   |   |
+
+See command specific documentation for further information on how to execute each command, the command-line, options relevant to that command, etc.
+
+#### INTEGRATING ANNOUNCE CLI INTO ANOTHER MODULE
 
 ##### Module Installation
 Assuming that node.js and npm have already been installed on the system, [Announce](https://github.com/twyr/announce) can be installed
@@ -93,11 +111,12 @@ via the following command: `npm install @twyr/announce --save-dev`
 
 ##### Module API
 Once installed, the module may be loaded using:
+
 ```
 const announce = require('@twyr/announce);
 ```
 
-- [ ] TODO: Added along with the commands
+See command specific documentation for information regarding each command, the options it takes, etc.
 
 #### CONTRIBUTING
 
