@@ -33,7 +33,6 @@ const debug = debugLib('announce:prepare');
 class PrepareCommandClass {
 	// #region Constructor
 	constructor(configuration, logger) {
-		if(configuration)
 		Object.defineProperty(this, '_commandOptions', {
 			'writeable': true,
 			'value': configuration ?? {}
