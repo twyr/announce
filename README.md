@@ -86,7 +86,6 @@ via the following commands:
 |   |   |
 
 ##### CLI Commands
-
 The list of commands, and the options each command supports, can be accessed from the terminal by:
 
 | Install Type | Command  |
