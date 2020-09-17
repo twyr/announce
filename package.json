@@ -73,6 +73,7 @@
 		"gitignore-parser": "0.0.2",
 		"please-upgrade-node": "3.2.0",
 		"replace-in-file": "6.1.0",
+		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.2"
 	},
 	"devDependencies": {
