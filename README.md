@@ -86,7 +86,6 @@ via the following commands:
 |   |   |
 
 ##### CLI Commands
-
 The list of commands, and the options each command supports, can be accessed from the terminal by:
 
 | Install Type | Command  |
@@ -112,7 +111,6 @@ via the following command: `npm install @twyr/announce --save-dev`
 
 ##### Module API
 Once installed, the module may be loaded using:
-
 ```
 const announce = require('@twyr/announce);
 ```
