@@ -1,2 +1,5 @@
 {
+	'prepare': {
+		'ignoreFolders': '.circleci, docs'
+	}
 }
