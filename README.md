@@ -111,6 +111,7 @@ via the following command: `npm install @twyr/announce --save-dev`
 
 ##### Module API
 Once installed, the module may be loaded using:
+
 ```
 const announce = require('@twyr/announce);
 ```
