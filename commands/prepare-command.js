@@ -26,51 +26,21 @@ const debug = debugLib('announce:prepare');
  * @param		{object} logger - The logger instance
  *
  * @description
- * The "prepare" command is the first-of-three-steps in the Twy'r release workflow.
- *
- * In this phase, the workflow simply increments the current version of the package
- * (as defined in the root level package.json) to the next version - either in the
- * same series or the next.
- *
- * The "version ladder" from release-to-release is usually defined as:
- * dev => alpha => beta => rc => patch / minor / major => dev(next-version)
- *
- * Each "stage" in the version ladder is considered a "series" - either "single-step" or
- * "multi-step". If the series is "multi-step" (consists of multiple steps), each "step"
- * contains additional version information for unique identification of the "step" within
- * the series.
- *
- * The dev / alpha / beta / rc series are "multi-step", and therefore, each step
- * in the series is identified with the {{series}}.{{step number}} label [dev.0, dev.1,
- * alpha.0, etc.]
- *
- * The patch / minor / major series are considered "single step", and therefore identified
- * with a canonical "semantic version" {{major.minor.patch}} [1.3.5, 2.0.3, etc.]
- *
- * dev => alpha => beta are usually "private" releases, and are (typically) not available
- * to anyone outside the development team. In certain cases, beta releases may be made
- * available to a restricted set of outsiders as part of "early feedback collection" cycle.
- *
- * The rc releases are usually made available to the general public, and typically released on
- * npm tagged as "@next". This is done for collecting feedback / bugs from the wider community,
- * as well as to give downstream packages/projects the time needed to make any changes mandated
- * by the new version - before the package is actually released.
- *
- * The patch / minor / major releases are considered "public" releases - in other words, they are
- * made available to "everyone" via the package registry and all users are encouraged to upgrade.
- *
- * Once a "public" release is done & dusted, development for the next set of changes is expected
- * to immediately begin - with the next (higher) version number and a "dev" series tag.
+ * The command class that implements the "prepare" step of the workflow.
+ * Please see README.md for the details of what this step involves.
  *
  */
 class PrepareCommandClass {
 	// #region Constructor
 	constructor(configuration, logger) {
+		if(configuration)
 		Object.defineProperty(this, '_commandOptions', {
-			'value': configuration
+			'writeable': true,
+			'value': configuration ?? {}
 		});
 
 		Object.defineProperty(this, '_logger', {
+			'writeable': true,
 			'value': logger ?? console
 		});
 	}
@@ -84,7 +54,8 @@ class PrepareCommandClass {
 	 * @memberof PrepareCommandClass
 	 * @name     execute
 	 *
-	 * @param    {object} options - Parsed command-line options.
+	 * @param    {object} options - Parsed command-line options, or options passed in via API
+	 * @param    {object} logger - Object implementing the usual log commands (debug, info, warn, error, etc.)
 	 *
 	 * @return {null} Nothing.
 	 *
@@ -95,8 +66,9 @@ class PrepareCommandClass {
 	 * - Parses the source files for the current version string, and replaces it with the next one
 	 *
 	 */
-	async execute(options) {
+	async execute(options, logger) {
 		const path = require('path');
+		const safeJsonStringify = require('safe-json-stringify');
 		const semver = require('semver');
 
 		// Setup sane defaults for the options
@@ -105,18 +77,20 @@ class PrepareCommandClass {
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
 
-		mergedOptions.series = options?.series ?? 'current';
+		mergedOptions.series = options?.series ?? (this?._commandOptions?.series ?? 'current');
 		mergedOptions.versionLadder = options?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
+
+		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
 		let loggerFn = null;
 		if(!mergedOptions.silent) { // eslint-disable-line curly
 			if(mergedOptions.quiet)
-				loggerFn = this._logger.info.bind(this._logger);
+				loggerFn = logger?.info?.bind?.(logger) ?? this._logger.info.bind(this._logger);
 			else
-				loggerFn = this._logger.debug.bind(this._logger);
+				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger.debug.bind(this._logger);
 		}
 
 		// Step 1: Get the current version from package.json
@@ -137,7 +111,7 @@ class PrepareCommandClass {
 		debug(`${projectPackageJson} contains version ${version}`);
 
 		// Step 2: Compute the next version
-		debug(`applying ${mergedOptions.series} series to version ${version} using the ladder: ${JSON.stringify(mergedOptions.versionLadder)}`);
+		debug(`applying ${mergedOptions.series} series to version ${version} using the ladder: ${safeJsonStringify(mergedOptions.versionLadder)}`);
 
 		const incArgs = [version];
 		const parsedVersion = semver.parse(version);
@@ -204,7 +178,7 @@ class PrepareCommandClass {
 		// eslint-disable-next-line security/detect-non-literal-fs-filename
 		const fileSystem = require('fs/promises');
 		let gitIgnoreFile = await fileSystem.readFile(path.join(process.cwd(), '.gitignore'), { 'encoding': 'utf8' });
-		gitIgnoreFile += `\n\n${this?._commandOptions?.ignoreFolders.join('\n')}\n\n`;
+		gitIgnoreFile += `\n\n${mergedOptions.ignoreFolders.replace(/,/g, '\n')}\n\n`;
 
 		gitIgnoreFile = gitIgnoreFile
 			.split('\n')
@@ -275,14 +249,15 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.command('prepare')
 		.option('--series <type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
 		.option('--version-ladder <stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
+		.option('--ignore-folders <folder list>', 'Comma-separated list of folders to ignore when checking for fils containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
 		.action(commandObj.execute.bind(commandObj));
 
 	return;
 };
 
 // Export the API for usage by downstream programs
-exports.apiCreator = function apiCreator(configuration, logger) {
-	if(!commandObj) commandObj = new PrepareCommandClass(configuration?.prepare, logger);
+exports.apiCreator = function apiCreator() {
+	if(!commandObj) commandObj = new PrepareCommandClass();
 	return {
 		'name': 'prepare',
 		'method': commandObj.execute.bind(commandObj)

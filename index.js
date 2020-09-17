@@ -32,22 +32,6 @@ require('please-upgrade-node')(
 	})
 );
 
-// Step 0: Load the configuration
-const { cosmiconfigSync } = require('cosmiconfig');
-const explorer = cosmiconfigSync('announce', {
-	'searchPlaces': [
-		'package.json',
-		'.announcerc',
-		'.announcerc.json',
-		'.announcerc.yaml',
-		'.announcerc.yml',
-		'.announcerc.js',
-		'announce.config.js'
-	]
-});
-
-const configuration = explorer.search();
-
 // Step 1: Crawl the commands folder and get the list of available commands
 const { 'fdir': FDir } = require('fdir');
 const { join } = require('path');
@@ -64,7 +48,13 @@ const availableCommandDefinitionFiles = crawler.crawl(commandDefinitionFolder).s
 for(const commandDefinitionFile of availableCommandDefinitionFiles) {
 	// eslint-disable-next-line
 	const { apiCreator } = require(commandDefinitionFile);
-	const api = apiCreator?.(configuration ?.config);
+	const api = apiCreator?.();
 
-	exports[api.name] = api.method;
+	if(!api?.name || !api?.method)
+		continue;
+
+	if(typeof api?.method !== 'function')
+		continue;
+
+	exports[api?.name] = api?.method;
 }
