@@ -79,6 +79,7 @@
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
 		"@commitlint/config-conventional": "11.0.0",
+		"arkit": "1.6.4",
 		"chai": "4.2.0",
 		"chai-arrays": "2.2.0",
 		"chai-bignumber": "3.0.0",
@@ -129,9 +130,10 @@
 		"stats:cc-json": "npx eslintcc --average --greater-than e --max-rank f --format json --no-inline-config . > ./stats/complexity.json",
 		"stats:sloc-table": "npx sloc --details --format cli-table --exclude '.circleci|.github|.vscode|buildresults|coverage|depcruise|deploy|docs|jsdoc_default|log|node_modules|stats|ecosystem.config.js|gruntfile.js|test/setup_mocks.js|test-results.xml' --keys source,comment,todo,empty,total . | tee ./stats/sloc.txt",
 		"stats:sloc-json": "npx sloc --details --format json --exclude '.circleci|.github|.vscode|buildresults|coverage|depcruise|deploy|docs|jsdoc_default|log|node_modules|stats|ecosystem.config.js|gruntfile.js|test/setup_mocks.js|test-results.xml' . > ./stats/sloc.json",
-		"test": "npx npm-run-all --continue-on-error --serial test:run test:coverage test:deps",
+		"test": "npx npm-run-all --continue-on-error --serial test:run test:coverage test:deps test:arkit",
 		"test:coverage": "NODE_ENV=test npx nyc --reporter=cobertura --reporter=lcovonly --reporter=text --reporter=text-summary mocha",
 		"test:deps": "mkdir -p depcruise && npx depcruise --config ./.dependency-cruiser.js --output-type json . -f ./depcruise/deps.json && npx depcruise-fmt --output-type archi ./depcruise/deps.json | dot -T svg > ./depcruise/archi.svg && npx depcruise-fmt --output-type err-html -f ./depcruise/error.html ./depcruise/deps.json",
+		"test:arkit": "mkdir -p arkit && npx arkit --config ./.arkit.json",
 		"test:run": "NODE_ENV=test npx mocha --reporter=spec"
 	},
 	"bin": {
