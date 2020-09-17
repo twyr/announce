@@ -178,7 +178,7 @@ class PrepareCommandClass {
 		// eslint-disable-next-line security/detect-non-literal-fs-filename
 		const fileSystem = require('fs/promises');
 		let gitIgnoreFile = await fileSystem.readFile(path.join(process.cwd(), '.gitignore'), { 'encoding': 'utf8' });
-		gitIgnoreFile += `\n\n${mergedOptions.ignoreFolders.replace(/,/g, '\n')}\n\n`;
+		gitIgnoreFile += `\n\n**/.git\n${mergedOptions.ignoreFolders.split(',').map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
 
 		gitIgnoreFile = gitIgnoreFile
 			.split('\n')
