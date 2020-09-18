@@ -28,10 +28,18 @@
 			<input type="text" id="nav-search" placeholder="Search" />
 			<h2><a href="index.html">Home</a></h2>
 			<h2><a href="https://github.com/twyr/announce" target="_blank" class="menu-item" id="github_link">GitHub</a></h2>
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
+			</ul>
 		</nav>
 		<div id="main">
 			<section class="package">
-				<h3>announce 0.0.1-dev.0</h3>
+				<h3>announce 0.0.1</h3>
 			</section>
 			<section class="readme usertext">
 				<article>
@@ -41,11 +49,14 @@
 					<div align="center">
 						<a href="https://spdx.org/licenses/MITNFA.html"><img src="https://img.shields.io/badge/License-MIT%20%2Bno--false--attribs-blue" /></a>
 						<a href="https://github.com/twyr/announce/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" /></a>
-						<a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=1IAiD3aXzBOoqeNPAAIXLB1fe8YSiUh5Y" /></a>
+						<a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=5b5a717014a209604624b6e25cee1552e6174315" /></a>
 					</div>
 					<hr />
 					<div align="center">
-						node.js CLI for the most common workflow - Semantic Versioning, Tagging/Releasing on Github/Gitlab, and NPM Publishing
+						node.js CLI for the most common release workflow
+					</div>
+					<div align="center">
+						Semantic Versioning, Tagging/Releasing on Bitbucket/Github/Gitlab, and Publishing to the NPM Registry
 					</div>
 					<div align="center">
 						Built as part of the <a href="https://github.com/twyr">Twy&apos;r</a> effort by <a href="https://github.com/shadyvd">Vish Desai</a> and <a href="https://github.com/twyr/announce/graphs/contributors">contributors</a>
@@ -99,6 +110,203 @@
 								<td>Publish Status</td>
 								<td><img src="https://img.shields.io/node/v/@twyr/announce" alt="node-current"> <img src="https://img.shields.io/bundlephobia/min/@twyr/announce" alt="npm bundle size"> <img src="https://img.shields.io/npm/dy/@twyr/announce" alt="npm"></td>
 							</tr>
+							<tr>
+								<td></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table>
+					<h4>TABLE OF CONTENTS</h4>
+					<ul>
+						<li><a href="#why-announce">Raison d'etre</a></li>
+						<li><a href="#workflow">Workflow</a></li>
+						<li><a href="#using-the-cli">Using the CLI</a>
+							<ul>
+								<li><a href="#cli-installation">Installation</a></li>
+								<li><a href="#cli-commands">Commands</a></li>
+							</ul>
+						</li>
+						<li><a href="#integrating-announce-cli-into-another-module">Integrating with another Module</a>
+							<ul>
+								<li><a href="#module-installation">Installation</a></li>
+								<li><a href="#module-api">API</a></li>
+							</ul>
+						</li>
+						<li><a href="#contributing">Contributing</a>
+							<ul>
+								<li><a href="#code-of-conduct">Code of Conduct</a></li>
+								<li><a href="#developing">Developing</a></li>
+								<li><a href="#contributors">Project Contributors</a></li>
+							</ul>
+						</li>
+						<li><a href="#license">License</a></li>
+						<li><a href="#see-also">See Also</a></li>
+					</ul>
+					<h4>WHY ANNOUNCE</h4>
+					<p>Most node.js projects follow a fairly simple set of steps during development - bump the (semantic) version for the next release, commit code,
+						author a changelog, tag/release on Github/Gitlab (with release notes), and publish to the NPM Registry.</p>
+					<p>While there are several tools that help with each of these steps, they fall into one of two categories - they either perform only one of the steps,
+						or they try to do everything and end up being extremely complex. A good example of the first category of tool is <a href="https://docs.npmjs.com/cli/version">npm-version</a>,
+						which takes responsibility only for bumping up the versions, and nothing else. On the other hand, tools such as <a href="https://www.npmjs.com/package/semantic-release">semantic-release</a>
+						provide functionality (via plugins) to push not only to NPM, but also several other registries/endpoints - see <a href="https://github.com/semantic-release/semantic-release/blob/HEAD/docs/extending/plugins-list.md">semantic-release plugins</a>
+						for example.</p>
+					<p>For the <a href="https://github.com/twyr">Twy'r Project</a>, neither of these categories of tools is &quot;exactly right&quot; - they provide either too little,
+						or too much, functionality. The Announce CLI/Module tries to fill in that &quot;sweet spot&quot; - providing exactly the functionality required.</p>
+					<h4>WORKFLOW</h4>
+					<p>The <a href="https://github.com/twyr">Twy'r Project</a> development/release workflow consists of the following steps:</p>
+					<ol>
+						<li>Bump version as required</li>
+						<li>Create a changelog automatically before tagging</li>
+						<li>Generate release notes and create a Github/Gitlab release using the tag created in Step #2</li>
+						<li>Publish the release to NPM</li>
+						<li>Repeat for the next development/release cycle</li>
+					</ol>
+					<p>Every repository in the project, including this CLI/Module, will adhere to this workflow going forward. The Announce module will be used
+						extensively to maintain the versioning, changelog, and release notes - as well as acting as a helper tool to publish to NPM as required.</p>
+					<h4>USING THE CLI</h4>
+					<h5>CLI Installation</h5>
+					<p>Assuming that node.js and npm have already been installed on the system, <a href="https://github.com/twyr/announce">Announce</a> can be installed
+						via the following commands:</p>
+					<table>
+						<thead>
+							<tr>
+								<th>Install Type</th>
+								<th>Command</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Local</td>
+								<td>npm install @twyr/announce --save-dev</td>
+							</tr>
+							<tr>
+								<td>Global</td>
+								<td>npm install @twyr/announce --global</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>CLI Commands</h5>
+					<p>The list of commands, and the options each command supports, can be accessed from the terminal by:</p>
+					<table>
+						<thead>
+							<tr>
+								<th>Install Type</th>
+								<th>Command</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Local</td>
+								<td>npx announce -h</td>
+							</tr>
+							<tr>
+								<td>Global</td>
+								<td>announce -h</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table>
+					<p>The Announce CLI list of commands, and a brief description of each, is given below:</p>
+					<table>
+						<thead>
+							<tr>
+								<th>Announce Command</th>
+								<th>Usage</th>
+								<th>Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Prepare</td>
+								<td>announce prepare</td>
+								<td>Increments the version as necessary. See <a href="PREPARE_COMMAND.md">Prepare Command</a> for details</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table>
+					<p>See command specific documentation for further information on how to execute each command, the command-line, options relevant to that command, etc.</p>
+					<h4>INTEGRATING ANNOUNCE CLI INTO ANOTHER MODULE</h4>
+					<h5>Module Installation</h5>
+					<p>Assuming that node.js and npm have already been installed on the system, <a href="https://github.com/twyr/announce">Announce</a> can be installed
+						via the following command: <code>npm install @twyr/announce --save-dev</code></p>
+					<h5>Module API</h5>
+					<p>Once installed, the module may be loaded using:</p>
+					<pre class="prettyprint source"><code>const announce = require('@twyr/announce);
+</code></pre>
+					<p>See command specific documentation for information regarding each command, the options it takes, etc.</p>
+					<h4>CONTRIBUTING</h4>
+					<h5>Code of Conduct</h5>
+					<p>All contributors to this project are expected to adhere to the <a href="CODE_OF_CONDUCT.md">Code of Conduct</a> specified.</p>
+					<h5>Developing</h5>
+					<p>Details on getting the code, setting up the development environment, and instructions on how to extend/build/test the code are detailed in the
+						<a href="CONTRIBUTING.md">Contribution Guide</a>
+					</p>
+					<h5>Contributors</h5>
+					<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+					<p><a href="#contributors"><img src="https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square" alt="All Contributors"></a></p>
+					<!-- ALL-CONTRIBUTORS-BADGE:END -->
+					<p>This project owes its existence to these wonderful people (<a href="https://allcontributors.org/docs/en/emoji-key">emoji key</a>):</p>
+					<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+					<!-- prettier-ignore-start -->
+					<!-- markdownlint-disable -->
+					<table>
+						<tr>
+							<td align="center"><a href="http://twyr.github.io"><img src="https://avatars1.githubusercontent.com/u/5027975?v=4" width="100px;" alt="" /><br /><sub><b>Vish Desai</b></sub></a></td>
+						</tr>
+					</table>
+					<!-- markdownlint-enable -->
+					<!-- prettier-ignore-end -->
+					<!-- ALL-CONTRIBUTORS-LIST:END -->
+					<p>This project follows the <a href="https://allcontributors.org">all-contributors</a> specification. Contributions of any kind are welcome!</p>
+					<h4>LICENSE</h4>
+					<p>This project is licensed under the <a href="https://spdx.org/licenses/MITNFA.html">MIT +no-false-attribs</a> license.
+						You may get a copy of the license by following the link, or at <a href="LICENSE.md">LICENSE.md</a></p>
+					<h4>SEE ALSO</h4>
+					<table>
+						<thead>
+							<tr>
+								<th>Command</th>
+								<th>Category</th>
+								<th>Alternatives on NPM</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Prepare</td>
+								<td>Semantic Versioning</td>
+								<td><a href="https://docs.npmjs.com/cli/version">npm-version</a></td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>Changelog Management</td>
+								<td><a href="https://www.npmjs.com/search?q=keywords:changelog">changelog</a></td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>Tagging &amp; Releasing</td>
+								<td><a href="https://www.npmjs.com/search?q=keywords:release">release</a></td>
+							</tr>
+							<tr>
+								<td>Publish</td>
+								<td>Registry (NPM, et al) Publishing</td>
+								<td><a href="https://www.npmjs.com/search?q=keywords:npm%20publish">publish</a></td>
+							</tr>
+							<tr>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
 						</tbody>
 					</table>
 				</article>
@@ -123,7 +331,7 @@
 							<dt class="tag-version">Version:</dt>
 							<dd class="tag-version">
 								<ul class="dummy">
-									<li>0.0.1-dev.0</li>
+									<li>0.0.1</li>
 								</ul>
 							</dd>
 							<dt class="tag-author">Author:</dt>
@@ -135,7 +343,7 @@
 							<dt class="tag-copyright">Copyright:</dt>
 							<dd class="tag-copyright">
 								<ul class="dummy">
-									<li>(c) <a href="https://twyr.github.io/annouce">Twy'r</a> 2016-2020</li>
+									<li>(c) <a href="https://twyr.github.io/annouce">Twy'r Announce</a> 2016-2020</li>
 								</ul>
 							</dd>
 							<dt class="tag-license">License:</dt>
@@ -154,7 +362,7 @@
 		</div>
 		<br class="clear">
 		<footer>
-			Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.5</a> on Tue Sep 08 2020 15:13:34 GMT+0530 (India Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+			Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.5</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 		</footer>
 		<script>
 			prettyPrint();
