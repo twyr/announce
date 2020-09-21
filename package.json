@@ -108,7 +108,7 @@
 		"grunt-jsbeautifier": "0.2.13",
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "4.3.0",
-		"jsdoc": "3.6.5",
+		"jsdoc": "3.6.6",
 		"lint-staged": "10.4.0",
 		"load-grunt-tasks": "5.1.0",
 		"mocha": "8.1.3",
