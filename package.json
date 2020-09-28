@@ -90,7 +90,7 @@
 		"chai-json-schema": "1.5.1",
 		"dependency-cruiser": "9.14.0",
 		"docdash": "1.2.0",
-		"eslint": "7.9.0",
+		"eslint": "7.10.0",
 		"eslintcc": "0.4.5",
 		"eslint-plugin-html": "6.1.0",
 		"eslint-plugin-jsdoc": "30.5.1",
