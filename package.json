@@ -93,7 +93,7 @@
 		"eslint": "7.9.0",
 		"eslintcc": "0.4.5",
 		"eslint-plugin-html": "6.1.0",
-		"eslint-plugin-jsdoc": "30.5.1",
+		"eslint-plugin-jsdoc": "30.6.2",
 		"eslint-plugin-json": "2.1.2",
 		"eslint-plugin-mocha": "8.0.0",
 		"eslint-plugin-node": "11.1.0",
