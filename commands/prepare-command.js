@@ -246,9 +246,9 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 	commanderProcess
 		.command('prepare')
-		.option('--series <type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
-		.option('--version-ladder <stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
-		.option('--ignore-folders <folder list>', 'Comma-separated list of folders to ignore when checking for fils containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
+		.option('-ss, --series <type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
+		.option('-vl, --version-ladder <stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
+		.option('-if, --ignore-folders <folder list>', 'Comma-separated list of folders to ignore when checking for files containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
 		.action(commandObj.execute.bind(commandObj));
 
 	return;
