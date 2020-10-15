@@ -124,15 +124,20 @@ class PrepareCommandClass {
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
 
 		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
+		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
 		let loggerFn = null;
 		if(!mergedOptions.silent) { // eslint-disable-line curly
-			if(mergedOptions.quiet)
-				loggerFn = logger?.info?.bind?.(logger) ?? this._logger.info.bind(this._logger);
-			else
-				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger.debug.bind(this._logger);
+			if(mergedOptions.quiet) {
+				loggerFn = logger?.info?.bind?.(logger) ?? this._logger?.info?.bind(this._logger);
+				loggerFn = loggerFn ?? console.info.bind(console);
+			}
+			else {
+				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger?.debug?.bind(this._logger);
+				loggerFn = loggerFn ?? console.debug.bind(console);
+			}
 		}
 
 		// Step 1: Get the current version from package.json
@@ -289,9 +294,9 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 	commanderProcess
 		.command('prepare')
-		.option('--series &lt;type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
-		.option('--version-ladder &lt;stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
-		.option('--ignore-folders &lt;folder list>', 'Comma-separated list of folders to ignore when checking for fils containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
+		.option('-ss, --series &lt;type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
+		.option('-vl, --version-ladder &lt;stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
+		.option('-if, --ignore-folders &lt;folder list>', 'Comma-separated list of folders to ignore when checking for files containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
 		.action(commandObj.execute.bind(commandObj));
 
 	return;
