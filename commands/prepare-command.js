@@ -81,15 +81,20 @@ class PrepareCommandClass {
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
 
 		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
+		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
 		let loggerFn = null;
 		if(!mergedOptions.silent) { // eslint-disable-line curly
-			if(mergedOptions.quiet)
-				loggerFn = logger?.info?.bind?.(logger) ?? this._logger.info.bind(this._logger);
-			else
-				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger.debug.bind(this._logger);
+			if(mergedOptions.quiet) {
+				loggerFn = logger?.info?.bind?.(logger) ?? this._logger?.info?.bind(this._logger);
+				loggerFn = loggerFn ?? console.info.bind(console);
+			}
+			else {
+				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger?.debug?.bind(this._logger);
+				loggerFn = loggerFn ?? console.debug.bind(console);
+			}
 		}
 
 		// Step 1: Get the current version from package.json
