@@ -71,6 +71,22 @@ Global Options inherited by the Prepare Command:
 | help | Displays this information. |
 |   |   |
 
+##### Configuration (.announcerc file)
+
+```
+{
+    'prepare': {
+        'series': 'series to use when incrementing', // Options are current, next, patch, minor, major [default: current]
+        'versionLadder': 'version ladder to use for defining the series', // String defining the version ladder [default: 'dev, alpha, beta, rc, patch, minor, major']
+        'ignoreFolders': 'list of folders to ignore', // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
+
+        'debug': true/false, // Enable debug logging as annouce:prepare if enabled [default: false]
+        'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
+        'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
+    }
+}
+```
+
 ##### Invoking via API
 
 The prepare command can be integrated into another module, and invoked as:
