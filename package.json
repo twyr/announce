@@ -88,7 +88,7 @@
 		"chai-json": "1.0.0",
 		"chai-json-equal": "0.0.1",
 		"chai-json-schema": "1.5.1",
-		"dependency-cruiser": "9.14.1",
+		"dependency-cruiser": "9.15.1",
 		"docdash": "1.2.0",
 		"eslint": "7.10.0",
 		"eslintcc": "0.4.6",
