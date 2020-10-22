@@ -40,7 +40,21 @@ made available to "everyone" via the package registry and all users are encourag
 Once a "public" release is done & dusted, development for the next set of changes is expected
 to immediately begin - with the next (higher) version number and a "dev" series tag.
 
+##### Version Increment Semantics
+
+Given the default version ladder *(dev, alpha, beta, rc, patch, minor, major)*, the next version
+is calculated according to the following semantics:
+
+| Series | => | current | next | patch | minor | major |
+| --- | --- | --- | --- | --- | --- | --- |
+| V 0.0.1-dev.0 | => | 0.0.1-dev.1 | 0.0.1-alpha.0 | 0.0.1 | 0.1.0 | 1.0.0 |
+| V 0.1.0 | => | 0.1.1 | 0.1.1-dev.0 | 0.1.1 | 0.2.0 | 1.0.0 |
+| V 1.0.0 | => | 1.0.1 | 1.0.1-dev.0 | 1.0.1 | 1.1.0 | 2.0.0 |
+|   |   |   |   |   |   |   |
+
+
 ##### Command Flow
+
 The prepare command executes the following steps:
 
 1. Check if package.json exists, and contains a semver-valid version
