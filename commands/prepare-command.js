@@ -81,15 +81,20 @@ class PrepareCommandClass {
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
 
 		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
+		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
 		let loggerFn = null;
 		if(!mergedOptions.silent) { // eslint-disable-line curly
-			if(mergedOptions.quiet)
-				loggerFn = logger?.info?.bind?.(logger) ?? this._logger.info.bind(this._logger);
-			else
-				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger.debug.bind(this._logger);
+			if(mergedOptions.quiet) {
+				loggerFn = logger?.info?.bind?.(logger) ?? this._logger?.info?.bind(this._logger);
+				loggerFn = loggerFn ?? console.info.bind(console);
+			}
+			else {
+				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger?.debug?.bind(this._logger);
+				loggerFn = loggerFn ?? console.debug.bind(console);
+			}
 		}
 
 		// Step 1: Get the current version from package.json
@@ -175,36 +180,41 @@ class PrepareCommandClass {
 		// debug(`possible targets for version change: ${targetFiles.join(', ')}`);
 
 		// eslint-disable-next-line security/detect-non-literal-fs-filename
-		const fileSystem = require('fs/promises');
-		let gitIgnoreFile = await fileSystem.readFile(path.join(process.cwd(), '.gitignore'), { 'encoding': 'utf8' });
-		gitIgnoreFile += `\n\n**/.git\n${mergedOptions.ignoreFolders.split(',').map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
+		try {
+			const fileSystem = require('fs/promises');
+			let gitIgnoreFile = await fileSystem.readFile(path.join(process.cwd(), '.gitignore'), { 'encoding': 'utf8' });
+			gitIgnoreFile += `\n\n**/.git\n${mergedOptions.ignoreFolders.map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
 
-		gitIgnoreFile = gitIgnoreFile
-			.split('\n')
-			.map((gitIgnoreLine) => {
-				if(gitIgnoreLine.trim().length === 0)
-					return gitIgnoreLine.trim();
+			gitIgnoreFile = gitIgnoreFile
+				.split('\n')
+				.map((gitIgnoreLine) => {
+					if(gitIgnoreLine.trim().length === 0)
+						return gitIgnoreLine.trim();
 
-				if(gitIgnoreLine.startsWith('#'))
-					return gitIgnoreLine;
+					if(gitIgnoreLine.startsWith('#'))
+						return gitIgnoreLine;
 
-				if(gitIgnoreLine.startsWith('**/'))
-					return gitIgnoreLine;
+					if(gitIgnoreLine.startsWith('**/'))
+						return gitIgnoreLine;
 
-				return `${gitIgnoreLine}\n**/${gitIgnoreLine}`;
-			})
-			.filter((gitIgnoreLine) => {
-				return gitIgnoreLine.length;
-			})
-			.join('\n\n');
+					return `${gitIgnoreLine}\n**/${gitIgnoreLine}`;
+				})
+				.filter((gitIgnoreLine) => {
+					return gitIgnoreLine.length;
+				})
+				.join('\n\n');
 
-		debug(`.gitignore used:\n${gitIgnoreFile}`);
+			debug(`.gitignore used:\n${gitIgnoreFile}`);
 
-		const gitIgnoreParser = require('gitignore-parser');
-		const gitIgnore = gitIgnoreParser.compile(gitIgnoreFile);
+			const gitIgnoreParser = require('gitignore-parser');
+			const gitIgnore = gitIgnoreParser.compile(gitIgnoreFile);
 
-		debug(`applying .gitignore to possible targets`);
-		targetFiles = targetFiles.filter(gitIgnore.accepts);
+			debug(`applying .gitignore to possible targets`);
+			targetFiles = targetFiles.filter(gitIgnore.accepts);
+		}
+		catch(err) {
+			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
+		}
 
 		// Step 4: Replace current version strong with next version string in all the target files
 		debug(`modifying version to ${nextVersion} in:\n${targetFiles.join('\n\t')}\n`);
@@ -246,9 +256,9 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 	commanderProcess
 		.command('prepare')
-		.option('--series <type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
-		.option('--version-ladder <stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
-		.option('--ignore-folders <folder list>', 'Comma-separated list of folders to ignore when checking for fils containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
+		.option('-ss, --series <type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
+		.option('-vl, --version-ladder <stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
+		.option('-if, --ignore-folders <folder list>', 'Comma-separated list of folders to ignore when checking for files containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
 		.action(commandObj.execute.bind(commandObj));
 
 	return;
