@@ -91,7 +91,7 @@
 		"dependency-cruiser": "9.14.1",
 		"docdash": "1.2.0",
 		"eslint": "7.10.0",
-		"eslintcc": "0.4.6",
+		"eslintcc": "0.4.7",
 		"eslint-plugin-html": "6.1.0",
 		"eslint-plugin-jsdoc": "30.6.2",
 		"eslint-plugin-json": "2.1.2",
