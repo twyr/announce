@@ -98,7 +98,8 @@ The Announce CLI list of commands, and a brief description of each, is given bel
 
 | Announce Command | Usage | Description |
 | --- | --- | --- |
-| Prepare | announce prepare  | Increments the version as necessary. See [Prepare Command](PREPARE_COMMAND.md) for details |
+| Prepare | announce prepare  | Increments the version as necessary. See [Prepare Command](markdown/PREPARE_COMMAND.md) for details |
+| Release | announce release  | Generate [CHANGELOG](CHANGELOG.md), tag the code, and release to Github. See [Release Command](markdown/RELEASE_COMMAND.md) for details |
 |   |   |   |
 
 See command specific documentation for further information on how to execute each command, the command-line, options relevant to that command, etc.
