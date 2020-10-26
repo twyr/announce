@@ -47,8 +47,8 @@ Global Options inherited by the Release Command:
 {
     'release': {
         'commit': true/false [default: false] // Default is to stash and un-stash
-        'github-token': 'GITHUB_TOKEN' // default: $GITHUB_TOKEN environment variable
-        'release-note': 'path to markdown file containing custom notes for this release', // default: ''
+        'githubToken': 'GITHUB_TOKEN' // default: $GITHUB_TOKEN environment variable
+        'releaseNote': 'path to markdown file containing custom notes for this release', // default: ''
         'upstream': 'git remote name of the upstream repository', // default: upstream
 
         'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
