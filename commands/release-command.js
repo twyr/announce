@@ -67,8 +67,10 @@ class ReleaseCommandClass {
 	 *
 	 */
 	async execute(options, logger) {
+		const safeJsonStringify = require('safe-json-stringify');
+
 		// Setup sane defaults for the options
-		const mergedOptions = options ?? {};
+		const mergedOptions = {};
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
@@ -77,6 +79,8 @@ class ReleaseCommandClass {
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
 		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
+
+		console.log(`announce::release::mergedOptions: ${safeJsonStringify(mergedOptions, null, '\t')}`);
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
@@ -110,10 +114,10 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 	commanderProcess
 		.command('release')
-		.option('-c, --commit', 'Commit code if branch is dirty', false)
+		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
 		.option('-t, --github-token <token>', 'Token to use for creating the release on Github')
-		.option('-rn, --release-note <path to release notes markdown>', 'Path to markdown file containing the release notes, with/without a placeholder for the CHANGELOG', '')
-		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', 'upstream')
+		.option('-rn, --release-note <path to release notes markdown>', 'Path to markdown file containing the release notes, with/without a placeholder for the CHANGELOG', configuration?.release?.releaseNote ?? '')
+		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
 	return;
