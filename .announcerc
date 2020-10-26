@@ -1,5 +1,12 @@
 {
 	'prepare': {
 		'ignoreFolders': '.circleci, docs'
+	},
+
+	'release': {
+        'commit': false,
+        'githubToken': null,
+        'releaseNote': '',
+        'upstream': 'twyr'
 	}
 }
