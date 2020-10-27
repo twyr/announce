@@ -74,7 +74,8 @@
 		"please-upgrade-node": "3.2.0",
 		"replace-in-file": "6.1.0",
 		"safe-json-stringify": "1.2.0",
-		"semver": "7.3.2"
+		"semver": "7.3.2",
+		"simple-git": "2.21.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
@@ -90,7 +91,7 @@
 		"chai-json-schema": "1.5.1",
 		"dependency-cruiser": "9.15.1",
 		"docdash": "1.2.0",
-		"eslint": "7.12.0",
+		"eslint": "7.12.1",
 		"eslintcc": "0.4.7",
 		"eslint-plugin-html": "6.1.0",
 		"eslint-plugin-jsdoc": "30.7.3",
@@ -109,7 +110,7 @@
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "4.3.0",
 		"jsdoc": "3.6.6",
-		"lint-staged": "10.4.2",
+		"lint-staged": "10.5.0",
 		"load-grunt-tasks": "5.1.0",
 		"mocha": "8.2.0",
 		"mocha-junit-reporter": "2.0.0",
