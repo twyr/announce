@@ -67,7 +67,12 @@ class ReleaseCommandClass {
 	 *
 	 */
 	async execute(options, logger) {
+		const es6DynTmpl = require('es6-dynamic-template');
+		const path = require('path');
 		const safeJsonStringify = require('safe-json-stringify');
+		const simpleGit = require('simple-git');
+
+		let shouldPopOnError = false;
 
 		// Setup sane defaults for the options
 		const mergedOptions = {};
@@ -75,12 +80,18 @@ class ReleaseCommandClass {
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
 
+		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
+
 		mergedOptions.commit = options?.commit ?? (this?._commandOptions?.commit ?? false);
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
 		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
-		console.log(`announce::release::mergedOptions: ${safeJsonStringify(mergedOptions, null, '\t')}`);
+		// Get package.json into memory... we'll use it in multiple places here
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const pkg = require(projectPackageJson);
+
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
@@ -96,10 +107,136 @@ class ReleaseCommandClass {
 			}
 		}
 
-		// Step 1: Get the current version from package.json
+		debug(`Releasing with options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
 
-		loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
-		debug(`done releasing the code to ${mergedOptions.upstream}`);
+		// Step 1: Initialize the GIT API for the current working directory
+		const git = simpleGit({
+			'baseDir': process.cwd()
+		})
+		.outputHandler((_command, stdout, stderr) => {
+			if(mergedOptions.debug) stdout.pipe(process.stdout);
+			stderr.pipe(process.stderr);
+		});
+
+		debug(`Initialized Git for the repository @ ${process.cwd()}`);
+
+		try {
+			// Step 2: Generate git commit trailer messages... we'll use this in multiple places, as well
+			let trailerMessages = await git.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+			trailerMessages = trailerMessages.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+			debug(`Trailer messages: ${trailerMessages}`);
+
+			// Step 3: Check if branch is dirty...
+			const branchStatus = await git.status();
+
+			// Step 4: Stash / Commit as required
+			let stashOrCommitStatus = null;
+			if(branchStatus.files.length) {
+				debug(`Branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
+				loggerFn?.(`Branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
+
+				if(!mergedOptions.commit) {
+					stashOrCommitStatus = await git.stash(['push']);
+					shouldPopOnError = true;
+				}
+				else {
+					const commitMessage = es6DynTmpl(mergedOptions.message, pkg);
+					debug(`Commit message: ${commitMessage}`);
+
+					const consolidatedMessage = commitMessage + trailerMessages;
+					stashOrCommitStatus = await git.commit(consolidatedMessage, null, {
+						'--all': true,
+						'--allow-empty': true,
+						'--signoff': true
+					});
+
+					stashOrCommitStatus = stashOrCommitStatus.commit;
+				}
+			}
+
+			debug(`${mergedOptions.commit ? 'Commit' : 'Stash'} status: ${safeJsonStringify(stashOrCommitStatus, null, '\t')}`);
+			loggerFn?.(`Done with the ${mergedOptions.commit ? 'commit' : 'stash'}`);
+
+			// Step 5: Get the last tag, the commit related to it, and the current commit
+			let lastTag = await git.tag(['--sort=-creatordate']);
+			lastTag = lastTag.split('\\n').shift().replace(/\\n/g, '').trim();
+
+			let lastTaggedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastTaggedCommit = lastTaggedCommit.replace(/\\n/g, '').trim();
+
+			let lastCommit = await git.raw(['rev-parse', 'HEAD']);
+			lastCommit = lastCommit.replace(/\\n/g, '').trim();
+
+			debug(`Last Tag: ${lastTag}, commit sha: ${lastTaggedCommit}, current commit sha: ${lastCommit}`);
+			loggerFn?.(`Generating CHANGELOG now...`);
+
+			// Step 6: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
+			let gitLogsInRange = await git.log(lastTaggedCommit, lastCommit);
+			gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
+				return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
+			});
+
+			let gitRemotes = await git.raw(['remote', '-v']);
+			gitRemotes = gitRemotes.split('\n').filter((remote) => {
+				return remote.startsWith(mergedOptions.upstream);
+			})[0];
+
+			gitRemotes = gitRemotes.replace(`${mergedOptions.upstream}\t`, '').replace('git@github.com:', 'github.com/').replace('https://', '');
+			const extnIdx = gitRemotes.indexOf('.git');
+
+			const repository = gitRemotes.substring(0, extnIdx);
+
+			const changeLogText = [`#### CHANGE LOG`];
+			const processedDates = [];
+
+			const dateFormat = require('date-fns/format');
+			gitLogsInRange.forEach((commitLog) => {
+				const commitDate = dateFormat(new Date(commitLog.date), 'dd-MMM-yyyy');
+				if(!processedDates.includes(commitDate)) {
+					processedDates.push(commitDate);
+					changeLogText.push(`\n\n##### ${commitDate}`);
+				}
+
+				changeLogText.push(`\n${commitLog.message} ([${commitLog.hash}](https://${repository}/commit/${commitLog.hash}))`);
+			});
+
+			const changelogFile = path.join(process.cwd(), 'CHANGELOG.md');
+			const replaceInFile = require('replace-in-file');
+			const replaceOptions = {
+				'files': changelogFile,
+				'from': '#### CHANGE LOG',
+				'to': changeLogText.join('\n')
+			};
+
+			const changelogResult = await replaceInFile(replaceOptions);
+			debug(`Generated CHANGELOG? ${changelogResult[0]['hasChanged']}`);
+			loggerFn?.(`Generated CHANGELOG? ${changelogResult[0]['hasChanged']}`);
+
+			// Step 7: Commit CHANGELOG
+			const consolidatedMessage = `chore(CHANGELOG): generated change log for release ${pkg.version}\n${trailerMessages}`;
+			let tagCommitSha = await git.commit(consolidatedMessage);
+			tagCommitSha = tagCommitSha.commit;
+
+			debug(`Committed change log: ${tagCommitSha}`);
+			loggerFn?.(`Committed CHANGELOG`);
+
+			// Step 7: Tag this commit
+			// const tagStatus = await git.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
+			// debug(`Tag done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+
+
+			loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
+			debug(`done releasing the code to ${mergedOptions.upstream}`);
+		}
+		// Finally, pop stash if necessary
+		finally {
+			if(shouldPopOnError) {
+				debug(`Restoring code - popping the stash`);
+				loggerFn?.(`Restoring code - popping the stash`);
+
+				await git.stash(['pop']);
+			}
+		}
 	}
 	// #endregion
 
@@ -115,7 +252,8 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	commanderProcess
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
-		.option('-t, --github-token <token>', 'Token to use for creating the release on Github')
+		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github')
+		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 		.option('-rn, --release-note <path to release notes markdown>', 'Path to markdown file containing the release notes, with/without a placeholder for the CHANGELOG', configuration?.release?.releaseNote ?? '')
 		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
