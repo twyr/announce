@@ -68,18 +68,18 @@ Prepare Command Options:
 
 | Option | Description |
 | --- | --- |
-| series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
-| version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
-| ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
+| -ss, --series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
+| -vl, --version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
+| -if, --ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
 
 Global Options inherited by the Prepare Command:
 
 | Option | Description |
 | --- | --- |
-| debug | Turn debug mode on/off. Default is off. If turned on, use announce:prepare as the debug key |
-| silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
-| quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
-| help | Displays this information. |
+| -d, --debug | Turn debug mode on/off. Default is off. If turned on, use announce:prepare as the debug key |
+| -s, --silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
+| -q, --quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
+| -h, --help | Displays this information. |
 
 ##### Configuration (.announcerc file)
 

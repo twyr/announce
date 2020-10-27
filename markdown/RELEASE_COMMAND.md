@@ -27,20 +27,20 @@ Release Command Options:
 
 | Option | Description |
 | --- | --- |
-| commit | Commit code if the branch is dirty |
-| github-token | Token to be use when generating the release on the Github repository |
-| message | Message to use while committing code. Ignored if commit = false |
-| release-note | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
-| upstream | Git remote name of the upstream repository for the release |
+| -c, --commit | Commit code if the branch is dirty |
+| -gt, --github-token | Token to be use when generating the release on the Github repository |
+| -m, --message | Message to use while committing code. Ignored if commit = false |
+| -rn, --release-note | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+| -u, --upstream | Git remote name of the upstream repository for the release |
 
 Global Options inherited by the Release Command:
 
 | Option | Description |
 | --- | --- |
-| debug | Turn debug mode on/off. Default is off. If turned on, use announce:release as the debug key |
-| silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
-| quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
-| help | Displays this information. |
+| -d, --debug | Turn debug mode on/off. Default is off. If turned on, use announce:release as the debug key |
+| -s, --silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
+| -q, --quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
+| -h, --help | Displays this information. |
 
 ##### Configuration (.announcerc file)
 
