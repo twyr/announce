@@ -76,6 +76,8 @@ class PrepareCommandClass {
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
 
+		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
+
 		mergedOptions.series = options?.series ?? (this?._commandOptions?.series ?? 'current');
 		mergedOptions.versionLadder = options?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
