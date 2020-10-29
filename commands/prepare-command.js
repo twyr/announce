@@ -76,6 +76,8 @@ class PrepareCommandClass {
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
 
+		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
+
 		mergedOptions.series = options?.series ?? (this?._commandOptions?.series ?? 'current');
 		mergedOptions.versionLadder = options?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
@@ -222,15 +224,20 @@ class PrepareCommandClass {
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': '',
-			'from': new RegExp(version, 'g'),
+			'from': '',
 			'to': nextVersion
 		};
 
 		for(const targetFile of targetFiles) {
 			replaceOptions.files = targetFile;
-			const results = await replaceInFile(replaceOptions);
+			if(path.basename(targetFile).startsWith('package'))
+				replaceOptions.from = new RegExp(version, 'i');
+			else
+				replaceOptions.from = new RegExp(version, 'gi');
 
+			const results = await replaceInFile(replaceOptions);
 			if(!results.length) continue;
+
 			results.forEach((result) => {
 				if(!result.hasChanged)
 					return;

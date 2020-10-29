@@ -5,7 +5,7 @@
 	"homepage": "https://twyr.github.io/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.0.2",
+	"version": "0.0.3-dev.0",
 	"keywords": [
 		"automation",
 		"announcement",
@@ -68,13 +68,17 @@
 		"bluebird": "3.7.2",
 		"commander": "6.2.0",
 		"cosmiconfig": "7.0.0",
+		"date-fns": "2.16.1",
 		"debug": "4.2.0",
+		"es6-dynamic-template": "2.0.0",
 		"fdir": "4.1.0",
 		"gitignore-parser": "0.0.2",
 		"please-upgrade-node": "3.2.0",
+		"prepend-file": "2.0.0",
 		"replace-in-file": "6.1.0",
 		"safe-json-stringify": "1.2.0",
-		"semver": "7.3.2"
+		"semver": "7.3.2",
+		"simple-git": "2.21.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",

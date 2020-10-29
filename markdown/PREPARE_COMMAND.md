@@ -50,8 +50,6 @@ is calculated according to the following semantics:
 | V 0.0.1-dev.0 | => | 0.0.1-dev.1 | 0.0.1-alpha.0 | 0.0.1 | 0.1.0 | 1.0.0 |
 | V 0.1.0 | => | 0.1.1 | 0.1.1-dev.0 | 0.1.1 | 0.2.0 | 1.0.0 |
 | V 1.0.0 | => | 1.0.1 | 1.0.1-dev.0 | 1.0.1 | 1.1.0 | 2.0.0 |
-|   |   |   |   |   |   |   |
-
 
 ##### Command Flow
 
@@ -70,20 +68,18 @@ Prepare Command Options:
 
 | Option | Description |
 | --- | --- |
-| series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
-| version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
-| ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
-|   |   |
+| -ss, --series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
+| -vl, --version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
+| -if, --ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
 
 Global Options inherited by the Prepare Command:
 
 | Option | Description |
 | --- | --- |
-| debug | Turn debug mode on/off. Default is off. If turned on, user announce:prepare as the debug key |
-| silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
-| quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
-| help | Displays this information. |
-|   |   |
+| -d, --debug | Turn debug mode on/off. Default is off. If turned on, use announce:prepare as the debug key |
+| -s, --silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
+| -q, --quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
+| -h, --help | Displays this information. |
 
 ##### Configuration (.announcerc file)
 
@@ -94,7 +90,7 @@ Global Options inherited by the Prepare Command:
         'versionLadder': 'version ladder to use for defining the series', // String defining the version ladder [default: 'dev, alpha, beta, rc, patch, minor, major']
         'ignoreFolders': 'list of folders to ignore', // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
 
-        'debug': true/false, // Enable debug logging as annouce:prepare if enabled [default: false]
+        'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
         'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
         'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
     }
@@ -112,8 +108,8 @@ announce.prepare({
     'versionLadder': 'version ladder to use for defining the series', // String defining the version ladder [default: 'dev, alpha, beta, rc, patch, minor, major']
     'ignoreFolders': 'list of folders to ignore', // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
 
-    'debug': true/false, // Enable debug logging as annouce:prepare if enabled [default: false]
+    'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
     'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
-}, logger ?? console);
+}, logger);
 ```

@@ -76,6 +76,6 @@
 		await program.parseAsync(process.argv);
 	}
 	catch(err) {
-		console.error(err.message);
+		console.error(`${err.message}\n${err.stack}$`);
 	}
 }());
