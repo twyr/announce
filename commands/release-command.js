@@ -160,7 +160,7 @@ class ReleaseCommandClass {
 
 			// Step 5: Get the last tag, the commit related to it, and the current commit
 			let lastTag = await git.tag(['--sort=-creatordate']);
-			lastTag = lastTag.split('\\n').shift().replace(/\\n/g, '').trim();
+			lastTag = lastTag.split('\n').shift().replace(/\\n/g, '').trim();
 
 			let lastTaggedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
 			lastTaggedCommit = lastTaggedCommit.replace(/\\n/g, '').trim();
