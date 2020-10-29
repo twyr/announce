@@ -5,7 +5,7 @@
 	"homepage": "https://twyr.github.io/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.0.2",
+	"version": "0.0.3-dev.0",
 	"keywords": [
 		"automation",
 		"announcement",
@@ -72,7 +72,7 @@
 		"debug": "4.2.0",
 		"es6-dynamic-template": "2.0.0",
 		"fdir": "4.1.0",
-		"gitignore-parser": "0.0.2",
+		"gitignore-parser": "0.0.3-dev.0",
 		"please-upgrade-node": "3.2.0",
 		"prepend-file": "2.0.0",
 		"replace-in-file": "6.1.0",
@@ -118,7 +118,7 @@
 		"mocha": "8.2.0",
 		"mocha-junit-reporter": "2.0.0",
 		"mocha-prepare": "0.1.0",
-		"mocha-prepare-promise": "0.0.2",
+		"mocha-prepare-promise": "0.0.3-dev.0",
 		"npm-run-all": "4.1.5",
 		"nyc": "15.1.0",
 		"sloc": "0.2.1"
