@@ -236,8 +236,8 @@ class PrepareCommandClass {
 				replaceOptions.from = new RegExp(version, 'gi');
 
 			const results = await replaceInFile(replaceOptions);
-
 			if(!results.length) continue;
+
 			results.forEach((result) => {
 				if(!result.hasChanged)
 					return;
