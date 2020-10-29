@@ -169,23 +169,20 @@ class ReleaseCommandClass {
 			lastCommit = lastCommit.replace(/\\n/g, '').trim();
 
 			debug(`Last Tag: ${lastTag}, commit sha: ${lastTaggedCommit}, current commit sha: ${lastCommit}`);
-			loggerFn?.(`Generating CHANGELOG now...`);
 
 			// Step 6: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
+			loggerFn?.(`Generating CHANGELOG now...`);
+
+			const gitRemotes = await git.raw(['remote', 'get-url', '--push', mergedOptions.upstream]);
+			const repository = gitRemotes.replace('git@github.com:', 'github.com/').replace('.git', '').replace('https://', '').trim();
+
 			let gitLogsInRange = await git.log(lastTaggedCommit, lastCommit);
 			gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
 				return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
 			});
 
-			let gitRemotes = await git.raw(['remote', '-v']);
-			gitRemotes = gitRemotes.split('\n').filter((remote) => {
-				return remote.startsWith(mergedOptions.upstream);
-			})[0];
-
-			gitRemotes = gitRemotes.replace(`${mergedOptions.upstream}\t`, '').replace('git@github.com:', 'github.com/').replace('https://', '');
-			const extnIdx = gitRemotes.indexOf('.git');
-
-			const repository = gitRemotes.substring(0, extnIdx);
+			// console.log(`Relevant Git Logs: ${safeJsonStringify(gitLogsInRange, null, '\t')}`);
+			// return;
 
 			const changeLogText = [`#### CHANGE LOG`];
 			const processedDates = [];
@@ -236,8 +233,8 @@ class ReleaseCommandClass {
 			const tagMessage = es6DynTmpl(mergedOptions.tagMessage, pkg);
 
 			const tagStatus = await git.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
-			debug(`Tag ${tagName}: ${tagMessage} done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
-			loggerFn?.(`Tag ${tagName}: ${tagMessage} done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+			debug(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+			loggerFn?.(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
 
 			// Step 9: Push commit/tag to the specified upstream
 			const pushCommitStatus = await git.push(mergedOptions.upstream, branchStatus.current, {
@@ -254,6 +251,10 @@ class ReleaseCommandClass {
 			});
 
 			debug(`Pushed to ${mergedOptions.upstream}:\nCommit: ${safeJsonStringify(pushCommitStatus, null, '\t')}\nTag: ${safeJsonStringify(pushTagStatus, null, '\t')}`);
+			loggerFn?.(`Pushed commit and tag ${tagName} to ${mergedOptions.upstream} remote`);
+
+			// Step 10: Create the release notes
+
 
 			loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
 			debug(`done releasing the code to ${mergedOptions.upstream}`);
