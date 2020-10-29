@@ -8,6 +8,8 @@
         'githubToken': null,
 		'message': '',
         'releaseNote': '',
+		'tagName': `V${version}`,
+		'tagMessage': `The spaghetti recipe at the time of releasing V${version}`,
         'upstream': 'twyr'
 	}
 }

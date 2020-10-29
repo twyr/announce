@@ -74,6 +74,10 @@ class ReleaseCommandClass {
 
 		let shouldPopOnError = false;
 
+		// Get package.json into memory... we'll use it in multiple places here
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const pkg = require(projectPackageJson);
+
 		// Setup sane defaults for the options
 		const mergedOptions = {};
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
@@ -86,12 +90,9 @@ class ReleaseCommandClass {
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
 		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
 		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
+		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${pkg.version}`);
+		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? '');
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
-
-		// Get package.json into memory... we'll use it in multiple places here
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
-
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
@@ -200,30 +201,56 @@ class ReleaseCommandClass {
 				changeLogText.push(`\n${commitLog.message} ([${commitLog.hash}](https://${repository}/commit/${commitLog.hash}))`);
 			});
 
-			const changelogFile = path.join(process.cwd(), 'CHANGELOG.md');
 			const replaceInFile = require('replace-in-file');
 			const replaceOptions = {
-				'files': changelogFile,
+				'files': path.join(process.cwd(), 'CHANGELOG.md'),
 				'from': '#### CHANGE LOG',
 				'to': changeLogText.join('\n')
 			};
 
 			const changelogResult = await replaceInFile(replaceOptions);
-			debug(`Generated CHANGELOG? ${changelogResult[0]['hasChanged']}`);
-			loggerFn?.(`Generated CHANGELOG? ${changelogResult[0]['hasChanged']}`);
+			if(!changelogResult[0]['hasChanged']) {
+				const prependFile = require('prepend-file');
+				await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText.join('\n'));
+			}
+
+			debug(`Generated CHANGELOG`);
+			loggerFn?.(`Generated CHANGELOG`);
 
 			// Step 7: Commit CHANGELOG
-			const consolidatedMessage = `chore(CHANGELOG): generated change log for release ${pkg.version}\n${trailerMessages}`;
-			let tagCommitSha = await git.commit(consolidatedMessage);
+			const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg.version}\n${trailerMessages}`;
+			let tagCommitSha = await git.commit(consolidatedMessage, null, {
+				'--allow-empty': true,
+				'--no-verify': true
+			});
 			tagCommitSha = tagCommitSha.commit;
 
 			debug(`Committed change log: ${tagCommitSha}`);
 			loggerFn?.(`Committed CHANGELOG`);
 
-			// Step 7: Tag this commit
-			// const tagStatus = await git.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
-			// debug(`Tag done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+			// Step 8: Tag this commit
+			const tagName = es6DynTmpl(mergedOptions.tagName, pkg);
+			const tagMessage = es6DynTmpl(mergedOptions.tagMessage, pkg);
 
+			const tagStatus = await git.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
+			debug(`Tag ${tagName}: ${tagMessage} done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+			loggerFn?.(`Tag ${tagName}: ${tagMessage} done with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+
+			// Step 9: Push commit/tag to the specified upstream
+			const pushCommitStatus = await git.push(mergedOptions.upstream, branchStatus.current, {
+				'--atomic': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+
+			const pushTagStatus = await git.pushTags(mergedOptions.upstream, {
+				'--atomic': true,
+				'--force': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+
+			debug(`Pushed to ${mergedOptions.upstream}:\nCommit: ${safeJsonStringify(pushCommitStatus, null, '\t')}\nTag: ${safeJsonStringify(pushTagStatus, null, '\t')}`);
 
 			loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
 			debug(`done releasing the code to ${mergedOptions.upstream}`);
@@ -255,6 +282,8 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github')
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 		.option('-rn, --release-note <path to release notes markdown>', 'Path to markdown file containing the release notes, with/without a placeholder for the CHANGELOG', configuration?.release?.releaseNote ?? '')
+		.option('-tn, --tag-name <name>', 'Tag Name to use for this release')
+		.option('-tm, --tag-message <message>', 'Message to use when creating the tag.')
 		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
