@@ -1,6 +1,6 @@
 {
 	'prepare': {
-		'ignoreFolders': '.circleci, docs'
+		'ignoreFolders': '.circleci, docs, CHANGELOG.md'
 	},
 
 	'release': {
