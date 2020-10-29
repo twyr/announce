@@ -91,7 +91,7 @@ class ReleaseCommandClass {
 		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
 		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
 		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${pkg.version}`);
-		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? '');
+		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${pkg.version}`);
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
 		// Setting up the logs, according to the options passed in
@@ -276,14 +276,19 @@ let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
 	if(!commandObj) commandObj = new ReleaseCommandClass(configuration?.release, console);
 
+	// Get package.json into memory... we'll use it in multiple places here
+	const path = require('path');
+	const projectPackageJson = path.join(process.cwd(), 'package.json');
+	const pkg = require(projectPackageJson);
+
 	commanderProcess
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
 		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github')
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 		.option('-rn, --release-note <path to release notes markdown>', 'Path to markdown file containing the release notes, with/without a placeholder for the CHANGELOG', configuration?.release?.releaseNote ?? '')
-		.option('-tn, --tag-name <name>', 'Tag Name to use for this release')
-		.option('-tm, --tag-message <message>', 'Message to use when creating the tag.')
+		.option('-tn, --tag-name <name>', 'Tag Name to use for this release', `V${pkg.version}`)
+		.option('-tm, --tag-message <message>', 'Message to use when creating the tag.', `The spaghetti recipe at the time of releasing V${pkg.version}`)
 		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
