@@ -224,12 +224,17 @@ class PrepareCommandClass {
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': '',
-			'from': new RegExp(version, 'g'),
+			'from': '',
 			'to': nextVersion
 		};
 
 		for(const targetFile of targetFiles) {
 			replaceOptions.files = targetFile;
+			if(path.basename(targetFile).startsWith('package'))
+				replaceOptions.from = new RegExp(version, 'i');
+			else
+				replaceOptions.from = new RegExp(version, 'gi');
+
 			const results = await replaceInFile(replaceOptions);
 
 			if(!results.length) continue;
