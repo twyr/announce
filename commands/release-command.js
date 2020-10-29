@@ -115,7 +115,7 @@ class ReleaseCommandClass {
 			'baseDir': process.cwd()
 		})
 		.outputHandler((_command, stdout, stderr) => {
-			if(mergedOptions.debug) stdout.pipe(process.stdout);
+			if(!mergedOptions.quiet) stdout.pipe(process.stdout);
 			stderr.pipe(process.stderr);
 		});
 
