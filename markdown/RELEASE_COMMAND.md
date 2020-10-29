@@ -31,6 +31,8 @@ Release Command Options:
 | -gt, --github-token | Token to be use when generating the release on the Github repository |
 | -m, --message | Message to use while committing code. Ignored if commit = false |
 | -rn, --release-note | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+| -tn, --tag-name | Tag Name to use for this release |
+| -tm, --tag-message | Message to use when creating the tag |
 | -u, --upstream | Git remote name of the upstream repository for the release |
 
 Global Options inherited by the Release Command:
@@ -51,6 +53,8 @@ Global Options inherited by the Release Command:
         'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
         'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
         'releaseNote': 'path to markdown file containing custom notes for this release', // [default: '']
+        'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
+        'tagMessage': 'tag message', // Message to use while tagging [default: '']
         'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
         'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
@@ -71,7 +75,9 @@ announce.release({
     'githubToken': 'XXX' // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
     'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
     'releaseNote': 'path to markdown file containing custom notes for this release', // [default: '']
-    'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
+    'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
+    'tagMessage': 'tag message', // Message to use while tagging [default: '']
+   'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
     'debug': true/false, // Enable debug logging as announce:release if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
