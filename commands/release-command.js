@@ -218,6 +218,9 @@ class ReleaseCommandClass {
 			loggerFn?.(`Generated CHANGELOG`);
 
 			// Step 7: Commit CHANGELOG
+			const addStatus = await git.add('.');
+			debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
+
 			const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg.version}\n${trailerMessages}`;
 			let tagCommitSha = await git.commit(consolidatedMessage, null, {
 				'--allow-empty': true,
