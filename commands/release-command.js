@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-object-injection */
 /* eslint-disable security/detect-non-literal-fs-filename */
 /* eslint-disable security/detect-non-literal-regexp */
 /* eslint-disable security/detect-non-literal-require */
@@ -329,7 +330,120 @@ class ReleaseCommandClass {
 	 * @summary  Creates a release on Github, and marks it as pre-release if required.
 	 *
 	 */
-	async _releaseCode(/* git, mergedOptions, loggerFn */) {
+	async _releaseCode(git, mergedOptions, loggerFn) {
+		const safeJsonStringify = require('safe-json-stringify');
+
+		// Step 1: Instantiate the Github Client for this repo
+		const octonode = require('octonode');
+		const client = octonode.client(process.env.GITHUB_TOKEN);
+		debug('created client to connect to github');
+
+		// Step 2: Get upstream repository info to use for getting required details...
+		const hostedGitInfo = require('hosted-git-info');
+		const gitRemotes = await git.raw(['remote', 'get-url', '--push', mergedOptions.upstream]);
+
+		const repository = hostedGitInfo.fromUrl(gitRemotes);
+		repository.project = repository.project.replace('.git\n', '');
+		debug(`repository Info: ${safeJsonStringify(repository, null, '\t')}`);
+
+		// Step 3: Create a repo object
+		const ghRepo = client.repo(`${repository.user}/${repository.project}`);
+
+		// Step 4: Get all the releases for the repository
+		loggerFn?.(`Fetching Last Release Information`);
+		debug(`Fetching Last Release Tag`);
+
+		const ghReleases = await ghRepo.releasesAsync();
+		const lastRelease = ghReleases[0].map((release) => {
+			return {
+				'name': release.name,
+				'published': release.published_at,
+				'tag': release.tag_name
+			};
+		})
+		.sort((left, right)=> {
+			return (new Date(right.published)).valueOf() - (new Date(left.published)).valueOf();
+		})
+		.shift();
+
+		debug(`${repository.user}/${repository.project} latest release: ${safeJsonStringify(lastRelease, null, '\t')}`);
+
+		// Step 5: Get the last released commit, and the most recent commit
+		let lastReleasedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastRelease.tag}`]);
+		lastReleasedCommit = lastReleasedCommit.replace(/\\n/g, '').trim();
+
+		let lastCommit = await git.raw(['rev-parse', 'HEAD']);
+		lastCommit = lastCommit.replace(/\\n/g, '').trim();
+
+		debug(`last Release Tag: ${lastRelease.tag}, commit sha: ${lastReleasedCommit}, current commit sha: ${lastCommit}`);
+		loggerFn?.(`Fetched Last Release\n\tTag: ${lastRelease.tag}\n\tCommit SHA: ${lastReleasedCommit}\n\tCurrent Commit SHA: ${lastCommit}`);
+
+		// Step 6: Get data required for generating the RELEASE NOTES
+		debug(`generating release notes...`);
+		loggerFn?.(`Generating release notes...`);
+
+		let gitLogsInRange = await git.log(lastReleasedCommit, lastCommit);
+		gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
+			return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
+		});
+
+		debug(`finished filtering out irrelevant git logs`);
+		loggerFn?.(`Filtered out irrelevant git logs`);
+
+		const featureSet = [];
+		const bugfixSet = [];
+		const documentationSet = [];
+		const contributorSet = {};
+
+		debug(`fetching author information`);
+		loggerFn?.(`Fetching author information`);
+
+		let resolutions = [];
+		gitLogsInRange.forEach((commitLog) => {
+			const commitObject = {
+				'hash': commitLog.hash,
+				'message': commitLog.message,
+				'author': commitLog['author_email']
+			};
+
+			if(commitLog.message.startsWith('feat')) featureSet.push(commitObject);
+			if(commitLog.message.startsWith('fix')) bugfixSet.push(commitObject);
+			if(commitLog.message.startsWith('docs')) documentationSet.push(commitObject);
+
+			if(!Object.keys(contributorSet).includes(commitLog['author_email'])) {
+				contributorSet[commitLog['author_email']] = commitLog['author_name'];
+				resolutions.push(ghRepo.commitAsync(commitLog.hash));
+			}
+		});
+
+		const promises = require('bluebird');
+		resolutions = await promises.all(resolutions);
+
+		debug(`fetched author information`);
+		loggerFn?.(`Fetched author information`);
+
+		// Step 7: Record authors / contributors
+		const commits = resolutions.shift();
+		const authorList = [];
+		commits.forEach((ghCommit, idx) => {
+			const authorEmail = Object.keys(contributorSet)[idx];
+			if(!authorEmail) return;
+
+			authorList.push({
+				'name': contributorSet[authorEmail],
+				'email': authorEmail,
+				'profile': ghCommit?.author?.html_url,
+				'avatar': ghCommit?.author?.avatar_url
+			});
+		});
+
+		loggerFn?.(`
+Features: ${featureSet.length}, Fixes: ${bugfixSet.length}, Docs: ${documentationSet.length}
+Authors: ${safeJsonStringify(authorList, null, '\t')}
+		`);
+
+		// Step 8: EJS the Release Notes template
+		// TODO
 	}
 	// #endregion
 
