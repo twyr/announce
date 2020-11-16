@@ -7,7 +7,8 @@
         'commit': false,
         'githubToken': null,
 		'message': '',
-        'releaseNote': '',
+        'releaseName': 'V${version} Release',
+        'releaseMessage': '',
         'tagName': 'V${version}',
         'tagMessage': 'The spaghetti recipe at the time of releasing V${version}',
         'upstream': 'twyr'
