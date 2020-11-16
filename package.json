@@ -80,7 +80,7 @@
 		"replace-in-file": "6.1.0",
 		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.2",
-		"simple-git": "2.21.0"
+		"simple-git": "2.22.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
@@ -101,7 +101,7 @@
 		"eslint": "7.13.0",
 		"eslintcc": "0.4.7",
 		"eslint-plugin-html": "6.1.1",
-		"eslint-plugin-jsdoc": "30.7.7",
+		"eslint-plugin-jsdoc": "30.7.8",
 		"eslint-plugin-json": "2.1.2",
 		"eslint-plugin-mocha": "8.0.0",
 		"eslint-plugin-node": "11.1.0",
