@@ -96,7 +96,7 @@
 		"chai-json-schema": "1.5.1",
 		"commitizen": "4.2.2",
 		"cz-conventional-changelog": "3.3.0",
-		"dependency-cruiser": "9.17.0",
+		"dependency-cruiser": "9.17.1",
 		"docdash": "1.2.0",
 		"eslint": "7.13.0",
 		"eslintcc": "0.4.7",
