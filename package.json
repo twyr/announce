@@ -80,7 +80,7 @@
 		"replace-in-file": "6.1.0",
 		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.2",
-		"simple-git": "2.23.0"
+		"simple-git": "2.24.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
@@ -96,7 +96,7 @@
 		"chai-json-schema": "1.5.1",
 		"commitizen": "4.2.2",
 		"cz-conventional-changelog": "3.3.0",
-		"dependency-cruiser": "9.17.1",
+		"dependency-cruiser": "9.18.0",
 		"docdash": "1.2.0",
 		"eslint": "7.14.0",
 		"eslintcc": "0.4.7",
