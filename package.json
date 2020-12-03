@@ -74,7 +74,7 @@
 		"fdir": "4.1.0",
 		"gitignore-parser": "0.0.2",
 		"hosted-git-info": "3.0.7",
-		"octonode": "0.9.5",
+		"octonode": "0.10.0",
 		"please-upgrade-node": "3.2.0",
 		"prepend-file": "2.0.0",
 		"replace-in-file": "6.1.0",
