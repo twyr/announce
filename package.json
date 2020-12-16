@@ -80,7 +80,7 @@
 		"replace-in-file": "6.1.0",
 		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.4",
-		"simple-git": "2.24.0"
+		"simple-git": "2.29.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "11.0.0",
