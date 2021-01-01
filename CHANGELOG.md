@@ -2,6 +2,53 @@
 #### CHANGE LOG
 
 
+##### 01-Jan-2021
+
+fix(release): default Release Name option ([8b4ef864f19669c95312288f22939df1fd33d0b4](https://github.com/twyr/announce/commit/8b4ef864f19669c95312288f22939df1fd33d0b4))
+
+
+##### 29-Oct-2020
+
+feat(release): cleaner way to get upstream url ([75bedf093eaca40913ba31b62dd6f303e590038c](https://github.com/twyr/announce/commit/75bedf093eaca40913ba31b62dd6f303e590038c))
+
+fix(release): error in splitting multiple tag string to extract the latest (#49) ([f1281bd126086d00586df5078fd2ffdd68e92fa3](https://github.com/twyr/announce/commit/f1281bd126086d00586df5078fd2ffdd68e92fa3))
+
+fix(release): error in splitting multiple tag string to extract the latest ([6e1a88fa369719c23e9fbc736046c8887f69aa64](https://github.com/twyr/announce/commit/6e1a88fa369719c23e9fbc736046c8887f69aa64))
+
+fix(release): add files to git before committing the CHANGELOG changes (#47) ([859b4afabb77fe89b974284563662ae0dfbe2f6e](https://github.com/twyr/announce/commit/859b4afabb77fe89b974284563662ae0dfbe2f6e))
+
+fix(release): add files to git before committing the CHANGELOG changes ([e2c08c79c89d7bca5691d70f7c056d660b655d43](https://github.com/twyr/announce/commit/e2c08c79c89d7bca5691d70f7c056d660b655d43))
+
+fix(prepare): don't do global version replace in package files ([8910b7af152728900b4f6ad446f9daa00c77b2c8](https://github.com/twyr/announce/commit/8910b7af152728900b4f6ad446f9daa00c77b2c8))
+
+fix(config): replaced reserved characters with allowed ones ([5e37c5ded9f14ef0f93a08f391942c8cd29cce14](https://github.com/twyr/announce/commit/5e37c5ded9f14ef0f93a08f391942c8cd29cce14))
+
+docs(release): added documentation for tag-related command-line / api parameters ([385adeecf6480754fa49bd889a71c49122134b2a](https://github.com/twyr/announce/commit/385adeecf6480754fa49bd889a71c49122134b2a))
+
+
+##### 27-Oct-2020
+
+feat(release): changelog generation done ([c550ebec51df61cab4ad19377958abdf20c0b289](https://github.com/twyr/announce/commit/c550ebec51df61cab4ad19377958abdf20c0b289))
+
+docs(changelog): minor change ([e948da60ad06f65c2534de984244b6277e8fc7de](https://github.com/twyr/announce/commit/e948da60ad06f65c2534de984244b6277e8fc7de))
+
+docs(commands): added short-form command line option information ([662753f1f3a3bba929eb7ae63b2caf506c6a6a3d](https://github.com/twyr/announce/commit/662753f1f3a3bba929eb7ae63b2caf506c6a6a3d))
+
+docs(release): added documentation for the message command-line parameter ([87b486cf6c2958a7b47a02c64af87b0a8fe580e0](https://github.com/twyr/announce/commit/87b486cf6c2958a7b47a02c64af87b0a8fe580e0))
+
+fix(prepare): enable quiet mode if silent mode is on ([1774ba773f6cc11c8a9e45a8b45a25178c0dc483](https://github.com/twyr/announce/commit/1774ba773f6cc11c8a9e45a8b45a25178c0dc483))
+
+
+##### 26-Oct-2020
+
+docs(release): minor change to reflect correct options ([49fe12a7198aa0dcf28be72f81711255604225af](https://github.com/twyr/announce/commit/49fe12a7198aa0dcf28be72f81711255604225af))
+
+
+##### 22-Oct-2020
+
+docs(release): pre-code release command documentation ([88c98e46ef7fc2ad7b09cf5e7ada5870c48cfea1](https://github.com/twyr/announce/commit/88c98e46ef7fc2ad7b09cf5e7ada5870c48cfea1))
+
+
 ##### 29-Oct-2020
 
 fix(release): error in splitting multiple tag string to extract the latest (#50) ([ead84753925c50fe0200721ca221cbbd49f49906](https://github.com/twyr/announce/commit/ead84753925c50fe0200721ca221cbbd49f49906))
