@@ -73,8 +73,6 @@ class ReleaseCommandClass {
 		const safeJsonStringify = require('safe-json-stringify');
 		const simpleGit = require('simple-git');
 
-		let shouldPopOnError = false;
-
 		// Get package.json into memory... we'll use it in multiple places here
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		const pkg = require(projectPackageJson);
@@ -111,18 +109,21 @@ class ReleaseCommandClass {
 
 		debug(`Releasing with options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
 
-		// Step 1: Initialize the GIT API for the current working directory, get remote repository, trailer messages, etc.
-		const git = simpleGit({
-			'baseDir': process.cwd()
-		})
-		.outputHandler((_command, stdout, stderr) => {
-			if(!mergedOptions.quiet) stdout.pipe(process.stdout);
-			stderr.pipe(process.stderr);
-		});
-
-		debug(`Initialized Git for the repository @ ${process.cwd()}`);
+		let git = null;
+		let shouldPopOnError = false;
 
 		try {
+			// Step 1: Initialize the Git VCS API for the current working directory, get remote repository, trailer messages, etc.
+			git = simpleGit({
+				'baseDir': process.cwd()
+			})
+			.outputHandler((_command, stdout, stderr) => {
+				if(!mergedOptions.quiet) stdout.pipe(process.stdout);
+				stderr.pipe(process.stderr);
+			});
+
+			debug(`Initialized Git for the repository @ ${process.cwd()}`);
+
 			// Step 2: Check if branch is dirty - commit/stash as required
 			let stashOrCommitStatus = null;
 
@@ -331,6 +332,7 @@ class ReleaseCommandClass {
 	 *
 	 */
 	async _releaseCode(git, mergedOptions, loggerFn) {
+		const promises = require('bluebird');
 		const safeJsonStringify = require('safe-json-stringify');
 
 		// Step 1: Instantiate the Github Client for this repo
@@ -416,7 +418,6 @@ class ReleaseCommandClass {
 			}
 		});
 
-		const promises = require('bluebird');
 		resolutions = await promises.all(resolutions);
 
 		debug(`fetched author information`);
