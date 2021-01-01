@@ -31,11 +31,18 @@ Release Command Options:
 | --- | --- |
 | -c, --commit | Commit code if the branch is dirty |
 | -gt, --github-token | Token to be use when generating the release on the Github repository |
+|   |   |
 | -m, --message | Message to use while committing code. Ignored if commit = false |
-| -rn, --release-name | Release Name to use for this release |
-| -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+|   |   |
+| --dont-tag | Don't tag now. Use the last created tag when cutting this release |
+| --tag | Use the (existing) tag specified when cutting this release |
 | -tn, --tag-name | Tag Name to use for this release |
 | -tm, --tag-message | Message to use when creating the tag |
+|   |   |
+| --dont-release | Don't release now. Simply tag and exit |
+| -rn, --release-name | Release Name to use for this release |
+| -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+|   |   |
 | -u, --upstream | Git remote name of the upstream repository for the release |
 
 Global Options inherited by the Release Command:
@@ -54,11 +61,18 @@ Global Options inherited by the Release Command:
     'release': {
         'commit': true/false, // Default is to stash and un-stash [default: false]
         'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
+
         'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-        'releaseName': 'release name', // [default: V${package version} Release]
-        'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
+
+        'dontTag': true/false, // Use the last created tag when cutting this release [default: false]
+        'tag': 'tag name', // Use the (existing) tag specified when cutting this release  [default: '']
         'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
         'tagMessage': 'tag message', // Message to use while tagging [default: '']
+
+        'dontRelease': true/false, // Don't release now. Simply tag and exit
+        'releaseName': 'release name', // [default: V${package version} Release]
+        'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
+
         'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
         'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
@@ -77,11 +91,18 @@ const announce = require('@twyr/announce);
 announce.release({
     'commit': true/false, // Commit code if branch is dirty [default: false]
     'githubToken': 'XXX' // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
+
     'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-    'releaseName': 'release name', // Name of the release [default: V${package version} Release]
-    'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
+
+    'dontTag': true/false, // Use the last created tag when cutting this release [default: false]
+    'tag': 'tag name', // Use the (existing) tag specified when cutting this release [default: '']
     'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
     'tagMessage': 'tag message', // Message to use while tagging [default: '']
+
+    'dontRelease': true/false, // Don't release now. Simply tag and exit
+    'releaseName': 'release name', // Name of the release [default: V${package version} Release]
+    'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
+
     'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
     'debug': true/false, // Enable debug logging as announce:release if enabled [default: false]
