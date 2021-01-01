@@ -87,11 +87,18 @@ class ReleaseCommandClass {
 
 		mergedOptions.commit = options?.commit ?? (this?._commandOptions?.commit ?? false);
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+
 		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
-		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
-		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
+
+		mergedOptions.dontTag = options?.dontTag ?? (this?._commandOptions.dontTag ?? false);
+		mergedOptions.tag = options?.tag ?? (this?._commandOptions.tag ?? '');
 		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${pkg.version}`);
 		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${pkg.version}`);
+
+		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
+		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
+		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
+
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
 		// Setting up the logs, according to the options passed in
@@ -108,7 +115,9 @@ class ReleaseCommandClass {
 			}
 		}
 
-		debug(`Releasing with options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
+		debug(`releasing with options - ${safeJsonStringify(mergedOptions)}`);
+		// loggerFn(`Releasing with options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
+		// loggerFn(`Releasing with...\nOptions: ${safeJsonStringify(options, null, '\t')}\nCommand Options: ${safeJsonStringify(this._commandOptions, null, '\t')}\nMerged Options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
 
 		let git = null;
 		let shouldPopOnError = false;
@@ -128,7 +137,7 @@ class ReleaseCommandClass {
 			// Step 2: Check if branch is dirty - commit/stash as required
 			let stashOrCommitStatus = null;
 
-			const branchStatus = await git.status();
+			let branchStatus = await git.status();
 			if(branchStatus.files.length) {
 				debug(`branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
 				loggerFn?.(`Branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
@@ -164,30 +173,46 @@ class ReleaseCommandClass {
 			}
 
 			// Step 3: Generate CHANGELOG, commit it, and tag the code
-			await this._tagCode(git, mergedOptions, loggerFn);
+			if((mergedOptions.tag === '') && !mergedOptions.dontTag) {
+				debug(`tag name specified, and dontTag is false - starting tagging`);
+				await this._tagCode(git, mergedOptions, loggerFn);
+			}
+			else {
+				loggerFn?.(`Tag specified, or DontTag is true. Not tagging the code`);
+				debug(`tag specified, or --dont-tag is true - not tagging the code`);
+			}
 
-			// Step 4: Push commit/tag to the specified upstream
-			const pushCommitStatus = await git.push(mergedOptions.upstream, branchStatus.current, {
-				'--atomic': true,
-				'--progress': true,
-				'--signed': 'if-asked'
-			});
+			// Step 4: Push commits/tags to the specified upstream
+			branchStatus = await git.status();
+			if(branchStatus.ahead) {
+				const pushCommitStatus = await git.push(mergedOptions.upstream, branchStatus.current, {
+					'--atomic': true,
+					'--progress': true,
+					'--signed': 'if-asked'
+				});
 
-			const pushTagStatus = await git.pushTags(mergedOptions.upstream, {
-				'--atomic': true,
-				'--force': true,
-				'--progress': true,
-				'--signed': 'if-asked'
-			});
+				const pushTagStatus = await git.pushTags(mergedOptions.upstream, {
+					'--atomic': true,
+					'--force': true,
+					'--progress': true,
+					'--signed': 'if-asked'
+				});
 
-			debug(`pushed to ${mergedOptions.upstream}:\nCommit: ${safeJsonStringify(pushCommitStatus, null, '\t')}\nTag: ${safeJsonStringify(pushTagStatus, null, '\t')}`);
-			loggerFn?.(`Pushed commit and tag to ${mergedOptions.upstream} remote`);
+				debug(`pushed to ${mergedOptions.upstream}:\nCommit: ${safeJsonStringify(pushCommitStatus, null, '\t')}\nTag: ${safeJsonStringify(pushTagStatus, null, '\t')}`);
+				loggerFn?.(`Pushed commit and tag to ${mergedOptions.upstream} remote`);
+			}
 
 			// Step 5: Create the release notes, and create the release itself
-			await this._releaseCode(git, mergedOptions, loggerFn);
+			if(!mergedOptions.dontRelease) {
+				await this._releaseCode(git, mergedOptions, loggerFn);
 
-			loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
-			debug(`done releasing the code to ${mergedOptions.upstream}`);
+				loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
+				debug(`done releasing the code to ${mergedOptions.upstream}`);
+			}
+			else {
+				loggerFn?.(`No release specified. Exiting without releasing`);
+				debug(`no release specified - exiting without releasing`);
+			}
 		}
 		// Finally, pop stash if necessary
 		finally {
@@ -255,23 +280,47 @@ class ReleaseCommandClass {
 		// Step 2: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
 		loggerFn?.(`Generating CHANGELOG now...`);
 
-		let gitLogsInRange = await git.log({
+		const gitLogsInRange = await git.log({
 			'from': lastTaggedCommit,
 			'to': lastCommit
 		});
 
-		gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
-			return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
+		const relevantGitLogs = [];
+		gitLogsInRange.all.forEach((commitLog) => {
+			// eslint-disable-next-line curly
+			if(commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs')) {
+				relevantGitLogs.push({
+					'hash': commitLog.hash,
+					'date': commitLog.date,
+					'message': commitLog.message,
+					'author_name': commitLog.author_name,
+					'author_email': commitLog.author_email
+				});
+			}
+
+			const commitLogBody = commitLog.body.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').split('\n');
+			commitLogBody.forEach((commitBody) => {
+				// eslint-disable-next-line curly
+				if(commitBody.startsWith('feat') || commitBody.startsWith('fix') || commitBody.startsWith('docs')) {
+					relevantGitLogs.push({
+						'hash': commitLog.hash,
+						'date': commitLog.date,
+						'message': commitBody.trim(),
+						'author_name': commitLog.author_name,
+						'author_email': commitLog.author_email
+					});
+				}
+			});
 		});
 
-		// console.log(`Relevant Git Logs: ${safeJsonStringify(gitLogsInRange, null, '\t')}`);
+		// console.log(`Relevant Git Logs: ${safeJsonStringify(relevantGitLogs, null, '\t')}`);
 		// return;
 
 		const changeLogText = [`#### CHANGE LOG`];
 		const processedDates = [];
 
 		const dateFormat = require('date-fns/format');
-		gitLogsInRange.forEach((commitLog) => {
+		relevantGitLogs.forEach((commitLog) => {
 			const commitDate = dateFormat(new Date(commitLog.date), 'dd-MMM-yyyy');
 			if(!processedDates.includes(commitDate)) {
 				processedDates.push(commitDate);
@@ -373,29 +422,61 @@ class ReleaseCommandClass {
 		})
 		.shift();
 
-		debug(`${repository.user}/${repository.project} latest release: ${safeJsonStringify(lastRelease, null, '\t')}`);
-
-		// Step 5: Get the last released commit, and the most recent commit
+		// Step 5: Get the last released commit, and the most recent tag / specified tag commit
 		let lastReleasedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastRelease.tag}`]);
 		lastReleasedCommit = lastReleasedCommit.replace(/\\n/g, '').trim();
 
-		let lastCommit = await git.raw(['rev-parse', 'HEAD']);
+		let lastTag = await git.tag(['--sort=-creatordate']);
+		// If a specific tag name is not given, use the commit associated with the last tag
+		if(mergedOptions.tag === '')
+			lastTag = lastTag.split('\n').shift().replace(/\\n/g, '').trim();
+		// Otherwise, use the commit associated with the specified tag
+		else
+			lastTag = lastTag.split('\n').filter((tagName) => { return tagName.replace(/\\n/g, '').trim() === mergedOptions.tag; }).shift().replace(/\\n/g, '').trim();
+
+		let lastCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
 		lastCommit = lastCommit.replace(/\\n/g, '').trim();
 
-		debug(`last Release Tag: ${lastRelease.tag}, commit sha: ${lastReleasedCommit}, current commit sha: ${lastCommit}`);
-		loggerFn?.(`Fetched Last Release\n\tTag: ${lastRelease.tag}\n\tCommit SHA: ${lastReleasedCommit}\n\tCurrent Commit SHA: ${lastCommit}`);
+		debug(`last release tag: ${lastRelease.tag}, last release commit sha: ${lastReleasedCommit}, current tag: ${lastTag}, current commit sha: ${lastCommit}`);
+		loggerFn?.(`Last Release\n\tTag: ${lastRelease.tag}\n\tCommit SHA: ${lastReleasedCommit}\nCurrent Status\n\tTag: ${lastTag}\n\tCommit SHA: ${lastCommit}`);
 
 		// Step 6: Get data required for generating the RELEASE NOTES
 		debug(`generating release notes...`);
 		loggerFn?.(`Generating release notes...`);
 
-		let gitLogsInRange = await git.log({
+		const gitLogsInRange = await git.log({
 			'from': lastReleasedCommit,
 			'to': lastCommit
 		});
 
-		gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
-			return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
+		const relevantGitLogs = [];
+		gitLogsInRange.all.forEach((commitLog) => {
+			const commitDate = new Date(commitLog.date);
+
+			// eslint-disable-next-line curly
+			if(commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs')) {
+				relevantGitLogs.push({
+					'hash': commitLog.hash,
+					'date': commitDate.toISOString(),
+					'message': commitLog.message,
+					'author_name': commitLog.author_name,
+					'author_email': commitLog.author_email
+				});
+			}
+
+			const commitLogBody = commitLog.body.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').split('\n');
+			commitLogBody.forEach((commitBody) => {
+				// eslint-disable-next-line curly
+				if(commitBody.startsWith('feat') || commitBody.startsWith('fix') || commitBody.startsWith('docs')) {
+					relevantGitLogs.push({
+						'hash': commitLog.hash,
+						'date': commitDate.toISOString(),
+						'message': commitBody.trim(),
+						'author_name': commitLog.author_name,
+						'author_email': commitLog.author_email
+					});
+				}
+			});
 		});
 
 		debug(`finished filtering out irrelevant git logs`);
@@ -410,11 +491,12 @@ class ReleaseCommandClass {
 		loggerFn?.(`Fetching author information`);
 
 		let resolutions = [];
-		gitLogsInRange.forEach((commitLog) => {
+		relevantGitLogs.forEach((commitLog) => {
 			const commitObject = {
 				'hash': commitLog.hash,
 				'message': commitLog.message,
-				'author': commitLog['author_email']
+				'author': commitLog['author_email'],
+				'date': commitLog.date
 			};
 
 			if(commitLog.message.startsWith('feat')) featureSet.push(commitObject);
@@ -448,7 +530,14 @@ class ReleaseCommandClass {
 		});
 
 		loggerFn?.(`
-Features: ${featureSet.length}, Fixes: ${bugfixSet.length}, Docs: ${documentationSet.length}
+Feature Count: ${featureSet.length}, Fix Count: ${bugfixSet.length}, Doc Count: ${documentationSet.length}, Author Count: ${authorList.length}
+
+Features: ${safeJsonStringify(featureSet, null, '\t')},
+
+Bug Fixes: ${safeJsonStringify(bugfixSet, null, '\t')},
+
+Documentations: ${safeJsonStringify(documentationSet, null, '\t')},
+
 Authors: ${safeJsonStringify(authorList, null, '\t')}
 		`);
 
@@ -475,11 +564,18 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
 		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github')
+
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
-		.option('-rn, --release-name <name>', 'Name to use for this release', `V${pkg.version} Release`)
-		.option('-rm, --release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
+
+		.option('--dont-tag', 'Don\'t tag now. Use the last tag when cutting this release', configuration?.release?.dontTag ?? false)
+		.option('--tag <name>', 'Use the (existing) tag specified when cutting this release', configuration?.release?.tag?.trim() ?? '')
 		.option('-tn, --tag-name <name>', 'Tag Name to use for this release', `V${pkg.version}`)
 		.option('-tm, --tag-message <message>', 'Message to use when creating the tag.', `The spaghetti recipe at the time of releasing V${pkg.version}`)
+
+		.option('--dont-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.dontRelease ?? false)
+		.option('-rn, --release-name <name>', 'Name to use for this release', `V${pkg.version} Release`)
+		.option('-rm, --release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
+
 		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
