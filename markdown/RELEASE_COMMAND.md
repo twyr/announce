@@ -14,11 +14,13 @@ repository, creates a tag, and uses that to publish a release in Github.
 The release command executes the following steps:
 
 1. Check if the code needs to be stashed/committed (based on passed-in options), and execute the step.
-1. Generate the CHANGELOG using commit messages in the git log
+1. Generate the CHANGELOG using commit messages in the git log - starting from the last tag
 1. Commit the CHANGELOG
 1. Create the appropriate tag with a label configured according to the preferences
 1. Push the commit and the tag to the specified upstream repository/branch
-1. Create a Github Release with the tag, and using the newly created CHANGELOG entries
+1. Generate the Release Notes using commit messages in the git log - starting from the last release
+1. Embed generated release notes into the release file using EJS tags
+1. Create a Github Release with the tag, and set the release notes using the generated notes
 1. Un-stash dirty code if stashed in the first step
 
 ##### CLI Options
@@ -30,7 +32,8 @@ Release Command Options:
 | -c, --commit | Commit code if the branch is dirty |
 | -gt, --github-token | Token to be use when generating the release on the Github repository |
 | -m, --message | Message to use while committing code. Ignored if commit = false |
-| -rn, --release-note | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+| -rn, --release-name | Release Name to use for this release |
+| -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
 | -tn, --tag-name | Tag Name to use for this release |
 | -tm, --tag-message | Message to use when creating the tag |
 | -u, --upstream | Git remote name of the upstream repository for the release |
@@ -52,7 +55,8 @@ Global Options inherited by the Release Command:
         'commit': true/false, // Default is to stash and un-stash [default: false]
         'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
         'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-        'releaseNote': 'path to markdown file containing custom notes for this release', // [default: '']
+        'releaseName': 'release name', // [default: V${package version} Release]
+        'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
         'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
         'tagMessage': 'tag message', // Message to use while tagging [default: '']
         'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
@@ -74,10 +78,11 @@ announce.release({
     'commit': true/false, // Commit code if branch is dirty [default: false]
     'githubToken': 'XXX' // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
     'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-    'releaseNote': 'path to markdown file containing custom notes for this release', // [default: '']
+    'releaseName': 'release name', // Name of the release [default: V${package version} Release]
+    'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
     'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
     'tagMessage': 'tag message', // Message to use while tagging [default: '']
-   'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
+    'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
     'debug': true/false, // Enable debug logging as announce:release if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
