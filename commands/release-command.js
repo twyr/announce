@@ -255,7 +255,11 @@ class ReleaseCommandClass {
 		// Step 2: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
 		loggerFn?.(`Generating CHANGELOG now...`);
 
-		let gitLogsInRange = await git.log(lastTaggedCommit, lastCommit);
+		let gitLogsInRange = await git.log({
+			'from': lastTaggedCommit,
+			'to': lastCommit
+		});
+
 		gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
 			return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
 		});
@@ -385,7 +389,11 @@ class ReleaseCommandClass {
 		debug(`generating release notes...`);
 		loggerFn?.(`Generating release notes...`);
 
-		let gitLogsInRange = await git.log(lastReleasedCommit, lastCommit);
+		let gitLogsInRange = await git.log({
+			'from': lastReleasedCommit,
+			'to': lastCommit
+		});
+
 		gitLogsInRange = gitLogsInRange.all.filter((commitLog) => {
 			return commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs');
 		});
