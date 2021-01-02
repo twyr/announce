@@ -5,7 +5,7 @@
 	"homepage": "https://twyr.github.io/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.0.3",
+	"version": "0.0.4-dev.0",
 	"keywords": [
 		"automation",
 		"announcement",
