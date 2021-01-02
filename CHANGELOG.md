@@ -4,6 +4,11 @@
 
 ##### 02-Jan-2021
 
+fix(release): modified URL for creating a Github release ([5f851b24b7dc5d4f769603700d7011c5011ab5a0](https://github.com/twyr/announce/commit/5f851b24b7dc5d4f769603700d7011c5011ab5a0))
+
+
+##### 02-Jan-2021
+
 feat(release): release notes default template ([99df18c1205d97840a1bcd6e7f34a7d926464547](https://github.com/twyr/announce/commit/99df18c1205d97840a1bcd6e7f34a7d926464547))
 
 docs(release): release command documentation ([8838aa6f85f208e06427d8155b63be8c248aee65](https://github.com/twyr/announce/commit/8838aa6f85f208e06427d8155b63be8c248aee65))
