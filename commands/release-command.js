@@ -595,8 +595,8 @@ class ReleaseCommandClass {
 		};
 
 		// Step 8: EJS the Release Notes template
-		debug(`creating release notes`);
-		loggerFn?.(`Creating release notes`);
+		debug(`generated release notes`);
+		loggerFn?.(`Generated release notes`);
 
 		let releaseMessagePath = mergedOptions.releaseMessage;
 		if(!releaseMessagePath || (releaseMessagePath === '')) releaseMessagePath = './../templates/release-notes.ejs';
@@ -633,7 +633,8 @@ class ReleaseCommandClass {
 		debug(`creating release on Github`);
 		loggerFn?.(`Creating the release on Github`);
 
-		await client.post(`https://${repository.domain}/${repository.user}/${repository.project}/releases`, {
+		const clientPost = promises.promisify(client.post.bind(client));
+		await clientPost(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 			'accept': 'application/vnd.github.v3+json',
 			'tag_name': lastTag,
 			'name': releaseMessageData['RELEASE_NAME'],
