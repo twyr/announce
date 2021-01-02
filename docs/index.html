@@ -35,11 +35,18 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
+				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
 			</ul>
 		</nav>
 		<div id="main">
 			<section class="package">
-				<h3>announce 0.0.2</h3>
+				<h3>announce 0.0.3-alpha.0</h3>
 			</section>
 			<section class="readme usertext">
 				<article>
@@ -226,7 +233,12 @@
 							<tr>
 								<td>Prepare</td>
 								<td>announce prepare</td>
-								<td>Increments the version as necessary. See <a href="PREPARE_COMMAND.md">Prepare Command</a> for details</td>
+								<td>Increments the version as necessary. See <a href="markdown/PREPARE_COMMAND.md">Prepare Command</a> for details</td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>announce release</td>
+								<td>Generate <a href="CHANGELOG.md">CHANGELOG</a>, tag the code, and release to Github. See <a href="markdown/RELEASE_COMMAND.md">Release Command</a> for details</td>
 							</tr>
 							<tr>
 								<td></td>
@@ -331,7 +343,7 @@
 							<dt class="tag-version">Version:</dt>
 							<dd class="tag-version">
 								<ul class="dummy">
-									<li>0.0.2</li>
+									<li>0.0.3-alpha.0</li>
 								</ul>
 							</dd>
 							<dt class="tag-author">Author:</dt>

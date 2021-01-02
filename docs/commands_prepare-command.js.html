@@ -35,6 +35,13 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
+				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
 			</ul>
 		</nav>
 		<div id="main">
@@ -118,6 +125,8 @@ class PrepareCommandClass {
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
+
+		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
 
 		mergedOptions.series = options?.series ?? (this?._commandOptions?.series ?? 'current');
 		mergedOptions.versionLadder = options?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
@@ -265,15 +274,20 @@ class PrepareCommandClass {
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': '',
-			'from': new RegExp(version, 'g'),
+			'from': '',
 			'to': nextVersion
 		};
 
 		for(const targetFile of targetFiles) {
 			replaceOptions.files = targetFile;
-			const results = await replaceInFile(replaceOptions);
+			if(path.basename(targetFile).startsWith('package'))
+				replaceOptions.from = new RegExp(version, 'i');
+			else
+				replaceOptions.from = new RegExp(version, 'gi');
 
+			const results = await replaceInFile(replaceOptions);
 			if(!results.length) continue;
+
 			results.forEach((result) => {
 				if(!result.hasChanged)
 					return;
