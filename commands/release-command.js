@@ -116,8 +116,6 @@ class ReleaseCommandClass {
 		}
 
 		debug(`releasing with options - ${safeJsonStringify(mergedOptions)}`);
-		// loggerFn(`Releasing with options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
-		// loggerFn(`Releasing with...\nOptions: ${safeJsonStringify(options, null, '\t')}\nCommand Options: ${safeJsonStringify(this._commandOptions, null, '\t')}\nMerged Options: ${safeJsonStringify(mergedOptions, null, '\t')}`);
 
 		let git = null;
 		let shouldPopOnError = false;
@@ -137,45 +135,45 @@ class ReleaseCommandClass {
 			// Step 2: Check if branch is dirty - commit/stash as required
 			let stashOrCommitStatus = null;
 
-			let branchStatus = await git.status();
-			if(branchStatus.files.length) {
-				debug(`branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
-				loggerFn?.(`Branch is dirty. Starting ${mergedOptions.commit ? 'commit' : 'stash'} process`);
+			let branchStatus = await git?.status();
+			if(branchStatus?.files?.length) {
+				debug(`branch is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`);
+				loggerFn?.(`Branch is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`);
 
-				if(!mergedOptions.commit) {
-					stashOrCommitStatus = await git.stash(['push']);
+				if(!mergedOptions?.commit) {
+					stashOrCommitStatus = await git?.stash(['push']);
 					shouldPopOnError = true;
 				}
 				else {
-					const commitMessage = es6DynTmpl(mergedOptions.message, pkg);
+					const commitMessage = es6DynTmpl(mergedOptions?.message, pkg);
 					debug(`Commit message: ${commitMessage}`);
 
-					let trailerMessages = await git.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-					trailerMessages = trailerMessages.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+					let trailerMessages = await git?.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+					trailerMessages = trailerMessages?.replace(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 					debug(`Trailer messages: ${trailerMessages}`);
 
-					const consolidatedMessage = commitMessage + trailerMessages;
-					stashOrCommitStatus = await git.commit(consolidatedMessage, null, {
+					const consolidatedMessage = (commitMessage ?? '') + (trailerMessages ?? '');
+					stashOrCommitStatus = await git?.commit(consolidatedMessage, null, {
 						'--all': true,
 						'--allow-empty': true,
 						'--signoff': true
 					});
 
-					stashOrCommitStatus = stashOrCommitStatus.commit;
+					stashOrCommitStatus = stashOrCommitStatus?.commit;
 				}
 
-				debug(`${mergedOptions.commit ? 'Commit' : 'Stash'} status: ${safeJsonStringify(stashOrCommitStatus, null, '\t')}`);
-				loggerFn?.(`Done with the ${mergedOptions.commit ? 'commit' : 'stash'}`);
+				debug(`${mergedOptions.commit ? 'Commit' : 'Stash'} status: ${safeJsonStringify((stashOrCommitStatus ?? {}), null, '\t')}`);
+				loggerFn?.(`Done with the ${mergedOptions?.commit ? 'commit' : 'stash'}`);
 			}
 			else {
-				debug(`branch clean. No requirement to ${mergedOptions.commit ? 'Commit' : 'Stash'}`);
-				loggerFn?.(`Branch clean. No requirement to ${mergedOptions.commit ? 'Commit' : 'Stash'}`);
+				debug(`branch clean. No requirement to ${mergedOptions?.commit ? 'Commit' : 'Stash'}`);
+				loggerFn?.(`Branch clean. No requirement to ${mergedOptions?.commit ? 'Commit' : 'Stash'}`);
 			}
 
 			// Step 3: Generate CHANGELOG, commit it, and tag the code
-			if((mergedOptions.tag === '') && !mergedOptions.dontTag) {
+			if((mergedOptions?.tag === '') && !mergedOptions?.dontTag) {
 				debug(`tag name specified, and dontTag is false - starting tagging`);
-				await this._tagCode(git, mergedOptions, loggerFn);
+				await this?._tagCode(git, mergedOptions, loggerFn);
 			}
 			else {
 				loggerFn?.(`Tag specified, or DontTag is true. Not tagging the code`);
@@ -183,27 +181,27 @@ class ReleaseCommandClass {
 			}
 
 			// Step 4: Push commits/tags to the specified upstream
-			branchStatus = await git.status();
-			if(branchStatus.ahead) {
-				const pushCommitStatus = await git.push(mergedOptions.upstream, branchStatus.current, {
+			branchStatus = await git?.status();
+			if(branchStatus?.ahead) {
+				const pushCommitStatus = await git?.push(mergedOptions?.upstream, branchStatus?.current, {
 					'--atomic': true,
 					'--progress': true,
 					'--signed': 'if-asked'
 				});
 
-				const pushTagStatus = await git.pushTags(mergedOptions.upstream, {
+				const pushTagStatus = await git?.pushTags(mergedOptions?.upstream, {
 					'--atomic': true,
 					'--force': true,
 					'--progress': true,
 					'--signed': 'if-asked'
 				});
 
-				debug(`pushed to ${mergedOptions.upstream}:\nCommit: ${safeJsonStringify(pushCommitStatus, null, '\t')}\nTag: ${safeJsonStringify(pushTagStatus, null, '\t')}`);
-				loggerFn?.(`Pushed commit and tag to ${mergedOptions.upstream} remote`);
+				debug(`pushed to ${mergedOptions?.upstream}:\nCommit: ${safeJsonStringify((pushCommitStatus ?? {}), null, '\t')}\nTag: ${safeJsonStringify((pushTagStatus ?? {}), null, '\t')}`);
+				loggerFn?.(`Pushed commit and tag to ${mergedOptions?.upstream} remote`);
 			}
 
 			// Step 5: Create the release notes, and create the release itself
-			if(!mergedOptions.dontRelease) {
+			if(!mergedOptions?.dontRelease) {
 				await this._releaseCode(git, mergedOptions, loggerFn);
 
 				loggerFn?.(`Done releasing the code to ${mergedOptions.upstream}`);
@@ -220,7 +218,7 @@ class ReleaseCommandClass {
 				debug(`Restoring code - popping the stash`);
 				loggerFn?.(`Restoring code - popping the stash`);
 
-				await git.stash(['pop']);
+				await git?.stash(['pop']);
 			}
 		}
 	}
@@ -253,120 +251,133 @@ class ReleaseCommandClass {
 		const pkg = require(projectPackageJson);
 
 		// Get trailer messages to append to git commit...
-		let trailerMessages = await git.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-		trailerMessages = trailerMessages.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+		let trailerMessages = await git?.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+		trailerMessages = trailerMessages?.replace(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 		debug(`Trailer messages: ${trailerMessages}`);
 
 		// Get upstream repository info to use for generating links to commits in the CHANGELOG...
 		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git.raw(['remote', 'get-url', '--push', mergedOptions.upstream]);
+		const gitRemotes = await git?.raw(['remote', 'get-url', '--push', mergedOptions?.upstream]);
 
-		const repository = hostedGitInfo.fromUrl(gitRemotes);
-		repository.project = repository.project.replace('.git\n', '');
+		const repository = hostedGitInfo?.fromUrl(gitRemotes);
+		repository.project = repository?.project?.replace('.git\n', '');
 		debug(`Repository Info: ${safeJsonStringify(repository, null, '\t')}`);
 
 		// Step 1: Get the last tag, the commit that was tagged, and the most recent commit
-		let lastTag = await git.tag(['--sort=-creatordate']);
-		lastTag = lastTag.split('\n').shift().replace(/\\n/g, '').trim();
+		let lastTag = await git?.tag(['--sort=-creatordate']);
+		lastTag = lastTag?.split('\n')?.shift()?.replace(/\\n/g, '')?.trim();
 
-		let lastTaggedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
-		lastTaggedCommit = lastTaggedCommit.replace(/\\n/g, '').trim();
+		let lastTaggedCommit = null;
+		if(lastTag) {
+			lastTaggedCommit = await git?.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastTaggedCommit = lastTaggedCommit?.replace(/\\n/g, '')?.trim();
+		}
 
-		let lastCommit = await git.raw(['rev-parse', 'HEAD']);
-		lastCommit = lastCommit.replace(/\\n/g, '').trim();
+		let lastCommit = await git?.raw(['rev-parse', 'HEAD']);
+		lastCommit = lastCommit?.replace(/\\n/g, '')?.trim();
 
 		debug(`Last Tag: ${lastTag}, commit sha: ${lastTaggedCommit}, current commit sha: ${lastCommit}`);
 
 		// Step 2: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
 		loggerFn?.(`Generating CHANGELOG now...`);
 
-		const gitLogsInRange = await git.log({
-			'from': lastTaggedCommit,
-			'to': lastCommit
-		});
+		let gitLogsInRange = null;
+
+		if(lastTaggedCommit && lastCommit)
+			gitLogsInRange = await git?.log({
+				'from': lastTaggedCommit,
+				'to': lastCommit
+			});
+
+		if(!lastTaggedCommit && lastCommit)
+			gitLogsInRange = await git?.log({
+				'to': lastCommit
+			});
+
+		if(!lastTaggedCommit && !lastCommit)
+			gitLogsInRange = {
+				'all': []
+			};
 
 		const relevantGitLogs = [];
-		gitLogsInRange.all.forEach((commitLog) => {
+		gitLogsInRange?.all?.forEach((commitLog) => {
 			// eslint-disable-next-line curly
-			if(commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs')) {
+			if(commitLog?.message?.startsWith('feat') || commitLog?.message?.startsWith('fix') || commitLog?.message?.startsWith('docs')) {
 				relevantGitLogs.push({
-					'hash': commitLog.hash,
-					'date': commitLog.date,
-					'message': commitLog.message,
-					'author_name': commitLog.author_name,
-					'author_email': commitLog.author_email
+					'hash': commitLog?.hash,
+					'date': commitLog?.date,
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
 				});
 			}
 
-			const commitLogBody = commitLog.body.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').split('\n');
-			commitLogBody.forEach((commitBody) => {
+			const commitLogBody = commitLog?.body?.replace(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split('\n');
+			commitLogBody?.forEach((commitBody) => {
 				// eslint-disable-next-line curly
-				if(commitBody.startsWith('feat') || commitBody.startsWith('fix') || commitBody.startsWith('docs')) {
+				if(commitBody?.startsWith('feat') || commitBody?.startsWith('fix') || commitBody?.startsWith('docs')) {
 					relevantGitLogs.push({
-						'hash': commitLog.hash,
-						'date': commitLog.date,
-						'message': commitBody.trim(),
-						'author_name': commitLog.author_name,
-						'author_email': commitLog.author_email
+						'hash': commitLog?.hash,
+						'date': commitLog?.date,
+						'message': commitBody?.trim(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
 					});
 				}
 			});
 		});
 
-		// console.log(`Relevant Git Logs: ${safeJsonStringify(relevantGitLogs, null, '\t')}`);
-		// return;
-
 		const changeLogText = [`#### CHANGE LOG`];
 		const processedDates = [];
 
 		const dateFormat = require('date-fns/format');
-		relevantGitLogs.forEach((commitLog) => {
-			const commitDate = dateFormat(new Date(commitLog.date), 'dd-MMM-yyyy');
-			if(!processedDates.includes(commitDate)) {
-				processedDates.push(commitDate);
-				changeLogText.push(`\n\n##### ${commitDate}`);
+		relevantGitLogs?.forEach((commitLog) => {
+			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
+			if(!processedDates?.includes(commitDate)) {
+				processedDates?.push(commitDate);
+				changeLogText?.push(`\n\n##### ${commitDate}`);
 			}
 
-			changeLogText.push(`\n${commitLog.message} ([${commitLog.hash}](https://${repository.domain}/${repository.user}/${repository.project}/commit/${commitLog.hash}))`);
+			changeLogText?.push(`\n${commitLog?.message} ([${commitLog?.hash}](https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash}))`);
 		});
 
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': path.join(process.cwd(), 'CHANGELOG.md'),
 			'from': '#### CHANGE LOG',
-			'to': changeLogText.join('\n')
+			'to': changeLogText?.join('\n')
 		};
 
 		const changelogResult = await replaceInFile(replaceOptions);
-		if(!changelogResult[0]['hasChanged']) {
+		if(!changelogResult?.[0]?.['hasChanged']) {
 			const prependFile = require('prepend-file');
-			await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText.join('\n'));
+			await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join('\n'));
 		}
 
 		debug(`Generated CHANGELOG`);
 		loggerFn?.(`Generated CHANGELOG`);
 
 		// Step 3: Commit CHANGELOG
-		const addStatus = await git.add('.');
+		const addStatus = await git?.add('.');
 		debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
 
-		const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg.version}\n${trailerMessages}`;
-		let tagCommitSha = await git.commit(consolidatedMessage, null, {
+		const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
+		let tagCommitSha = await git?.commit(consolidatedMessage, null, {
 			'--allow-empty': true,
 			'--no-verify': true
 		});
-		tagCommitSha = tagCommitSha.commit;
+		tagCommitSha = tagCommitSha?.commit;
 
 		debug(`Committed change log: ${tagCommitSha}`);
 		loggerFn?.(`Committed CHANGELOG`);
 
 		// Step 4: Tag this commit
-		const tagName = es6DynTmpl(mergedOptions.tagName, pkg);
-		const tagMessage = es6DynTmpl(mergedOptions.tagMessage, pkg);
+		const tagName = es6DynTmpl(mergedOptions?.tagName, pkg);
+		const tagMessage = es6DynTmpl(mergedOptions?.tagMessage, pkg);
 
-		const tagStatus = await git.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
-		debug(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
-		loggerFn?.(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify(tagStatus, null, '\t')}`);
+		const tagStatus = await git?.tag(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
+		debug(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
+		loggerFn?.(`Tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
 	}
 
 	/**
@@ -391,90 +402,108 @@ class ReleaseCommandClass {
 
 		// Step 1: Instantiate the Github Client for this repo
 		const octonode = require('octonode');
-		const client = octonode.client(mergedOptions.githubToken);
+		const client = octonode?.client(mergedOptions?.githubToken);
 		debug('created client to connect to github');
 
 		// Step 2: Get upstream repository info to use for getting required details...
 		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git.raw(['remote', 'get-url', '--push', mergedOptions.upstream]);
+		const gitRemotes = await git?.raw(['remote', 'get-url', '--push', mergedOptions?.upstream]);
 
-		const repository = hostedGitInfo.fromUrl(gitRemotes);
-		repository.project = repository.project.replace('.git\n', '');
-		debug(`repository Info: ${safeJsonStringify(repository, null, '\t')}`);
+		const repository = hostedGitInfo?.fromUrl(gitRemotes);
+		repository.project = repository?.project?.replace('.git\n', '');
+		debug(`repository Info: ${safeJsonStringify((repository ?? {}), null, '\t')}`);
 
 		// Step 3: Create a repo object
-		const ghRepo = client.repo(`${repository.user}/${repository.project}`);
+		const ghRepo = client?.repo(`${repository?.user}/${repository?.project}`);
 
 		// Step 4: Get all the releases for the repository
 		loggerFn?.(`Fetching Last Release Information`);
 		debug(`Fetching Last Release Tag`);
 
-		const ghReleases = await ghRepo.releasesAsync();
-		const lastRelease = ghReleases[0].map((release) => {
+		const ghReleases = await ghRepo?.releasesAsync();
+		const lastRelease = ghReleases?.[0]?.map((release) => {
 			return {
-				'name': release.name,
-				'published': release.published_at,
-				'tag': release.tag_name
+				'name': release?.name,
+				'published': release?.published_at,
+				'tag': release?.tag_name
 			};
 		})
-		.sort((left, right)=> {
-			return (new Date(right.published)).valueOf() - (new Date(left.published)).valueOf();
+		?.sort((left, right) => {
+			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
 		})
-		.shift();
+		?.shift();
 
 		// Step 5: Get the last released commit, and the most recent tag / specified tag commit
-		let lastReleasedCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastRelease.tag}`]);
-		lastReleasedCommit = lastReleasedCommit.replace(/\\n/g, '').trim();
+		let lastReleasedCommit = null;
+		if(lastRelease) {
+			lastReleasedCommit = await git?.raw(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
+			lastReleasedCommit = lastReleasedCommit?.replace(/\\n/g, '')?.trim();
+		}
 
-		let lastTag = await git.tag(['--sort=-creatordate']);
+		let lastTag = await git?.tag(['--sort=-creatordate']);
 		// If a specific tag name is not given, use the commit associated with the last tag
 		if(mergedOptions.tag === '')
-			lastTag = lastTag.split('\n').shift().replace(/\\n/g, '').trim();
+			lastTag = lastTag?.split('\n')?.shift()?.replace(/\\n/g, '')?.trim();
 		// Otherwise, use the commit associated with the specified tag
 		else
-			lastTag = lastTag.split('\n').filter((tagName) => { return tagName.replace(/\\n/g, '').trim() === mergedOptions.tag; }).shift().replace(/\\n/g, '').trim();
+			lastTag = lastTag?.split('\n')?.filter((tagName) => { return tagName?.replace(/\\n/g, '')?.trim() === mergedOptions?.tag; })?.shift()?.replace(/\\n/g, '')?.trim();
 
-		let lastCommit = await git.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
-		lastCommit = lastCommit.replace(/\\n/g, '').trim();
+		let lastCommit = null;
+		if(lastTag) {
+			lastCommit = await git?.raw(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastCommit = lastCommit?.replace(/\\n/g, '')?.trim();
+		}
 
-		debug(`last release tag: ${lastRelease.tag}, last release commit sha: ${lastReleasedCommit}, current tag: ${lastTag}, current commit sha: ${lastCommit}`);
+		debug(`last release tag: ${lastRelease?.tag}, last release commit sha: ${lastReleasedCommit}, current tag: ${lastTag}, current commit sha: ${lastCommit}`);
 		loggerFn?.(`Last Release\n\tTag: ${lastRelease.tag}\n\tCommit SHA: ${lastReleasedCommit}\nCurrent Status\n\tTag: ${lastTag}\n\tCommit SHA: ${lastCommit}`);
 
 		// Step 6: Get data required for generating the RELEASE NOTES
 		debug(`generating release notes...`);
 		loggerFn?.(`Generating release notes...`);
 
-		const gitLogsInRange = await git.log({
-			'from': lastReleasedCommit,
-			'to': lastCommit
-		});
+		let gitLogsInRange = null;
+		if(lastReleasedCommit && lastCommit)
+			gitLogsInRange = await git?.log({
+				'from': lastReleasedCommit,
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit && lastCommit)
+			gitLogsInRange = await git?.log({
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit && !lastCommit)
+			gitLogsInRange = {
+				'all': []
+			};
 
 		const dateFormat = require('date-fns/format');
 		const relevantGitLogs = [];
-		gitLogsInRange.all.forEach((commitLog) => {
-			const commitDate = dateFormat(new Date(commitLog.date), 'dd-MMM-yyyy');
+		gitLogsInRange?.all?.forEach((commitLog) => {
+			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
 
 			// eslint-disable-next-line curly
-			if(commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs')) {
-				relevantGitLogs.push({
-					'hash': commitLog.hash,
+			if(commitLog?.message?.startsWith('feat') || commitLog?.message?.startsWith('fix') || commitLog?.message?.startsWith('docs')) {
+				relevantGitLogs?.push({
+					'hash': commitLog?.hash,
 					'date': commitDate,
-					'message': commitLog.message,
-					'author_name': commitLog.author_name,
-					'author_email': commitLog.author_email
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
 				});
 			}
 
-			const commitLogBody = commitLog.body.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').split('\n');
-			commitLogBody.forEach((commitBody) => {
+			const commitLogBody = commitLog?.body?.replace(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split('\n');
+			commitLogBody?.forEach((commitBody) => {
 				// eslint-disable-next-line curly
-				if(commitBody.startsWith('feat') || commitBody.startsWith('fix') || commitBody.startsWith('docs')) {
-					relevantGitLogs.push({
-						'hash': commitLog.hash,
+				if(commitBody?.startsWith('feat') || commitBody?.startsWith('fix') || commitBody?.startsWith('docs')) {
+					relevantGitLogs?.push({
+						'hash': commitLog?.hash,
 						'date': commitDate,
-						'message': commitBody.trim(),
-						'author_name': commitLog.author_name,
-						'author_email': commitLog.author_email
+						'message': commitBody?.trim(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
 					});
 				}
 			});
@@ -492,68 +521,69 @@ class ReleaseCommandClass {
 		loggerFn?.(`Fetching author information`);
 
 		let resolutions = [];
-		relevantGitLogs.forEach((commitLog) => {
+		relevantGitLogs?.forEach((commitLog) => {
 			const commitObject = {
-				'hash': commitLog.hash,
+				'hash': commitLog?.hash,
 				'component': '',
-				'message': commitLog.message,
-				'author_name': commitLog['author_name'],
-				'author_email': commitLog['author_email'],
-				'date': commitLog.date
+				'message': commitLog?.message,
+				'author_name': commitLog?.['author_name'],
+				'author_email': commitLog?.['author_email'],
+				'date': commitLog?.date
 			};
 
-			if(commitLog.message.startsWith('feat')) {
-				commitObject.message = commitObject.message.replace('feat', '');
-				if(commitObject.message.startsWith('(')) {
-					const componentClose = commitObject.message.indexOf(':') - 2;
-					commitObject.component = commitObject.message.substr(1, componentClose);
+			if(commitLog?.message?.startsWith('feat')) {
+				commitObject.message = commitObject?.message?.replace('feat', '');
+				if(commitObject?.message?.startsWith('(')) {
+					const componentClose = commitObject?.message?.indexOf(':') - 2;
+					commitObject.component = commitObject?.message?.substr(1, componentClose);
 
-					commitObject.message = commitObject.message.substr(componentClose + 3);
+					commitObject.message = commitObject?.message?.substr(componentClose + 3);
 				}
 				else {
-					commitObject.message = commitObject.message.substr(1);
+					commitObject.message = commitObject?.message?.substr(1);
 				}
 
-				featureSet.push(commitObject);
+				featureSet?.push(commitObject);
 			}
-			if(commitLog.message.startsWith('fix')) {
-				commitObject.message = commitObject.message.replace('fix', '');
-				if(commitObject.message.startsWith('(')) {
-					const componentClose = commitObject.message.indexOf(':') - 2;
-					commitObject.component = commitObject.message.substr(1, componentClose);
 
-					commitObject.message = commitObject.message.substr(componentClose + 3);
+			if(commitLog?.message?.startsWith('fix')) {
+				commitObject.message = commitObject?.message?.replace('fix', '');
+				if(commitObject?.message?.startsWith('(')) {
+					const componentClose = commitObject?.message?.indexOf(':') - 2;
+					commitObject.component = commitObject?.message?.substr(1, componentClose);
+
+					commitObject.message = commitObject?.message?.substr(componentClose + 3);
 				}
 				else {
-					commitObject.message = commitObject.message.substr(1);
+					commitObject.message = commitObject?.message?.substr(1);
 				}
 
-				bugfixSet.push(commitObject);
+				bugfixSet?.push(commitObject);
 			}
 
-			if(commitLog.message.startsWith('docs')) {
-				commitObject.message = commitObject.message.replace('docs', '');
-				if(commitObject.message.startsWith('(')) {
-					const componentClose = commitObject.message.indexOf(':') - 2;
-					commitObject.component = commitObject.message.substr(1, componentClose);
+			if(commitLog?.message?.startsWith('docs')) {
+				commitObject.message = commitObject?.message?.replace('docs', '');
+				if(commitObject?.message?.startsWith('(')) {
+					const componentClose = commitObject?.message?.indexOf(':') - 2;
+					commitObject.component = commitObject?.message?.substr(1, componentClose);
 
-					commitObject.message = commitObject.message.substr(componentClose + 3);
+					commitObject.message = commitObject?.message?.substr(componentClose + 3);
 				}
 				else {
-					commitObject.message = commitObject.message.substr(1);
+					commitObject.message = commitObject?.message?.substr(1);
 				}
 
-				documentationSet.push(commitObject);
+				documentationSet?.push(commitObject);
 			}
 
-			if(!Object.keys(contributorSet).includes(commitLog['author_email'])) {
-				contributorSet[commitLog['author_email']] = commitLog['author_name'];
-				resolutions.push(ghRepo.commitAsync(commitLog.hash));
+			if(!Object.keys(contributorSet).includes(commitLog?.['author_email'])) {
+				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
+				resolutions?.push(ghRepo?.commitAsync(commitLog?.hash));
 			}
 		});
 
 		const promises = require('bluebird');
-		resolutions = await promises.all(resolutions);
+		resolutions = await promises?.all(resolutions);
 
 		debug(`fetched author information`);
 		loggerFn?.(`Fetched author information`);
@@ -562,32 +592,42 @@ class ReleaseCommandClass {
 		debug(`processing author information`);
 		loggerFn?.(`Processing Author Information`);
 
-		const commits = resolutions.shift();
+		const commits = resolutions?.shift();
 		const authorList = [];
-		commits.forEach((ghCommit, idx) => {
+		commits?.forEach((ghCommit, idx) => {
 			const authorEmail = Object.keys(contributorSet)[idx];
 			if(!authorEmail) return;
 
-			authorList.push({
-				'name': contributorSet[authorEmail],
+			authorList?.push({
+				'name': contributorSet?.[authorEmail],
 				'email': authorEmail,
 				'profile': ghCommit?.author?.html_url,
 				'avatar': ghCommit?.author?.avatar_url
 			});
 		});
 
-		featureSet.forEach((feature) => {
-			const thisAuthor = authorList.filter((author) => { return author.email === feature.author_email; }).shift();
-			feature['author_profile'] = thisAuthor.profile;
+		featureSet?.forEach((feature) => {
+			const thisAuthor = authorList?.filter((author) => { return author?.email === feature?.author_email; }).shift();
+			feature['author_profile'] = thisAuthor?.profile;
+		});
+
+		bugfixSet?.forEach((fix) => {
+			const thisAuthor = authorList?.filter((author) => { return author?.email === fix?.author_email; }).shift();
+			fix['author_profile'] = thisAuthor?.profile;
+		});
+
+		documentationSet?.forEach((doc) => {
+			const thisAuthor = authorList?.filter((author) => { return author?.email === doc?.author_email; }).shift();
+			doc['author_profile'] = thisAuthor?.profile;
 		});
 
 		const releaseMessageData = {
 			'REPO': repository,
-			'RELEASE_NAME': mergedOptions.releaseName,
-			'NUM_FEATURES': featureSet.length,
-			'NUM_FIXES': bugfixSet.length,
-			'NUM_DOCS': documentationSet.length,
-			'NUM_AUTHORS': authorList.length,
+			'RELEASE_NAME': mergedOptions?.releaseName,
+			'NUM_FEATURES': featureSet?.length,
+			'NUM_FIXES': bugfixSet?.length,
+			'NUM_DOCS': documentationSet?.length,
+			'NUM_AUTHORS': authorList?.length,
 			'FEATURES': featureSet,
 			'FIXES': bugfixSet,
 			'DOCS': documentationSet,
@@ -598,8 +638,8 @@ class ReleaseCommandClass {
 		debug(`generated release notes`);
 		loggerFn?.(`Generated release notes`);
 
-		let releaseMessagePath = mergedOptions.releaseMessage;
-		if(!releaseMessagePath || (releaseMessagePath === '')) releaseMessagePath = './../templates/release-notes.ejs';
+		let releaseMessagePath = mergedOptions?.releaseMessage ?? '';
+		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
 		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
 
 		// Get package.json into memory...
@@ -618,10 +658,10 @@ class ReleaseCommandClass {
 			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 		}
 
-		const parsedVersion = semver.parse(version);
+		const parsedVersion = semver?.parse(version);
 		releaseMessageData['RELEASE_TYPE'] = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
 
-		const releaseNotes = await ejs.renderFileAsync(releaseMessagePath, releaseMessageData, {
+		const releaseNotes = await ejs?.renderFileAsync(releaseMessagePath, releaseMessageData, {
 			'async': true,
 			'cache': false,
 			'debug': false,
@@ -633,11 +673,11 @@ class ReleaseCommandClass {
 		debug(`creating release on Github`);
 		loggerFn?.(`Creating the release on Github`);
 
-		const clientPost = promises.promisify(client.post.bind(client));
+		const clientPost = promises?.promisify(client?.post?.bind(client));
 		await clientPost(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 			'accept': 'application/vnd.github.v3+json',
 			'tag_name': lastTag,
-			'name': releaseMessageData['RELEASE_NAME'],
+			'name': releaseMessageData?.['RELEASE_NAME'],
 			'body': releaseNotes,
 			'prerelease': !!parsedVersion?.prerelease?.length
 		});
