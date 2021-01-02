@@ -97,7 +97,7 @@ class ReleaseCommandClass {
 
 		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
-		mergedOptions.releaseNote = options?.releaseNote ?? (this?._commandOptions.releaseNote ?? '');
+		mergedOptions.releaseMessage = options?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
 
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
@@ -386,7 +386,7 @@ class ReleaseCommandClass {
 	 *
 	 */
 	async _releaseCode(git, mergedOptions, loggerFn) {
-		const promises = require('bluebird');
+		const path = require('path');
 		const safeJsonStringify = require('safe-json-stringify');
 
 		// Step 1: Instantiate the Github Client for this repo
@@ -449,15 +449,16 @@ class ReleaseCommandClass {
 			'to': lastCommit
 		});
 
+		const dateFormat = require('date-fns/format');
 		const relevantGitLogs = [];
 		gitLogsInRange.all.forEach((commitLog) => {
-			const commitDate = new Date(commitLog.date);
+			const commitDate = dateFormat(new Date(commitLog.date), 'dd-MMM-yyyy');
 
 			// eslint-disable-next-line curly
 			if(commitLog.message.startsWith('feat') || commitLog.message.startsWith('fix') || commitLog.message.startsWith('docs')) {
 				relevantGitLogs.push({
 					'hash': commitLog.hash,
-					'date': commitDate.toISOString(),
+					'date': commitDate,
 					'message': commitLog.message,
 					'author_name': commitLog.author_name,
 					'author_email': commitLog.author_email
@@ -470,7 +471,7 @@ class ReleaseCommandClass {
 				if(commitBody.startsWith('feat') || commitBody.startsWith('fix') || commitBody.startsWith('docs')) {
 					relevantGitLogs.push({
 						'hash': commitLog.hash,
-						'date': commitDate.toISOString(),
+						'date': commitDate,
 						'message': commitBody.trim(),
 						'author_name': commitLog.author_name,
 						'author_email': commitLog.author_email
@@ -494,14 +495,56 @@ class ReleaseCommandClass {
 		relevantGitLogs.forEach((commitLog) => {
 			const commitObject = {
 				'hash': commitLog.hash,
+				'component': '',
 				'message': commitLog.message,
-				'author': commitLog['author_email'],
+				'author_name': commitLog['author_name'],
+				'author_email': commitLog['author_email'],
 				'date': commitLog.date
 			};
 
-			if(commitLog.message.startsWith('feat')) featureSet.push(commitObject);
-			if(commitLog.message.startsWith('fix')) bugfixSet.push(commitObject);
-			if(commitLog.message.startsWith('docs')) documentationSet.push(commitObject);
+			if(commitLog.message.startsWith('feat')) {
+				commitObject.message = commitObject.message.replace('feat', '');
+				if(commitObject.message.startsWith('(')) {
+					const componentClose = commitObject.message.indexOf(':') - 2;
+					commitObject.component = commitObject.message.substr(1, componentClose);
+
+					commitObject.message = commitObject.message.substr(componentClose + 3);
+				}
+				else {
+					commitObject.message = commitObject.message.substr(1);
+				}
+
+				featureSet.push(commitObject);
+			}
+			if(commitLog.message.startsWith('fix')) {
+				commitObject.message = commitObject.message.replace('fix', '');
+				if(commitObject.message.startsWith('(')) {
+					const componentClose = commitObject.message.indexOf(':') - 2;
+					commitObject.component = commitObject.message.substr(1, componentClose);
+
+					commitObject.message = commitObject.message.substr(componentClose + 3);
+				}
+				else {
+					commitObject.message = commitObject.message.substr(1);
+				}
+
+				bugfixSet.push(commitObject);
+			}
+
+			if(commitLog.message.startsWith('docs')) {
+				commitObject.message = commitObject.message.replace('docs', '');
+				if(commitObject.message.startsWith('(')) {
+					const componentClose = commitObject.message.indexOf(':') - 2;
+					commitObject.component = commitObject.message.substr(1, componentClose);
+
+					commitObject.message = commitObject.message.substr(componentClose + 3);
+				}
+				else {
+					commitObject.message = commitObject.message.substr(1);
+				}
+
+				documentationSet.push(commitObject);
+			}
 
 			if(!Object.keys(contributorSet).includes(commitLog['author_email'])) {
 				contributorSet[commitLog['author_email']] = commitLog['author_name'];
@@ -509,12 +552,16 @@ class ReleaseCommandClass {
 			}
 		});
 
+		const promises = require('bluebird');
 		resolutions = await promises.all(resolutions);
 
 		debug(`fetched author information`);
 		loggerFn?.(`Fetched author information`);
 
 		// Step 7: Record authors / contributors
+		debug(`processing author information`);
+		loggerFn?.(`Processing Author Information`);
+
 		const commits = resolutions.shift();
 		const authorList = [];
 		commits.forEach((ghCommit, idx) => {
@@ -529,20 +576,70 @@ class ReleaseCommandClass {
 			});
 		});
 
-		loggerFn?.(`
-Feature Count: ${featureSet.length}, Fix Count: ${bugfixSet.length}, Doc Count: ${documentationSet.length}, Author Count: ${authorList.length}
+		featureSet.forEach((feature) => {
+			const thisAuthor = authorList.filter((author) => { return author.email === feature.author_email; }).shift();
+			feature['author_profile'] = thisAuthor.profile;
+		});
 
-Features: ${safeJsonStringify(featureSet, null, '\t')},
-
-Bug Fixes: ${safeJsonStringify(bugfixSet, null, '\t')},
-
-Documentations: ${safeJsonStringify(documentationSet, null, '\t')},
-
-Authors: ${safeJsonStringify(authorList, null, '\t')}
-		`);
+		const releaseMessageData = {
+			'REPO': repository,
+			'RELEASE_NAME': mergedOptions.releaseName,
+			'NUM_FEATURES': featureSet.length,
+			'NUM_FIXES': bugfixSet.length,
+			'NUM_DOCS': documentationSet.length,
+			'NUM_AUTHORS': authorList.length,
+			'FEATURES': featureSet,
+			'FIXES': bugfixSet,
+			'DOCS': documentationSet,
+			'AUTHORS': authorList
+		};
 
 		// Step 8: EJS the Release Notes template
-		// TODO
+		debug(`creating release notes`);
+		loggerFn?.(`Creating release notes`);
+
+		let releaseMessagePath = mergedOptions.releaseMessage;
+		if(!releaseMessagePath || (releaseMessagePath === '')) releaseMessagePath = './../templates/release-notes.ejs';
+		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
+
+		// Get package.json into memory...
+		const ejs = promises.promisifyAll(require('ejs'));
+		const semver = require('semver');
+
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const { version } = require(projectPackageJson);
+
+		if(!version) {
+			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+		}
+		if(!semver.valid(version)) {
+			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+		}
+
+		const parsedVersion = semver.parse(version);
+		releaseMessageData['RELEASE_TYPE'] = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
+
+		const releaseNotes = await ejs.renderFileAsync(releaseMessagePath, releaseMessageData, {
+			'async': true,
+			'cache': false,
+			'debug': false,
+			'rmWhitespace': false,
+			'strict': false
+		});
+
+		// Step 9: Create the release...
+		debug(`creating release on Github`);
+		loggerFn?.(`Creating the release on Github`);
+
+		await client.post(`https://${repository.domain}/${repository.user}/${repository.project}/releases`, {
+			'accept': 'application/vnd.github.v3+json',
+			'tag_name': lastTag,
+			'name': releaseMessageData['RELEASE_NAME'],
+			'body': releaseNotes,
+			'prerelease': !!parsedVersion?.prerelease?.length
+		});
 	}
 	// #endregion
 

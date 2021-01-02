@@ -1,0 +1,58 @@
+#### Table Of Contents
+
+1. [Overview](#overview)
+1. [Features](#features)
+1. [Bug Fixes](#bug-fixes)
+1. [Documentation](#documentation)
+1. [Contributors](#contributors)
+
+
+#### Overview
+This release contains:
+
+| Features | Fixes | Docs | Contributors |
+| --- | --- | --- | --- |
+| <%= NUM_FEATURES %> | <%= NUM_FIXES %> | <%= NUM_DOCS %> | <%= NUM_AUTHORS %> |
+
+#### Features
+This <%- RELEASE_TYPE -%> adds the features:
+
+| | Feature | Component | Contributor | Date |
+| --- | --- | --- | --- | --- |
+<% for(let idx = 0; idx < NUM_FEATURES; idx++) { -%>
+| <%- idx + 1 -%> | [<%- FEATURES[idx]['message'] -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>/commit/<%- FEATURES[idx]['hash'] -%>) | <%- FEATURES[idx]['component'] -%> | <a href="<%- FEATURES[idx]['author_profile'] -%>"><%- FEATURES[idx]['author_name'] -%></a> | <%- FEATURES[idx]['date'] -%> |
+<% } -%>
+
+#### Bug Fixes
+This <%- RELEASE_TYPE -%> fixes:
+
+| | Fix | Component | Contributor | Date |
+| --- | --- | --- | --- | --- |
+<% for(let idx = 0; idx < NUM_FIXES; idx++) { -%>
+| <%- idx + 1 -%> | [<%- FIXES[idx]['message'] -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>/commit/<%- FIXES[idx]['hash'] -%>) | <%- FIXES[idx]['component'] -%> | <a href="<%- FIXES[idx]['author_profile'] -%>"><%- FIXES[idx]['author_name'] -%></a> | <%- FIXES[idx]['date'] -%> |
+<% } -%>
+
+#### Documentation
+This <%- RELEASE_TYPE -%> adds documentation for:
+
+| | Documentation | Component | Contributor | Date |
+| --- | --- | --- | --- | --- |
+<% for(let idx = 0; idx < NUM_DOCS; idx++) { -%>
+| <%- idx + 1 -%> | [<%- DOCS[idx]['message'] -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>/commit/<%- DOCS[idx]['hash'] -%>) | <%- DOCS[idx]['component'] -%> | <a href="<%- DOCS[idx]['author_profile'] -%>"><%- DOCS[idx]['author_name'] -%></a> | <%- DOCS[idx]['date'] -%>) |
+<% } -%>
+
+#### Contributors
+The [<%- REPO.user -%>/<%- REPO.project -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>) team would like to thank the following people for contributing to this release:
+
+<% for(let idx = 0; idx < NUM_AUTHORS; idx++) { %>
+<table>
+  <tr>
+    <td align="center">
+      <a href="<%- AUTHORS[idx]['profile'] -%>">
+        <img src="<%- AUTHORS[idx]['avatar'] -%>" width="100px;" alt=""/><br />
+        <sub><b>#<%- AUTHORS[idx]['name'] -%></b></sub>
+	  </a>
+    </td>
+  </tr>
+</table>
+<% } %>
