@@ -2,6 +2,24 @@
 #### CHANGE LOG
 
 
+##### 02-Jan-2021
+
+feat(release): release notes default template ([99df18c1205d97840a1bcd6e7f34a7d926464547](https://github.com/twyr/announce/commit/99df18c1205d97840a1bcd6e7f34a7d926464547))
+
+docs(release): release command documentation ([8838aa6f85f208e06427d8155b63be8c248aee65](https://github.com/twyr/announce/commit/8838aa6f85f208e06427d8155b63be8c248aee65))
+
+
+##### 01-Jan-2021
+
+docs(release): added documentation for the skip tag/release command options ([c8d595083a9ce585ff45703695f51ca67650aa84](https://github.com/twyr/announce/commit/c8d595083a9ce585ff45703695f51ca67650aa84))
+
+feat(release): added options to bypass tagging/releasing ([5d6655603295b527e8f9426be5aaba7073f30c46](https://github.com/twyr/announce/commit/5d6655603295b527e8f9426be5aaba7073f30c46))
+
+docs(release): updated release command options ([ec0abfce908c7e871b9768339799c88e16cbca90](https://github.com/twyr/announce/commit/ec0abfce908c7e871b9768339799c88e16cbca90))
+
+fix(release): octonode Log API signature change ([087f06b435681bcd02f3e80bc2344b30231b5a4e](https://github.com/twyr/announce/commit/087f06b435681bcd02f3e80bc2344b30231b5a4e))
+
+
 ##### 01-Jan-2021
 
 fix(release): default Release Name option ([8b4ef864f19669c95312288f22939df1fd33d0b4](https://github.com/twyr/announce/commit/8b4ef864f19669c95312288f22939df1fd33d0b4))
