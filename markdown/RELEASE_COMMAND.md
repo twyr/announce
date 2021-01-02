@@ -97,7 +97,7 @@ The release command can be integrated into another module, and invoked as:
 const announce = require('@twyr/announce);
 announce.release({
     'commit': true/false, // Commit code if branch is dirty [default: false]
-    'githubToken': 'XXX' // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
+    'githubToken': 'XXX', // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
 
     'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
 
