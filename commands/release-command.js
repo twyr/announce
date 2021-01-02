@@ -391,7 +391,7 @@ class ReleaseCommandClass {
 
 		// Step 1: Instantiate the Github Client for this repo
 		const octonode = require('octonode');
-		const client = octonode.client(process.env.GITHUB_TOKEN);
+		const client = octonode.client(mergedOptions.githubToken);
 		debug('created client to connect to github');
 
 		// Step 2: Get upstream repository info to use for getting required details...
@@ -661,7 +661,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	commanderProcess
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
-		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github')
+		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github', process.env.GITHUB_TOKEN)
 
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 
