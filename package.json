@@ -1,11 +1,11 @@
 {
-	"name": "announce",
+	"name": "@twyr/announce",
 	"displayName": "Announce",
 	"description": "CLI Tool and NPM Library for announcing a release on Github / Gitlab / etc. and on NPM",
-	"homepage": "https://twyr.github.io/announce",
+	"homepage": "https://github.com/twyr/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.0.4-dev.0",
+	"version": "0.0.4",
 	"keywords": [
 		"automation",
 		"announcement",

@@ -4,6 +4,13 @@
 
 ##### 02-Jan-2021
 
+fix(release): link to author profile in the release notes ([6df109ca9a4238da51a3c2243520b973af0586cb](https://github.com/twyr/announce/commit/6df109ca9a4238da51a3c2243520b973af0586cb))
+
+fix(release): github Token from options ([f0b1baae504e0078a5eebd85c6488bf7d949eb3b](https://github.com/twyr/announce/commit/f0b1baae504e0078a5eebd85c6488bf7d949eb3b))
+
+
+##### 02-Jan-2021
+
 fix(release): modified URL for creating a Github release ([5f851b24b7dc5d4f769603700d7011c5011ab5a0](https://github.com/twyr/announce/commit/5f851b24b7dc5d4f769603700d7011c5011ab5a0))
 
 
