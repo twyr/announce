@@ -9,6 +9,13 @@ In this step, the workflow generates a changelog containing all the features/fix
 last release (using commit messages in the git log), commits and pushes the code to the upstream
 repository, creates a tag, and uses that to publish a release in Github.
 
+###### NOTE
+This command assumes that a Github Token, with the required permissions to create a release,
+has been configured and available for use.
+
+If no token has been passed in via the CLI options / API configuration, it expects a token to
+be present at the environment variable GITHUB_TOKEN
+
 ##### Command Flow
 
 The release command executes the following steps:
