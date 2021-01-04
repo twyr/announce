@@ -31,7 +31,6 @@
 |   |   |
 | Release Status | ![GitHub package.json version](https://img.shields.io/github/package-json/v/twyr/announce/main) ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/twyr/announce?sort=semver) ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/twyr/announce?sort=semver) |
 | Publish Status | ![node-current](https://img.shields.io/node/v/@twyr/announce) ![npm bundle size](https://img.shields.io/bundlephobia/min/@twyr/announce) ![npm](https://img.shields.io/npm/dy/@twyr/announce) |
-|   |   |
 
 #### TABLE OF CONTENTS
 - [Raison d'etre](#why-announce)
@@ -83,7 +82,6 @@ via the following commands:
 | --- | --- |
 | Local | npm install @twyr/announce --save-dev  |
 | Global  | npm install @twyr/announce --global  |
-|   |   |
 
 ##### CLI Commands
 The list of commands, and the options each command supports, can be accessed from the terminal by:
@@ -92,7 +90,6 @@ The list of commands, and the options each command supports, can be accessed fro
 | --- | --- |
 | Local | npx announce -h  |
 | Global  | announce -h  |
-|   |   |
 
 The Announce CLI list of commands, and a brief description of each, is given below:
 
@@ -101,7 +98,6 @@ The Announce CLI list of commands, and a brief description of each, is given bel
 | Prepare | announce prepare  | Increments the version as necessary. See [Prepare Command](markdown/PREPARE_COMMAND.md) for details |
 | Release | announce release  | Generate [CHANGELOG](CHANGELOG.md), tag the code, and release to Github. See [Release Command](markdown/RELEASE_COMMAND.md) for details |
 | Publish | announce publish  | Publish a Github Release to npm. See [Publish Command](markdown/PUBLISH_COMMAND.md) for details |
-|   |   |   |
 
 See command specific documentation for further information on how to execute each command, the command-line, options relevant to that command, etc.
 
@@ -163,4 +159,3 @@ You may get a copy of the license by following the link, or at [LICENSE.md](LICE
 | Release | Changelog Management | [changelog](https://www.npmjs.com/search?q=keywords:changelog) |
 | Release | Tagging & Releasing | [release](https://www.npmjs.com/search?q=keywords:release) |
 | Publish | Registry (NPM, et al) Publishing | [publish](https://www.npmjs.com/search?q=keywords:npm%20publish) |
-|  |  |
