@@ -19,5 +19,17 @@
         'releaseMessage': '',
 
         'upstream': 'twyr'
+	},
+
+	'publish': {
+		'access': 'public',
+		'distTag': 'version_default',
+		'dryRun': false,
+
+        'githubToken': null,
+        'npmToken': null,
+
+        'releaseName': 'V${version} Release',
+        'upstream': 'twyr'
 	}
 }
