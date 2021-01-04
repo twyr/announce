@@ -3,7 +3,7 @@
 
 	<head>
 		<meta charset="utf-8">
-		<title>ReleaseCommandClass - Announce CLI - API Reference</title>
+		<title>PublishCommandClass - Announce CLI - API Reference</title>
 		<meta name="description" content="Announce CLI - API Reference" />
 		<meta name="keywords" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
 		<meta name="keyword" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
@@ -50,33 +50,33 @@
 			</ul>
 		</nav>
 		<div id="main">
-			<h1 class="page-title">ReleaseCommandClass</h1>
+			<h1 class="page-title">PublishCommandClass</h1>
 			<section>
 				<header>
 					<h2>
-						ReleaseCommandClass
+						PublishCommandClass
 					</h2>
 					<div class="class-description usertext">
-						<p>The command class that handles all the release operations.</p>
+						<p>The command class that handles all the publish operations.</p>
 					</div>
 				</header>
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="ReleaseCommandClass"><span class="type-signature"></span>new ReleaseCommandClass<span class="signature">(configuration, logger)</span><span class="type-signature"></span></h4>
-						<p class="summary usertext">The command class that implements the &quot;release&quot; step of the workflow.</p>
+						<h4 class="name" id="PublishCommandClass"><span class="type-signature"></span>new PublishCommandClass<span class="signature">(configuration, logger)</span><span class="type-signature"></span></h4>
+						<p class="summary usertext">The command class that implements the &quot;publish&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line22">line 22</a>
+										<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line22">line 22</a>
 									</li>
 								</ul>
 							</dd>
 						</dl>
 						<div class="description usertext">
-							<p>The command class that implements the &quot;release&quot; step of the workflow.
+							<p>The command class that implements the &quot;publish&quot; step of the workflow.
 								Please see README.md for the details of what this step involves.</p>
 						</div>
 						<h5>Parameters:</h5>
@@ -111,144 +111,13 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(git, mergedOptions, loggerFn)</span><span class="type-signature"> &rarr; {null}</span></h4>
-					<p class="summary usertext">
-					<p>Creates a release on Github, and marks it as pre-release if required.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line383">line 383</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>GIT API instance</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>mergedOptions</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>loggerFn</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>One of the usual log commands (debug, info, warn, error, etc.)</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Nothing.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">null</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(git, mergedOptions, loggerFn)</span><span class="type-signature"> &rarr; {null}</span></h4>
-					<p class="summary usertext">
-					<p>Tags the codebase and pushes to Github.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line228">line 228</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>GIT API instance</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>mergedOptions</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>loggerFn</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>One of the usual log commands (debug, info, warn, error, etc.)</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Nothing.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">null</span>
-						</dd>
-					</dl>
 					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>The main method to tag/release the codebase on Github.</p>
-					<p>This method does 3 things:</p>
+					<p>The main method to publish the Github release to NPM.</p>
+					<p>This method does 2 things:</p>
 					<ul>
-						<li>Generates the changelog - features/fixes added to the code since the last tag/release</li>
-						<li>Commits, tags, pushes to Github</li>
-						<li>Creates a release using the tag and the generated changelog</li>
+						<li>Gets the URL to the compressed asset for the last/specified release from Github</li>
+						<li>Publishes the asset to NPM</li>
 					</ul>
 					</p>
 					<dl class="details">
@@ -256,7 +125,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line50">line 50</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line50">line 50</a>
 								</li>
 							</ul>
 						</dd>

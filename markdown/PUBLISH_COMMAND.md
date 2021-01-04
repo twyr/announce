@@ -34,7 +34,9 @@ Publish Command Options:
 | --- | --- |
 | --access | Access to be specified on the published NPM package |
 | --dist-tag | Tag to be applied to the published NPM package - defaults to **latest** for *normal* releases, and **next** for *prereleases* |
+| --dry-run | Do a dry run to check the output. Don't actually publish it to NPM |
 | -gt, --github-token | Token to be use when accessing the release on the Github repository |
+| -nt, --npm-token | Token to be use when publishing the release to the NPM repository |
 | -rn, --release-name | Release Name to use for publishing to NPM |
 | -u, --upstream | Git remote name of the upstream repository to pick the release from |
 
@@ -54,8 +56,11 @@ Global Options inherited by the Publish Command:
     'publish': {
 		'access': 'public|restricted', // See *npm help publish* for details
 		'distTag': 'latest', // See *npm help publish*, the --tag option, for details
+		'dryRun': false, // See *npm help publish*, the --dry-run option, for details
 
         'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
+        'npmToken': 'NPM_TOKEN', // default: $NPM_TOKEN environment variable
+
         'releaseName': 'release name', // [default: V${package version} Release]
         'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
@@ -75,8 +80,11 @@ const announce = require('@twyr/announce);
 announce.publish({
     'access': 'public|restricted', // See *npm help publish* for details
     'distTag': 'latest', // See *npm help publish*, the --tag option, for details
+    'dryRun': false, // See *npm help publish*, the --dry-run option, for details
 
     'githubToken': 'XXX', // Token to use for reading the release details from Github [default: process.env.GITHUB_TOKEN environment variable]
+    'npmToken': 'NPM_TOKEN', // default: $NPM_TOKEN environment variable
+
     'releaseName': 'release name', // Name of the release [default: V${package version} Release]
     'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
 
