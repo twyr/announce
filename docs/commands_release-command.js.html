@@ -713,9 +713,6 @@ class ReleaseCommandClass {
 			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 		}
 
-		const parsedVersion = semver?.parse(version);
-		releaseMessageData['RELEASE_TYPE'] = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
-
 		const releaseNotes = await ejs?.renderFileAsync(releaseMessagePath, releaseMessageData, {
 			'async': true,
 			'cache': false,
@@ -729,6 +726,8 @@ class ReleaseCommandClass {
 		loggerFn?.(`Creating the release on Github`);
 
 		const clientPost = promises?.promisify(client?.post?.bind(client));
+		const parsedVersion = semver?.parse(version);
+
 		await clientPost(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 			'accept': 'application/vnd.github.v3+json',
 			'tag_name': lastTag,
