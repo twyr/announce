@@ -47,7 +47,7 @@ module.exports = function (grunt) {
 				'command': 'mkdir -p ./buildresults/mocha && mkdir -p ./buildresults/eslint && mv ./buildresults/lint.xml ./buildresults/eslint/results.xml && mv ./buildresults/tests.xml ./buildresults/mocha/results.xml && mv ./coverage ./buildresults && mv ./.nyc_output ./buildresults && mv ./depcruise ./buildresults && mv ./arkit ./buildresults && mv ./stats ./buildresults'
 			},
 			'rename-docs': {
-				'command': 'mv ./jsdoc_default/announce/<%= pkg.version %> ./docs && rm -r ./jsdoc_default'
+				'command': 'mv ./jsdoc_default/@twyr/announce/<%= pkg.version %> ./docs && rm -r ./jsdoc_default'
 			},
 			'test': {
 				'command': 'npm run-script test'
