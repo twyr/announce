@@ -2,6 +2,24 @@
 #### CHANGE LOG
 
 
+##### 04-Jan-2021
+
+docs(publish): documentation for the Publish Command ([390cf2f32286d426fca495bcaf9b7e3797dc4bca](https://github.com/twyr/announce/commit/390cf2f32286d426fca495bcaf9b7e3797dc4bca))
+
+feat(all): bumped version to 0.1.0 ([86abdfde665fba40370611cedcb805ff61b46cf6](https://github.com/twyr/announce/commit/86abdfde665fba40370611cedcb805ff61b46cf6))
+
+feat(publish): publish to NPM ([c86c7c0aba37ed509db113dd34379dfc9cb0b9c0](https://github.com/twyr/announce/commit/c86c7c0aba37ed509db113dd34379dfc9cb0b9c0))
+
+docs(all): updated release command documentation ([d0d42dc009850008a193b0a59a62de6f301ab090](https://github.com/twyr/announce/commit/d0d42dc009850008a193b0a59a62de6f301ab090))
+
+
+##### 02-Jan-2021
+
+docs(publish): publish Command Documentation ([2c428e8218a42c6e4eef672023ff81014295ab67](https://github.com/twyr/announce/commit/2c428e8218a42c6e4eef672023ff81014295ab67))
+
+docs(release): gITHUB_TOKEN note ([f1628a6c9d763d9b8a8f34fe10cc9b3995ccdb9a](https://github.com/twyr/announce/commit/f1628a6c9d763d9b8a8f34fe10cc9b3995ccdb9a))
+
+
 ##### 02-Jan-2021
 
 fix(release): link to author profile in the release notes ([6df109ca9a4238da51a3c2243520b973af0586cb](https://github.com/twyr/announce/commit/6df109ca9a4238da51a3c2243520b973af0586cb))
