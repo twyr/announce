@@ -1,7 +1,7 @@
 /**
  * @name		index.js
  * @file		Main entry point of the Twy'r Announce CLI tool
- * @version		0.0.5-dev.0
+ * @version		0.1.0
  *
  * @author		Vish Desai <shadyvd@hotmail.com>
  * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2020
