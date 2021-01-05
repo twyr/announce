@@ -72,7 +72,7 @@
 		"debug": "4.3.1",
 		"ejs": "3.1.5",
 		"es6-dynamic-template": "2.0.0",
-		"execa": "4.0.3",
+		"execa": "5.0.0",
 		"fdir": "4.1.0",
 		"gitignore-parser": "0.0.2",
 		"hosted-git-info": "3.0.7",
