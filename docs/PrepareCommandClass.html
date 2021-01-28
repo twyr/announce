@@ -63,7 +63,7 @@
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="PrepareCommandClass"><span class="type-signature"></span>new PrepareCommandClass<span class="signature">(configuration, logger)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="PrepareCommandClass"><span class="type-signature"></span>new PrepareCommandClass<span class="signature">(configuration)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The command class that implements the &quot;prepare&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
@@ -98,20 +98,11 @@
 										<p>The configuration object containing the command options from the config file (.announcerc, package.json, etc.)</p>
 									</td>
 								</tr>
-								<tr>
-									<td class="name"><code>logger</code></td>
-									<td class="type">
-										<span class="param-type">object</span>
-									</td>
-									<td class="description last">
-										<p>The logger instance</p>
-									</td>
-								</tr>
 							</tbody>
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>The main method to prepare the codebase for the next release.</p>
 					<p>This method does 2 things:</p>
@@ -125,7 +116,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line49">line 49</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line43">line 43</a>
 								</li>
 							</ul>
 						</dd>
@@ -147,15 +138,6 @@
 								</td>
 								<td class="description last">
 									<p>Parsed command-line options, or options passed in via API</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Object implementing the usual log commands (debug, info, warn, error, etc.)</p>
 								</td>
 							</tr>
 						</tbody>
