@@ -2,6 +2,24 @@
 #### CHANGE LOG
 
 
+##### 28-Jan-2021
+
+docs(all): updated API options ([688ce2cfb801474ef023dd26ea32b4406c7d17b3](https://github.com/twyr/announce/commit/688ce2cfb801474ef023dd26ea32b4406c7d17b3))
+
+docs(prepare): updates to linked code ([92ba790c6f7a96fbc72b97e5b13951a6086bf410](https://github.com/twyr/announce/commit/92ba790c6f7a96fbc72b97e5b13951a6086bf410))
+
+feat(prepare): cleaner console logging ([40a81d3f84a47c9c4163fda3155bb9219d152c42](https://github.com/twyr/announce/commit/40a81d3f84a47c9c4163fda3155bb9219d152c42))
+
+
+##### 04-Jan-2021
+
+docs(index): updated index.html to reflect README changes ([7d19adc02dbda314aed9091c501edf79c72d2650](https://github.com/twyr/announce/commit/7d19adc02dbda314aed9091c501edf79c72d2650))
+
+docs(publish): formatting markdown ([947c7653fa60eb85f59a01762c04fd6ca9fb37ec](https://github.com/twyr/announce/commit/947c7653fa60eb85f59a01762c04fd6ca9fb37ec))
+
+docs(readme): rEADME formatting changes ([1bce0cc45186a56e0bc3d675f7e9105e59a19b4b](https://github.com/twyr/announce/commit/1bce0cc45186a56e0bc3d675f7e9105e59a19b4b))
+
+
 ##### 04-Jan-2021
 
 docs(publish): documentation for the Publish Command ([390cf2f32286d426fca495bcaf9b7e3797dc4bca](https://github.com/twyr/announce/commit/390cf2f32286d426fca495bcaf9b7e3797dc4bca))
