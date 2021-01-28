@@ -262,10 +262,10 @@ class PrepareCommandClass {
 		}
 
 		for(const targetFile of targetFiles) {
-			if(execMode === 'api')
+			if(execMode === 'api' && !mergedOptions.quiet)
 				logger?.debug?.(`processing ${targetFile}`);
 			else
-				if(logger) logger.text = `processing ${targetFile}...`;
+				if(logger && !mergedOptions.quiet) logger.text = `processing ${targetFile}...`;
 
 			replaceOptions.files = targetFile;
 			if(path.basename(targetFile).startsWith('package'))
@@ -281,10 +281,13 @@ class PrepareCommandClass {
 					return;
 
 				debug(`${result.file} bumped to ${nextVersion}`);
-				if(execMode === 'api')
-					logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
-				else
-					logger?.succeed?.(`processed ${result.file}`);
+				// eslint-disable-next-line curly
+				if(!mergedOptions.quiet) {
+					if(execMode === 'api')
+						logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
+					else
+						logger?.succeed?.(`processed ${result.file}`);
+				}
 			});
 		}
 
