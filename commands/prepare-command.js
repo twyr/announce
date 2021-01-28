@@ -257,6 +257,9 @@ class PrepareCommandClass {
 			logger?.succeed?.(`Modifying target files:`);
 			if(logger) logger.prefixText = '  ';
 		}
+		else {
+			logger?.info?.(`modifying target files now`);
+		}
 
 		for(const targetFile of targetFiles) {
 			if(execMode === 'api')
