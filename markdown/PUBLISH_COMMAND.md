@@ -9,7 +9,7 @@ In this step, the workflow looks up a release in Github, and publishes the sourc
 
 ###### NOTE
 This command assumes that a Github Token, with the required permissions to read the release list,
-has been configured and available for use. If no token has been passed in via the CLI options / 
+has been configured and available for use. If no token has been passed in via the CLI options /
 API configuration, it expects a token to be present at the environment variable GITHUB_TOKEN
 
 This command also requires that an [NPM Automation Token](https://docs.npmjs.com/creating-and-viewing-access-tokens)
@@ -90,6 +90,8 @@ announce.publish({
 
     'debug': true/false, // Enable debug logging as announce:publish if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
-}, logger);
+    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false],
+
+    'logger': object // Logger instance
+});
 ```

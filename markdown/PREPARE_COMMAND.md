@@ -110,6 +110,8 @@ announce.prepare({
 
     'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
-}, logger);
+    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false],
+
+    'logger': object // Logger instance
+});
 ```
