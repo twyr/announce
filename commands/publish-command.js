@@ -24,7 +24,6 @@ const debug = debugLib('announce:publish');
  * @classdesc	The command class that handles all the publish operations.
  *
  * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
- * @param		{object} logger - The logger instance
  *
  * @description
  * The command class that implements the "publish" step of the workflow.
@@ -33,15 +32,10 @@ const debug = debugLib('announce:publish');
  */
 class PublishCommandClass {
 	// #region Constructor
-	constructor(configuration, logger) {
+	constructor(configuration) {
 		Object.defineProperty(this, '_commandOptions', {
 			'writeable': true,
 			'value': configuration ?? {}
-		});
-
-		Object.defineProperty(this, '_logger', {
-			'writeable': true,
-			'value': logger ?? console
 		});
 	}
 	// #endregion
@@ -55,7 +49,6 @@ class PublishCommandClass {
 	 * @name     execute
 	 *
 	 * @param    {object} options - Parsed command-line options, or options passed in via API
-	 * @param    {object} logger - Object implementing the usual log commands (debug, info, warn, error, etc.)
 	 *
 	 * @return {null} Nothing.
 	 *
@@ -66,7 +59,7 @@ class PublishCommandClass {
 	 * - Publishes the asset to NPM
 	 *
 	 */
-	async execute(options, logger) {
+	async execute(options) {
 		const path = require('path');
 		const simpleGit = require('simple-git');
 		const safeJsonStringify = require('safe-json-stringify');
@@ -77,6 +70,8 @@ class PublishCommandClass {
 
 		// Setup sane defaults for the options
 		const mergedOptions = {};
+		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
+
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
@@ -95,46 +90,66 @@ class PublishCommandClass {
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
-		let loggerFn = null;
-		if(!mergedOptions.silent) { // eslint-disable-line curly
-			if(mergedOptions.quiet) {
-				loggerFn = logger?.info?.bind?.(logger) ?? this._logger?.info?.bind(this._logger);
-				loggerFn = loggerFn ?? console.info.bind(console);
-			}
-			else {
-				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger?.debug?.bind(this._logger);
-				loggerFn = loggerFn ?? console.debug.bind(console);
-			}
+
+		let logger = null;
+		const execMode = mergedOptions.execMode;
+
+		if((execMode === 'api') && !mergedOptions.silent) { // eslint-disable-line curly
+			logger = options?.logger;
+		}
+
+		if((execMode === 'cli') && !mergedOptions.silent) {
+			const Ora = require('ora');
+			logger = new Ora({
+				'discardStdin': true,
+				'text': `Publishing...`
+			});
+
+			logger?.start?.();
 		}
 
 		debug(`publishing with options - ${safeJsonStringify(mergedOptions)}`);
 
 		try {
 			// Step 1: Initialize the Git VCS API for the current working directory, get remote repository, trailer messages, etc.
-			const git = simpleGit({
+			const git = simpleGit?.({
 				'baseDir': process.cwd()
 			})
 			.outputHandler((_command, stdout, stderr) => {
-				if(!mergedOptions.quiet) stdout.pipe(process.stdout);
+				// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
 				stderr.pipe(process.stderr);
 			});
 
 			debug(`initialized Git for the repository @ ${process.cwd()}`);
+			if(execMode === 'api' && !mergedOptions.quiet) logger?.debug?.(`initialized Git for the repository @ ${process.cwd()}`);
 
 			// Step 2: Create the URL for the release
 			const hostedGitInfo = require('hosted-git-info');
-			const gitRemotes = await git?.raw(['remote', 'get-url', '--push', mergedOptions?.upstream]);
+			const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', mergedOptions?.upstream]);
 
-			const repository = hostedGitInfo?.fromUrl(gitRemotes);
-			repository.project = repository?.project?.replace('.git\n', '');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
+			repository.project = repository?.project?.replace?.('.git\n', '');
 
 			debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
+			if(execMode === 'api' && !mergedOptions.quiet) logger?.debug?.(`repository info - ${safeJsonStringify(repository)}`);
 
 			// Step 3: Get the release details from Github
-			const githubReleases = await this._getFromGithub(mergedOptions, `https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-			const releaseToBePublished = githubReleases.filter((release) => { return (release.name === mergedOptions.releaseName); }).shift();
+			debug(`retrieving ${mergedOptions?.releaseName} release from github`);
+			if(execMode === 'api' && !mergedOptions.quiet)
+				logger?.debug?.(`retrieving ${mergedOptions?.releaseName} release from github`);
+			else
+				if(logger) logger.text = `Retrieving ${mergedOptions?.releaseName} release from github...`;
+
+			const githubReleases = await this?._getFromGithub?.(mergedOptions, `https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
+			const releaseToBePublished = githubReleases?.filter?.((release) => { return (release?.name === mergedOptions?.releaseName); })?.shift?.();
 			if(!releaseToBePublished) throw new Error(`Unknown Release: ${mergedOptions.releaseName}`);
 			if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${mergedOptions.releaseName}`);
+
+			debug(`retrieved ${mergedOptions?.releaseName} release from github`);
+			if(execMode === 'api')
+				logger?.info?.(`retrieved ${mergedOptions?.releaseName} release from github`);
+			else
+				logger?.succeed?.(`Retrieved ${mergedOptions?.releaseName} release from github.`);
 
 			// eslint-disable-next-line curly
 			if((mergedOptions?.distTag ?? 'version_default') === 'version_default') {
@@ -145,24 +160,38 @@ class PublishCommandClass {
 			}
 
 			// Step 4: Run the npm publish command with the specified options
+			debug(`publishing ${mergedOptions?.releaseName} release to npm`);
+			if(execMode === 'api' && !mergedOptions.quiet)
+				logger?.debug?.(`publishing ${mergedOptions?.releaseName} release to npm`);
+			else
+				if(logger) logger.text = `Publishing ${mergedOptions?.releaseName} release to npm...`;
+
 			const execa = require('execa');
 
 			const publishOptions = ['publish'];
-			publishOptions.push(`--tag ${mergedOptions.distTag}`);
-			publishOptions.push(`--access ${mergedOptions.access}`);
-			if(mergedOptions.dryRun) publishOptions.push('--dry-run');
-			publishOptions.push(releaseToBePublished?.tarball_url);
+			publishOptions?.push?.(`--tag ${mergedOptions.distTag}`);
+			publishOptions?.push?.(`--access ${mergedOptions.access}`);
+			if(mergedOptions?.dryRun) publishOptions?.push?.('--dry-run');
+			publishOptions?.push(releaseToBePublished?.tarball_url);
 
-			loggerFn?.(`Publishing with the command: ${publishOptions.join(` `)}`);
-
-			const publishProcess = execa('npm', publishOptions, {'all': true });
-			publishProcess.stdout.pipe(process.stdout);
-			publishProcess.stderr.pipe(process.stderr);
+			const publishProcess = execa?.('npm', publishOptions, {'all': true });
+			publishProcess?.stdout?.pipe?.(process.stdout);
+			publishProcess?.stderr?.pipe(process.stderr);
 
 			await publishProcess;
+
+			debug(`published ${mergedOptions?.releaseName} release: npm ${publishOptions.join(' ')}`);
+			if(execMode === 'api')
+				logger?.info?.(`published ${mergedOptions?.releaseName} release: npm ${publishOptions.join(' ')}`);
+			else
+				logger?.succeed?.(`Published ${mergedOptions?.releaseName} release to npm.`);
 		}
 		catch(err) {
-			loggerFn?.(err.message);
+			if(execMode === 'api')
+				logger?.error?.(err.message);
+			else
+				logger?.fail?.(err.message);
+
 			throw err;
 		}
 	}
@@ -175,25 +204,25 @@ class PublishCommandClass {
 		return new Promise((resolve, reject) => {
 			try {
 				const octonode = require('octonode');
-				const client = octonode?.client(mergedOptions?.githubToken);
+				const client = octonode?.client?.(mergedOptions?.githubToken);
 				debug('created client to connect to github');
 
 				client?.get?.(url, {}, (err, status, body) => {
 					if(err) {
-						reject(err);
+						reject?.(err);
 						return;
 					}
 
 					if(status !== 200) {
-						reject(status);
+						reject?.(status);
 						return;
 					}
 
-					resolve(body);
+					resolve?.(body);
 				});
 			}
 			catch(err) {
-				reject(err);
+				reject?.(err);
 			}
 		});
 	}
@@ -206,7 +235,7 @@ class PublishCommandClass {
 // Add the command to the cli
 let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	if(!commandObj) commandObj = new PublishCommandClass(configuration?.publish, console);
+	if(!commandObj) commandObj = new PublishCommandClass(configuration?.publish);
 
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
@@ -232,7 +261,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	if(!commandObj) commandObj = new PublishCommandClass();
+	if(!commandObj) commandObj = new PublishCommandClass({ 'execMode': 'api' });
 	return {
 		'name': 'publish',
 		'method': commandObj.execute.bind(commandObj)
