@@ -4,6 +4,11 @@
 
 ##### 28-Jan-2021
 
+feat(release): aPI options signature change ([b7b1bf6c2ee92f1130c7a6bbc044bf00a2011704](https://github.com/twyr/announce/commit/b7b1bf6c2ee92f1130c7a6bbc044bf00a2011704))
+
+
+##### 28-Jan-2021
+
 docs(all): updated API options ([688ce2cfb801474ef023dd26ea32b4406c7d17b3](https://github.com/twyr/announce/commit/688ce2cfb801474ef023dd26ea32b4406c7d17b3))
 
 docs(prepare): updates to linked code ([92ba790c6f7a96fbc72b97e5b13951a6086bf410](https://github.com/twyr/announce/commit/92ba790c6f7a96fbc72b97e5b13951a6086bf410))
