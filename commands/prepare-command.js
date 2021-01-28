@@ -23,7 +23,6 @@ const debug = debugLib('announce:prepare');
  * @classdesc	The command class that handles all the prepare operations.
  *
  * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
- * @param		{object} logger - The logger instance
  *
  * @description
  * The command class that implements the "prepare" step of the workflow.
@@ -32,15 +31,10 @@ const debug = debugLib('announce:prepare');
  */
 class PrepareCommandClass {
 	// #region Constructor
-	constructor(configuration, logger) {
+	constructor(configuration) {
 		Object.defineProperty(this, '_commandOptions', {
 			'writeable': true,
 			'value': configuration ?? {}
-		});
-
-		Object.defineProperty(this, '_logger', {
-			'writeable': true,
-			'value': logger ?? console
 		});
 	}
 	// #endregion
@@ -54,7 +48,6 @@ class PrepareCommandClass {
 	 * @name     execute
 	 *
 	 * @param    {object} options - Parsed command-line options, or options passed in via API
-	 * @param    {object} logger - Object implementing the usual log commands (debug, info, warn, error, etc.)
 	 *
 	 * @return {null} Nothing.
 	 *
@@ -65,13 +58,15 @@ class PrepareCommandClass {
 	 * - Parses the source files for the current version string, and replaces it with the next one
 	 *
 	 */
-	async execute(options, logger) {
+	async execute(options) {
 		const path = require('path');
 		const safeJsonStringify = require('safe-json-stringify');
 		const semver = require('semver');
 
 		// Setup sane defaults for the options
 		const mergedOptions = options ?? {};
+		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
+
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
 		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
 		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
@@ -87,34 +82,54 @@ class PrepareCommandClass {
 
 		// Setting up the logs, according to the options passed in
 		if(mergedOptions.debug) debugLib.enable('announce:*');
-		let loggerFn = null;
-		if(!mergedOptions.silent) { // eslint-disable-line curly
-			if(mergedOptions.quiet) {
-				loggerFn = logger?.info?.bind?.(logger) ?? this._logger?.info?.bind(this._logger);
-				loggerFn = loggerFn ?? console.info.bind(console);
-			}
-			else {
-				loggerFn = logger?.debug?.bind?.(logger) ?? this._logger?.debug?.bind(this._logger);
-				loggerFn = loggerFn ?? console.debug.bind(console);
-			}
+
+		let logger = null;
+		const execMode = mergedOptions.execMode;
+
+		if((execMode === 'api') && !mergedOptions.silent) { // eslint-disable-line curly
+			logger = options?.logger;
+		}
+
+		if((execMode === 'cli') && !mergedOptions.silent) {
+			const Ora = require('ora');
+			logger = new Ora({
+				'discardStdin': true,
+				'text': `Preparing...`
+			});
+
+			logger?.start?.();
 		}
 
 		// Step 1: Get the current version from package.json
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		debug(`processing ${projectPackageJson}`);
+		if(execMode === 'api') logger?.debug?.(`processing ${projectPackageJson}`);
 
 		const { version } = require(projectPackageJson);
 		if(!version) {
+			if(execMode === 'api')
+				logger?.error?.(`${projectPackageJson} doesn't contain a version field.`);
+			else
+				logger?.fail?.(`${projectPackageJson} doesn't contain a version field.`);
+
 			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+			throw new Error(`${projectPackageJson} doesn't contain a version field.`);
 		}
 		if(!semver.valid(version)) {
+			if(execMode === 'api')
+				logger?.error?.(`${projectPackageJson} contains a non-semantic-version format: ${version}.`);
+			else
+				logger?.fail?.(`${projectPackageJson} contains a non-semantic-version format: ${version}.`);
+
 			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 		}
 
-		loggerFn?.(`${projectPackageJson} contains version ${version}`);
 		debug(`${projectPackageJson} contains version ${version}`);
+		if(execMode === 'api')
+			logger?.info?.(`${projectPackageJson} contains version ${version}`);
+		else
+			if(logger) logger.text = `Preparing... current version: ${version}`;
 
 		// Step 2: Compute the next version
 		debug(`applying ${mergedOptions.series} series to version ${version} using the ladder: ${safeJsonStringify(mergedOptions.versionLadder)}`);
@@ -171,20 +186,28 @@ class PrepareCommandClass {
 		debug(`incrementing version using semver.inc(${incArgs.join(', ')})`);
 		const nextVersion = incArgs.length ? semver.inc(...incArgs) : mergedOptions.series;
 
-		debug(`Series "${mergedOptions.series}": ${version} will be bumped to ${nextVersion}`);
-		loggerFn?.(`Series "${mergedOptions.series}": ${version} will be bumped to ${nextVersion}`);
+		debug(`${version} will be bumped to ${nextVersion}`);
+		if(execMode === 'api')
+			logger?.info?.(`${version} will be bumped to ${nextVersion}`);
+		else
+			logger?.succeed?.(`Preparing to bump current version: ${version} to next version: ${nextVersion}`);
 
 		// Step 3: Get a hold of all the possible files where we need to change the version string.
 		const { 'fdir': FDir } = require('fdir');
-		const crawler = new FDir().withFullPaths().crawl(process.cwd());
 
+		debug(`crawling ${process.cwd()}`);
+		if(execMode === 'api') logger?.debug?.(`crawling ${process.cwd()}s`);
+
+		const crawler = new FDir().withFullPaths().crawl(process.cwd());
 		let targetFiles = await crawler.withPromise();
-		// debug(`possible targets for version change: ${targetFiles.join(', ')}`);
 
 		// eslint-disable-next-line security/detect-non-literal-fs-filename
 		try {
 			const fileSystem = require('fs/promises');
-			let gitIgnoreFile = await fileSystem.readFile(path.join(process.cwd(), '.gitignore'), { 'encoding': 'utf8' });
+			const gitIgnorePath = path.join(process.cwd(), '.gitignore');
+
+			debug(`processing ${gitIgnorePath}`);
+			let gitIgnoreFile = await fileSystem.readFile(gitIgnorePath, { 'encoding': 'utf8' });
 			gitIgnoreFile += `\n\n**/.git\n${mergedOptions.ignoreFolders.map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
 
 			gitIgnoreFile = gitIgnoreFile
@@ -208,6 +231,7 @@ class PrepareCommandClass {
 
 			debug(`.gitignore used:\n${gitIgnoreFile}`);
 
+			debug(`parsing ${gitIgnorePath}`);
 			const gitIgnoreParser = require('gitignore-parser');
 			const gitIgnore = gitIgnoreParser.compile(gitIgnoreFile);
 
@@ -219,7 +243,8 @@ class PrepareCommandClass {
 		}
 
 		// Step 4: Replace current version strong with next version string in all the target files
-		debug(`modifying version to ${nextVersion} in:\n${targetFiles.join('\n\t')}\n`);
+		debug(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
+		if(execMode === 'api') logger?.debug?.(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
 
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
@@ -228,7 +253,17 @@ class PrepareCommandClass {
 			'to': nextVersion
 		};
 
+		if(execMode !== 'api') {
+			logger?.succeed?.(`Modifying target files:`);
+			if(logger) logger.prefixText = '  ';
+		}
+
 		for(const targetFile of targetFiles) {
+			if(execMode === 'api')
+				logger?.debug?.(`processing ${targetFile}`);
+			else
+				if(logger) logger.text = `processing ${targetFile}...`;
+
 			replaceOptions.files = targetFile;
 			if(path.basename(targetFile).startsWith('package'))
 				replaceOptions.from = new RegExp(version, 'i');
@@ -243,12 +278,22 @@ class PrepareCommandClass {
 					return;
 
 				debug(`${result.file} bumped to ${nextVersion}`);
-				loggerFn?.(`${result.file} bumped to ${nextVersion}`);
+				if(execMode === 'api')
+					logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
+				else
+					logger?.succeed?.(`processed ${result.file}`);
 			});
 		}
 
-		loggerFn?.(`Done bumping version from ${version} to ${nextVersion}`);
+		if(execMode !== 'api' && logger)
+			logger.prefixText = '';
+
+
 		debug(`done bumping version from ${version} to ${nextVersion}`);
+		if(execMode === 'api')
+			logger?.info?.(`done bumping version from ${version} to ${nextVersion}`);
+		else
+			logger?.succeed?.(`Done bumping version from ${version} to ${nextVersion}`);
 	}
 	// #endregion
 
@@ -259,7 +304,7 @@ class PrepareCommandClass {
 // Add the command to the cli
 let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	if(!commandObj) commandObj = new PrepareCommandClass(configuration?.prepare, console);
+	if(!commandObj) commandObj = new PrepareCommandClass(configuration?.prepare);
 
 	commanderProcess
 		.command('prepare')
@@ -273,7 +318,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	if(!commandObj) commandObj = new PrepareCommandClass();
+	if(!commandObj) commandObj = new PrepareCommandClass({ 'execMode': 'api' });
 	return {
 		'name': 'prepare',
 		'method': commandObj.execute.bind(commandObj)
