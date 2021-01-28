@@ -110,7 +110,7 @@ class ReleaseCommandClass {
 			const Ora = require('ora');
 			logger = new Ora({
 				'discardStdin': true,
-				'text': `Preparing...`
+				'text': `Releasing...`
 			});
 
 			logger?.start?.();
@@ -123,7 +123,7 @@ class ReleaseCommandClass {
 
 		try {
 			// Step 1: Initialize the Git VCS API for the current working directory, get remote repository, trailer messages, etc.
-			git = simpleGit({
+			git = simpleGit?.({
 				'baseDir': process.cwd()
 			})
 			.outputHandler((_command, stdout, stderr) => {
