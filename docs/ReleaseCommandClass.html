@@ -63,7 +63,7 @@
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="ReleaseCommandClass"><span class="type-signature"></span>new ReleaseCommandClass<span class="signature">(configuration, logger)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="ReleaseCommandClass"><span class="type-signature"></span>new ReleaseCommandClass<span class="signature">(configuration)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The command class that implements the &quot;release&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
@@ -98,20 +98,11 @@
 										<p>The configuration object containing the command options from the config file (.announcerc, package.json, etc.)</p>
 									</td>
 								</tr>
-								<tr>
-									<td class="name"><code>logger</code></td>
-									<td class="type">
-										<span class="param-type">object</span>
-									</td>
-									<td class="description last">
-										<p>The logger instance</p>
-									</td>
-								</tr>
 							</tbody>
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(git, mergedOptions, loggerFn)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(git, mergedOptions, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Creates a release on Github, and marks it as pre-release if required.</p>
 					</p>
@@ -120,7 +111,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line383">line 383</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line495">line 495</a>
 								</li>
 							</ul>
 						</dd>
@@ -154,12 +145,12 @@
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>loggerFn</code></td>
+								<td class="name"><code>logger</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>One of the usual log commands (debug, info, warn, error, etc.)</p>
+									<p>Logger supporting the usual commands (debug, info, warn, error, etc.)</p>
 								</td>
 							</tr>
 						</tbody>
@@ -176,16 +167,16 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(git, mergedOptions, loggerFn)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(git, mergedOptions, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Tags the codebase and pushes to Github.</p>
+					<p>Tags the codebase.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line228">line 228</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line297">line 297</a>
 								</li>
 							</ul>
 						</dd>
@@ -219,12 +210,12 @@
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>loggerFn</code></td>
+								<td class="name"><code>logger</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>One of the usual log commands (debug, info, warn, error, etc.)</p>
+									<p>Logger supporting the usual commands (debug, info, warn, error, etc.)</p>
 								</td>
 							</tr>
 						</tbody>
@@ -241,7 +232,7 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>The main method to tag/release the codebase on Github.</p>
 					<p>This method does 3 things:</p>
@@ -256,7 +247,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line50">line 50</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line44">line 44</a>
 								</li>
 							</ul>
 						</dd>
@@ -278,15 +269,6 @@
 								</td>
 								<td class="description last">
 									<p>Parsed command-line options, or options passed in via API</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Object implementing the usual log commands (debug, info, warn, error, etc.)</p>
 								</td>
 							</tr>
 						</tbody>
