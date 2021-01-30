@@ -2,6 +2,16 @@
 #### CHANGE LOG
 
 
+##### 30-Jan-2021
+
+docs(all): updated for 0.4.0 release ([7d3bd762eaca84dab2fdfddc522a93d33b1f2c29](https://github.com/twyr/announce/commit/7d3bd762eaca84dab2fdfddc522a93d33b1f2c29))
+
+
+##### 28-Jan-2021
+
+feat(publish): better logging ([7fbfd35999cc633c745888d2aecc92375a72b566](https://github.com/twyr/announce/commit/7fbfd35999cc633c745888d2aecc92375a72b566))
+
+
 ##### 28-Jan-2021
 
 feat(release): aPI options signature change ([b7b1bf6c2ee92f1130c7a6bbc044bf00a2011704](https://github.com/twyr/announce/commit/b7b1bf6c2ee92f1130c7a6bbc044bf00a2011704))
