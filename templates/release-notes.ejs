@@ -43,7 +43,7 @@ This <%- RELEASE_TYPE -%> adds documentation for:
 | | Documentation | Component | Contributor | Date |
 | --- | --- | --- | --- | --- |
 <% for(let idx = 0; idx < NUM_DOCS; idx++) { -%>
-| <%- idx + 1 -%> | [<%- DOCS[idx]['message'] -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>/commit/<%- DOCS[idx]['hash'] -%>) | <%- DOCS[idx]['component'] -%> | <a href="<%- DOCS[idx]['author_profile'] -%>"><%- DOCS[idx]['author_name'] -%></a> | <%- DOCS[idx]['date'] -%>) |
+| <%- idx + 1 -%> | [<%- DOCS[idx]['message'] -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>/commit/<%- DOCS[idx]['hash'] -%>) | <%- DOCS[idx]['component'] -%> | <a href="<%- DOCS[idx]['author_profile'] -%>"><%- DOCS[idx]['author_name'] -%></a> | <%- DOCS[idx]['date'] -%> |
 <% } -%>
 <% } -%>
 
