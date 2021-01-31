@@ -224,10 +224,10 @@ class PublishCommandClass {
 			const execa = require('execa');
 
 			const publishOptions = ['publish'];
+			publishOptions?.push(releaseToBePublished?.tarball_url);
 			publishOptions?.push?.(`--tag ${mergedOptions.distTag}`);
 			publishOptions?.push?.(`--access ${mergedOptions.access}`);
 			if(mergedOptions?.dryRun) publishOptions?.push?.('--dry-run');
-			publishOptions?.push(releaseToBePublished?.tarball_url);
 
 			const publishProcess = execa?.('npm', publishOptions, {'all': true });
 			publishProcess?.stdout?.pipe?.(process.stdout);
