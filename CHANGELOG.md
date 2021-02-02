@@ -1,4 +1,6 @@
-#### CHANGE LOG
+#### CHANGE LOG#### CHANGE LOG
+
+docs(release-notes): template change ([af3e8fdfb0af595e2a11c8137013c7d56c135b55](https://github.com/twyr/announce/commit/af3e8fdfb0af595e2a11c8137013c7d56c135b55))
 
 
 ##### 30-Jan-2021
