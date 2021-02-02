@@ -431,41 +431,62 @@ class ReleaseCommandClass {
 			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash}))`);
 		});
 
-		const replaceInFile = require('replace-in-file');
-		const replaceOptions = {
-			'files': path.join(process.cwd(), 'CHANGELOG.md'),
-			'from': '#### CHANGE LOG',
-			'to': changeLogText?.join?.('\n')
-		};
+		if(changeLogText.length > 1) {
+			const replaceInFile = require('replace-in-file');
+			changeLogText.reverse();
 
-		const changelogResult = await replaceInFile?.(replaceOptions);
-		if(!changelogResult?.[0]?.['hasChanged']) {
-			const prependFile = require('prepend-file');
-			await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
+			while(changeLogText.length) {
+				const thisChangeSet = [];
+
+				let thisChangeLog = changeLogText.shift();
+				while(changeLogText.length && !thisChangeLog.startsWith('\n\n####')) {
+					thisChangeSet.push(thisChangeLog);
+					thisChangeLog = changeLogText.shift();
+				}
+
+				thisChangeSet.push(thisChangeLog);
+
+				const replaceOptions = {
+					'files': path.join(process.cwd(), 'CHANGELOG.md'),
+					'from': thisChangeLog,
+					'to': thisChangeSet?.join?.('\n')
+				};
+
+				const changelogResult = await replaceInFile?.(replaceOptions);
+				if(!changelogResult?.[0]?.['hasChanged']) {
+					const prependFile = require('prepend-file');
+					await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
+				}
+			}
+
+			debug(`generated CHANGELOG.md`);
+			if(execMode === 'api')
+				logger?.info?.(`generated CHANGELOG.md`);
+			else
+				logger?.succeed?.('Generated CHANGELOG.md...');
 		}
 
-		debug(`generated CHANGELOG.md`);
-		if(execMode === 'api')
-			logger?.info?.(`generated CHANGELOG.md`);
-		else
-			logger?.succeed?.('Generated CHANGELOG.md...');
-
 		// Step 3: Commit CHANGELOG
-		const addStatus = await git?.add?.('.');
-		debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
+		const branchStatus = await git?.status();
+		let tagCommitSha = null;
 
-		const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
-		let tagCommitSha = await git?.commit?.(consolidatedMessage, null, {
-			'--allow-empty': true,
-			'--no-verify': true
-		});
-		tagCommitSha = tagCommitSha?.commit;
+		if(branchStatus?.files?.length) {
+			const addStatus = await git?.add?.('.');
+			debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
 
-		debug(`Committed change log: ${tagCommitSha}`);
-		if(execMode === 'api')
-			logger?.info?.(`committed CHANGELOG.md`);
-		else
-			logger?.succeed?.('Committed CHANGELOG.md...');
+			const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
+			tagCommitSha = await git?.commit?.(consolidatedMessage, null, {
+				'--allow-empty': true,
+				'--no-verify': true
+			});
+			tagCommitSha = tagCommitSha?.commit;
+
+			debug(`Committed change log: ${tagCommitSha}`);
+			if(execMode === 'api')
+				logger?.info?.(`committed CHANGELOG.md`);
+			else
+				logger?.succeed?.('Committed CHANGELOG.md...');
+		}
 
 		// Step 4: Tag this commit
 		debug(`generating tag name / message...`);
@@ -483,7 +504,8 @@ class ReleaseCommandClass {
 		else
 			if(logger) logger.text = 'Tagging...';
 
-		const tagStatus = await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha]);
+
+		const tagStatus = await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha || lastCommit]);
 
 		debug(`tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
 		if(execMode === 'api')
