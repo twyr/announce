@@ -126,7 +126,7 @@ class ReleaseCommandClass {
 			git = simpleGit?.({
 				'baseDir': process.cwd()
 			})
-			.outputHandler((_command, stdout, stderr) => {
+			.outputHandler?.((_command, stdout, stderr) => {
 				// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
 				stderr.pipe(process.stderr);
 			});
@@ -137,7 +137,7 @@ class ReleaseCommandClass {
 			// Step 2: Check if branch is dirty - commit/stash as required
 			let stashOrCommitStatus = null;
 
-			let branchStatus = await git?.status();
+			let branchStatus = await git?.status?.();
 			if(branchStatus?.files?.length) {
 				debug(`${branchStatus.current} branch is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`);
 				if(execMode === 'api' && !mergedOptions.quiet)
@@ -146,19 +146,19 @@ class ReleaseCommandClass {
 					if(logger) logger.text = `Branch "${branchStatus.current}" is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`;
 
 				if(!mergedOptions?.commit) {
-					stashOrCommitStatus = await git?.stash(['push']);
+					stashOrCommitStatus = await git?.stash?.(['push']);
 					shouldPopOnError = true;
 				}
 				else {
-					const commitMessage = es6DynTmpl(mergedOptions?.message, pkg);
+					const commitMessage = es6DynTmpl?.(mergedOptions?.message, pkg);
 					debug(`Commit message: ${commitMessage}`);
 
-					let trailerMessages = await git?.raw('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-					trailerMessages = trailerMessages?.replace(/\\n/g, '\n')?.replace(/\\t/g, '\t');
+					let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+					trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 					debug(`Trailer messages: ${trailerMessages}`);
 
 					const consolidatedMessage = (commitMessage ?? '') + (trailerMessages ?? '');
-					stashOrCommitStatus = await git?.commit(consolidatedMessage, null, {
+					stashOrCommitStatus = await git?.commit?.(consolidatedMessage, null, {
 						'--all': true,
 						'--allow-empty': true,
 						'--signoff': true
@@ -206,7 +206,7 @@ class ReleaseCommandClass {
 			}
 
 			// Step 4: Push commits/tags to the specified upstream
-			branchStatus = await git?.status();
+			branchStatus = await git?.status?.();
 			if(branchStatus?.ahead) {
 				debug(`pushing ${branchStatus.current} branch commits upstream to ${mergedOptions?.upstream}`);
 				if(execMode === 'api' && !mergedOptions.quiet)
@@ -214,7 +214,7 @@ class ReleaseCommandClass {
 				else
 					if(logger) logger.text = `Pushing ${branchStatus.current} branch commits upstream to ${mergedOptions?.upstream}...`;
 
-				const pushCommitStatus = await git?.push(mergedOptions?.upstream, branchStatus?.current, {
+				const pushCommitStatus = await git?.push?.(mergedOptions?.upstream, branchStatus?.current, {
 					'--atomic': true,
 					'--progress': true,
 					'--signed': 'if-asked'
@@ -222,11 +222,11 @@ class ReleaseCommandClass {
 
 				debug(`pushing ${branchStatus.current} branch tags upstream to ${mergedOptions?.upstream}`);
 				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`pushing ${branchStatus.current} branch tags upstream to ${mergedOptions?.upstream}`);
+					logger?.debug?.(`pushing ${branchStatus?.current} branch tags upstream to ${mergedOptions?.upstream}`);
 				else
-					if(logger) logger.text = `Pushing ${branchStatus.current} branch tags upstream to ${mergedOptions?.upstream}...`;
+					if(logger) logger.text = `Pushing ${branchStatus?.current} branch tags upstream to ${mergedOptions?.upstream}...`;
 
-				const pushTagStatus = await git?.pushTags(mergedOptions?.upstream, {
+				const pushTagStatus = await git?.pushTags?.(mergedOptions?.upstream, {
 					'--atomic': true,
 					'--force': true,
 					'--progress': true,
@@ -248,7 +248,7 @@ class ReleaseCommandClass {
 				else
 					logger?.succeed?.(`Releasing to ${mergedOptions?.upstream}...`);
 
-				await this._releaseCode(git, mergedOptions, logger);
+				await this?._releaseCode?.(git, mergedOptions, logger);
 
 				debug(`released to ${mergedOptions?.upstream}`);
 				if(execMode === 'api')
@@ -433,30 +433,33 @@ class ReleaseCommandClass {
 
 		if(changeLogText.length > 1) {
 			const replaceInFile = require('replace-in-file');
-			changeLogText.reverse();
+			changeLogText?.reverse?.();
 
 			while(changeLogText.length) {
 				const thisChangeSet = [];
 
-				let thisChangeLog = changeLogText.shift();
-				while(changeLogText.length && !thisChangeLog.startsWith('\n\n####')) {
-					thisChangeSet.push(thisChangeLog);
-					thisChangeLog = changeLogText.shift();
+				let thisChangeLog = changeLogText?.shift?.();
+				while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
+					thisChangeSet?.push?.(thisChangeLog);
+					thisChangeLog = changeLogText?.shift?.();
 				}
 
-				thisChangeSet.push(thisChangeLog);
+				thisChangeSet?.push?.(thisChangeLog);
 
 				const replaceOptions = {
 					'files': path.join(process.cwd(), 'CHANGELOG.md'),
 					'from': thisChangeLog,
-					'to': thisChangeSet?.join?.('\n')
+					'to': thisChangeSet?.reverse()?.join?.('\n')
 				};
 
 				const changelogResult = await replaceInFile?.(replaceOptions);
-				if(!changelogResult?.[0]?.['hasChanged']) {
-					const prependFile = require('prepend-file');
-					await prependFile(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
-				}
+				if(!changelogResult?.[0]?.['hasChanged']) continue;
+
+				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.pop?.());
+
+				const prependFile = require('prepend-file');
+				await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.reverse()?.join?.('\n'));
+				break;
 			}
 
 			debug(`generated CHANGELOG.md`);
@@ -467,7 +470,7 @@ class ReleaseCommandClass {
 		}
 
 		// Step 3: Commit CHANGELOG
-		const branchStatus = await git?.status();
+		const branchStatus = await git?.status?.();
 		let tagCommitSha = null;
 
 		if(branchStatus?.files?.length) {
