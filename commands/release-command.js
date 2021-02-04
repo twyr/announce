@@ -433,15 +433,14 @@ class ReleaseCommandClass {
 
 		if(changeLogText.length > 1) {
 			const replaceInFile = require('replace-in-file');
-			changeLogText?.reverse?.();
 
 			while(changeLogText.length) {
 				const thisChangeSet = [];
 
-				let thisChangeLog = changeLogText?.shift?.();
+				let thisChangeLog = changeLogText?.pop?.();
 				while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
-					thisChangeSet?.push?.(thisChangeLog);
-					thisChangeLog = changeLogText?.shift?.();
+					thisChangeSet?.unshift?.(thisChangeLog);
+					thisChangeLog = changeLogText?.pop?.();
 				}
 
 				thisChangeSet?.push?.(thisChangeLog);
@@ -449,15 +448,15 @@ class ReleaseCommandClass {
 				const replaceOptions = {
 					'files': path.join(process.cwd(), 'CHANGELOG.md'),
 					'from': thisChangeLog,
-					'to': thisChangeSet?.reverse()?.join?.('\n')
+					'to': thisChangeSet?.join?.('\n')
 				};
 
 				let changelogResult = await replaceInFile?.(replaceOptions);
 				if(changelogResult?.[0]?.['hasChanged']) continue;
 
-				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.pop?.());
+				while(thisChangeSet?.length) changeLogText?.unshift?.(thisChangeSet?.pop?.());
 
-				replaceOptions.from = thisChangeLog;
+				replaceOptions.from = changeLogText[0];
 				replaceOptions.to = changeLogText?.join?.('\n');
 
 				changelogResult = await replaceInFile?.(replaceOptions);
