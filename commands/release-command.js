@@ -313,13 +313,13 @@ class ReleaseCommandClass {
 	async _tagCode(git, mergedOptions, logger) {
 		const execMode = mergedOptions.execMode;
 
-		const es6DynTmpl = require('es6-dynamic-template');
+		// const es6DynTmpl = require('es6-dynamic-template');
 		const path = require('path');
 		const safeJsonStringify = require('safe-json-stringify');
 
 		// Get package.json into memory...
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
+		// const projectPackageJson = path.join(process.cwd(), 'package.json');
+		// const pkg = require(projectPackageJson);
 
 		// Get trailer messages to append to git commit...
 		let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
@@ -443,7 +443,7 @@ class ReleaseCommandClass {
 					thisChangeLog = changeLogText?.pop?.();
 				}
 
-				thisChangeSet?.push?.(thisChangeLog);
+				thisChangeSet?.unshift?.(thisChangeLog);
 
 				const replaceOptions = {
 					'files': path.join(process.cwd(), 'CHANGELOG.md'),
@@ -451,16 +451,10 @@ class ReleaseCommandClass {
 					'to': thisChangeSet?.join?.('\n')
 				};
 
-				let changelogResult = await replaceInFile?.(replaceOptions);
+				const changelogResult = await replaceInFile?.(replaceOptions);
 				if(changelogResult?.[0]?.['hasChanged']) continue;
 
-				while(thisChangeSet?.length) changeLogText?.unshift?.(thisChangeSet?.pop?.());
-
-				replaceOptions.from = changeLogText[0];
-				replaceOptions.to = changeLogText?.join?.('\n');
-
-				changelogResult = await replaceInFile?.(replaceOptions);
-				if(changelogResult?.[0]?.['hasChanged']) continue;
+				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.pop?.());
 
 				const prependFile = require('prepend-file');
 				await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
@@ -475,51 +469,51 @@ class ReleaseCommandClass {
 		}
 
 		// Step 3: Commit CHANGELOG
-		const branchStatus = await git?.status?.();
-		let tagCommitSha = null;
+		// const branchStatus = await git?.status?.();
+		// let tagCommitSha = null;
 
-		if(branchStatus?.files?.length) {
-			const addStatus = await git?.add?.('.');
-			debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
+		// if(branchStatus?.files?.length) {
+		// 	const addStatus = await git?.add?.('.');
+		// 	debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
 
-			const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
-			tagCommitSha = await git?.commit?.(consolidatedMessage, null, {
-				'--allow-empty': true,
-				'--no-verify': true
-			});
-			tagCommitSha = tagCommitSha?.commit;
+		// 	const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
+		// 	tagCommitSha = await git?.commit?.(consolidatedMessage, null, {
+		// 		'--allow-empty': true,
+		// 		'--no-verify': true
+		// 	});
+		// 	tagCommitSha = tagCommitSha?.commit;
 
-			debug(`Committed change log: ${tagCommitSha}`);
-			if(execMode === 'api')
-				logger?.info?.(`committed CHANGELOG.md`);
-			else
-				logger?.succeed?.('Committed CHANGELOG.md...');
-		}
+		// 	debug(`Committed change log: ${tagCommitSha}`);
+		// 	if(execMode === 'api')
+		// 		logger?.info?.(`committed CHANGELOG.md`);
+		// 	else
+		// 		logger?.succeed?.('Committed CHANGELOG.md...');
+		// }
 
-		// Step 4: Tag this commit
-		debug(`generating tag name / message...`);
-		if(execMode === 'api')
-			logger?.debug?.(`generating tag name / message`);
-		else
-			if(logger) logger.text = 'Generating tag name / message...';
+		// // Step 4: Tag this commit
+		// debug(`generating tag name / message...`);
+		// if(execMode === 'api')
+		// 	logger?.debug?.(`generating tag name / message`);
+		// else
+		// 	if(logger) logger.text = 'Generating tag name / message...';
 
-		const tagName = es6DynTmpl?.(mergedOptions?.tagName, pkg);
-		const tagMessage = es6DynTmpl?.(mergedOptions?.tagMessage, pkg);
+		// const tagName = es6DynTmpl?.(mergedOptions?.tagName, pkg);
+		// const tagMessage = es6DynTmpl?.(mergedOptions?.tagMessage, pkg);
 
-		debug(`tagging the code`);
-		if(execMode === 'api')
-			logger?.debug?.(`tagging the code...`);
-		else
-			if(logger) logger.text = 'Tagging...';
+		// debug(`tagging the code`);
+		// if(execMode === 'api')
+		// 	logger?.debug?.(`tagging the code...`);
+		// else
+		// 	if(logger) logger.text = 'Tagging...';
 
 
-		const tagStatus = await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha || lastCommit]);
+		// const tagStatus = await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha || lastCommit]);
 
-		debug(`tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
-		if(execMode === 'api')
-			logger?.info?.(`tag ${tagName}: ${tagMessage} created`);
-		else
-			logger?.succeed?.(`Tag ${tagName}: ${tagMessage} created`);
+		// debug(`tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
+		// if(execMode === 'api')
+		// 	logger?.info?.(`tag ${tagName}: ${tagMessage} created`);
+		// else
+		// 	logger?.succeed?.(`Tag ${tagName}: ${tagMessage} created`);
 	}
 
 	/**
