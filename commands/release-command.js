@@ -452,13 +452,19 @@ class ReleaseCommandClass {
 					'to': thisChangeSet?.reverse()?.join?.('\n')
 				};
 
-				const changelogResult = await replaceInFile?.(replaceOptions);
-				if(!changelogResult?.[0]?.['hasChanged']) continue;
+				let changelogResult = await replaceInFile?.(replaceOptions);
+				if(changelogResult?.[0]?.['hasChanged']) continue;
 
 				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.pop?.());
 
+				replaceOptions.from = thisChangeLog;
+				replaceOptions.to = changeLogText?.join?.('\n');
+
+				changelogResult = await replaceInFile?.(replaceOptions);
+				if(changelogResult?.[0]?.['hasChanged']) continue;
+
 				const prependFile = require('prepend-file');
-				await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.reverse()?.join?.('\n'));
+				await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
 				break;
 			}
 
