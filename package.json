@@ -90,7 +90,7 @@
 		"@commitlint/cli": "11.0.0",
 		"@commitlint/config-conventional": "11.0.0",
 		"arkit": "1.6.4",
-		"chai": "4.2.0",
+		"chai": "4.3.0",
 		"chai-arrays": "2.2.0",
 		"chai-bignumber": "3.0.0",
 		"chai-datetime": "1.7.0",
