@@ -1,8 +1,8 @@
 {
 	"hooks": {
-		"commit-msg": "npx commitlint -E HUSKY_GIT_PARAMS",
+		"commit-msg": "git interpret-trailers --trailer sign --in-place $HUSKY_GIT_PARAMS && npx commitlint -E HUSKY_GIT_PARAMS",
 		"pre-commit": "npx lint-staged --allow-empty",
 		"pre-push": "npx lint-staged --allow-empty",
-		"prepare-commit-msg": "exec < /dev/tty && git cz --hook || true",
+		"prepare-commit-msg": "exec < /dev/tty && npx git-cz --hook || true",
 	}
 }
