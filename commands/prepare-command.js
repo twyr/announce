@@ -33,7 +33,6 @@ class PrepareCommandClass {
 	// #region Constructor
 	constructor(configuration) {
 		Object.defineProperty(this, '_commandOptions', {
-			'writeable': true,
 			'value': configuration ?? {}
 		});
 	}
@@ -59,11 +58,49 @@ class PrepareCommandClass {
 	 *
 	 */
 	async execute(options) {
-		const path = require('path');
-		const safeJsonStringify = require('safe-json-stringify');
-		const semver = require('semver');
+	//  Step 1: Setup sane defaults for the options
+		const mergedOptions = this._mergeOptions(options);
 
-		// Setup sane defaults for the options
+		// Step 2: Set up the logger according to the options passed in
+		const execMode = options?.execMode ?? 'cli';
+		const logger = this.__setupLogger(mergedOptions);
+
+		// Step 3: Get the current version from package.json
+		const currentVersion = this._getCurrentVersion(mergedOptions, logger);
+
+		// Step 4: Compute the next version
+		const nextVersion = this._computeNextVersion(mergedOptions, logger, currentVersion);
+
+		// Step 5: Get a hold of all the possible files where we need to change the version string.
+		const targetFiles = await this._getTargetFileList(mergedOptions, logger);
+
+		// Step 6: Replace current version strong with next version string in all the target files
+		await this._bumpVersion(mergedOptions, logger, currentVersion, nextVersion, targetFiles);
+
+		// Finally, let the caller know...
+		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
+		if(execMode === 'api')
+			logger?.info?.(`done bumping version from ${currentVersion} to ${nextVersion}`);
+		else
+			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
+	}
+	// #endregion
+
+	// #region Private Methods
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_mergeOptions
+	 *
+	 * @param		{object} options - Parsed command-line options, or options passed in via API
+	 *
+	 * @return		{object} Merged options - input options > configured options.
+	 *
+	 * @summary  	Merges options passed in with configured ones - and puts in sane defaults if neither is available.
+	 *
+	 */
+	_mergeOptions(options) {
 		const mergedOptions = options ?? {};
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
@@ -80,17 +117,32 @@ class PrepareCommandClass {
 		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
 		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
 
-		// Setting up the logs, according to the options passed in
-		if(mergedOptions.debug) debugLib.enable('announce:*');
+		return mergedOptions;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_setupLogger
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 *
+	 * @return		{object} Logger object with info / error functions.
+	 *
+	 * @summary  	Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.
+	 *
+	 */
+	_setupLogger(options) {
+		const execMode = options?.execMode ?? 'cli';
+		if(options?.debug) debugLib?.enable?.('announce:*');
 
 		let logger = null;
-		const execMode = mergedOptions.execMode;
-
-		if((execMode === 'api') && !mergedOptions.silent) { // eslint-disable-line curly
+		if((execMode === 'api') && !options?.silent) { // eslint-disable-line curly
 			logger = options?.logger;
 		}
 
-		if((execMode === 'cli') && !mergedOptions.silent) {
+		if((execMode === 'cli') && !options?.silent) {
 			const Ora = require('ora');
 			logger = new Ora({
 				'discardStdin': true,
@@ -100,10 +152,35 @@ class PrepareCommandClass {
 			logger?.start?.();
 		}
 
-		// Step 1: Get the current version from package.json
+		return logger;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_getCurrentVersion
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 *
+	 * @return		{string} Current version contained in the package.json file, if present and semantically valid
+	 *
+	 * @summary  	Returns the version contained in the package.json file.
+	 *
+	 */
+	_getCurrentVersion(options, logger) {
+		const path = require('path');
+		const semver = require('semver');
+
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const execMode = options?.execMode ?? 'cli';
+
 		debug(`processing ${projectPackageJson}`);
-		if(execMode === 'api') logger?.debug?.(`processing ${projectPackageJson}`);
+		if(execMode === 'api')
+			logger?.debug?.(`processing ${projectPackageJson}`);
+		else
+			logger.text = `processing ${projectPackageJson}`;
 
 		const { version } = require(projectPackageJson);
 		if(!version) {
@@ -129,15 +206,37 @@ class PrepareCommandClass {
 		if(execMode === 'api')
 			logger?.info?.(`${projectPackageJson} contains version ${version}`);
 		else
-			if(logger) logger.text = `Preparing... current version: ${version}`;
+			logger.text = `Preparing... current version: ${version}`;
 
-		// Step 2: Compute the next version
-		debug(`applying ${mergedOptions.series} series to version ${version} using the ladder: ${safeJsonStringify(mergedOptions.versionLadder)}`);
+		return version;
+	}
 
-		const incArgs = [version];
-		const parsedVersion = semver.parse(version);
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_computeNextVersion
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{string} currentVersion - Version contained in the package.json file currently
+	 *
+	 * @return		{string} String representing the next version
+	 *
+	 * @summary  	Computes the next version to be applied based on current version, the series, and the version ladder - and returns the string representation of it.
+	 *
+	 */
+	_computeNextVersion(options, logger, currentVersion) {
+		const safeJsonStringify = require('safe-json-stringify');
+		const semver = require('semver');
 
-		switch (mergedOptions.series) {
+		debug(`applying ${options.series} series to version ${currentVersion} using the ladder: ${safeJsonStringify(options.versionLadder)}`);
+
+		const execMode = options?.execMode ?? 'cli';
+		const incArgs = [currentVersion];
+		const parsedVersion = semver.parse(currentVersion);
+
+		switch (options.series) {
 			case 'current':
 				if(parsedVersion?.prerelease?.length) {
 					incArgs.push('prerelease');
@@ -152,82 +251,106 @@ class PrepareCommandClass {
 				if(parsedVersion?.prerelease?.length) {
 					let preReleaseTag = parsedVersion?.prerelease[0];
 
-					const currentStep = mergedOptions.versionLadder.indexOf(preReleaseTag);
+					const currentStep = options.versionLadder.indexOf(preReleaseTag);
 					if(currentStep === -1)
 						preReleaseTag = 'patch';
-					else if(currentStep === mergedOptions.versionLadder.length - 1)
+					else if(currentStep === options.versionLadder.length - 1)
 						preReleaseTag = 'patch';
 					else
-						preReleaseTag = mergedOptions.versionLadder[currentStep + 1];
+						preReleaseTag = options.versionLadder[currentStep + 1];
 
 					if(preReleaseTag !== 'patch') incArgs.push('prerelease');
 					incArgs.push(preReleaseTag);
 				}
 				else {
 					incArgs.push('prerelease');
-					incArgs.push(mergedOptions.versionLadder[0]);
+					incArgs.push(options.versionLadder[0]);
 				}
 				break;
 
 			case 'patch':
 			case 'minor':
 			case 'major':
-				incArgs.push(mergedOptions.series);
+				incArgs.push(options.series);
 				break;
 
 			default:
-				if(!semver.valid(mergedOptions.series)) {
+				if(!semver.valid(options.series)) {
 					incArgs.length = 0;
-					throw new Error(`Unknown series: ${mergedOptions.series}`);
+					throw new Error(`Unknown series: ${options.series}`);
 				}
 				break;
 		}
 
 		debug(`incrementing version using semver.inc(${incArgs.join(', ')})`);
-		const nextVersion = incArgs.length ? semver.inc(...incArgs) : mergedOptions.series;
+		const nextVersion = incArgs.length ? semver.inc(...incArgs) : options.series;
 
-		debug(`${version} will be bumped to ${nextVersion}`);
+		debug(`${currentVersion} will be bumped to ${nextVersion}`);
 		if(execMode === 'api')
-			logger?.info?.(`${version} will be bumped to ${nextVersion}`);
+			logger?.info?.(`${currentVersion} will be bumped to ${nextVersion}`);
 		else
-			logger?.succeed?.(`Preparing to bump current version: ${version} to next version: ${nextVersion}`);
+			logger?.succeed?.(`Preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
 
-		// Step 3: Get a hold of all the possible files where we need to change the version string.
+		return nextVersion;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_getTargetFileList
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 *
+	 * @return		{string} List of files in which the current version should be replaced with the new version
+	 *
+	 * @summary  	Looks at all the files in the project folder/sub-folders, removes files ignored by .gitignore, then removes files in folders marked ignore in the config, and returns the remaining.
+	 *
+	 */
+	async _getTargetFileList(options, logger) {
 		const { 'fdir': FDir } = require('fdir');
+		const path = require('path');
+
+		const execMode = options?.execMode ?? 'cli';
 
 		debug(`crawling ${process.cwd()}`);
-		if(execMode === 'api') logger?.debug?.(`crawling ${process.cwd()}s`);
+		if(execMode === 'api')
+			logger?.debug?.(`crawling ${process.cwd()}s`);
+		else
+			logger.text = `crawling ${process.cwd()}s`;
 
 		const crawler = new FDir().withFullPaths().crawl(process.cwd());
 		let targetFiles = await crawler.withPromise();
 
-		// eslint-disable-next-line security/detect-non-literal-fs-filename
 		try {
+			// eslint-disable-next-line node/no-missing-require
 			const fileSystem = require('fs/promises');
 			const gitIgnorePath = path.join(process.cwd(), '.gitignore');
 
 			debug(`processing ${gitIgnorePath}`);
 			let gitIgnoreFile = await fileSystem.readFile(gitIgnorePath, { 'encoding': 'utf8' });
-			gitIgnoreFile += `\n\n**/.git\n${mergedOptions.ignoreFolders.map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
+			gitIgnoreFile += `\n\n**/.git\n${options.ignoreFolders.map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
 
 			gitIgnoreFile = gitIgnoreFile
-				.split('\n')
-				.map((gitIgnoreLine) => {
-					if(gitIgnoreLine.trim().length === 0)
-						return gitIgnoreLine.trim();
+			.split('\n')
+			.map((gitIgnoreLine) => {
+				if(gitIgnoreLine.trim().length === 0)
+					return gitIgnoreLine.trim();
 
-					if(gitIgnoreLine.startsWith('#'))
-						return gitIgnoreLine;
+				if(gitIgnoreLine.startsWith('#'))
+					return gitIgnoreLine;
 
-					if(gitIgnoreLine.startsWith('**/'))
-						return gitIgnoreLine;
+				if(gitIgnoreLine.startsWith('**/'))
+					return gitIgnoreLine;
 
-					return `${gitIgnoreLine}\n**/${gitIgnoreLine}`;
-				})
-				.filter((gitIgnoreLine) => {
-					return gitIgnoreLine.length;
-				})
-				.join('\n\n');
+				return `${gitIgnoreLine}\n**/${gitIgnoreLine}`;
+			})
+			.filter((gitIgnoreLine) => {
+				return gitIgnoreLine.length;
+			})
+			.join('\n\n');
 
 			debug(`.gitignore used:\n${gitIgnoreFile}`);
 
@@ -242,10 +365,34 @@ class PrepareCommandClass {
 			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
 		}
 
-		// Step 4: Replace current version strong with next version string in all the target files
+		return targetFiles;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_bumpVersion
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{string} currentVersion - String representing the current version in package.json that needs to be replaced
+	 * @param		{string} nextVersion - String representing the next version of the package
+	 * @param		{Array} targetFiles - List of files where the current version string should be replaced with the new version string
+	 *
+	 * @return		{null} Nothing
+	 *
+	 * @summary  	Replaces the old version string with the new version string.
+	 *
+	 */
+	async _bumpVersion(options, logger, currentVersion, nextVersion, targetFiles) {
+		const execMode = options?.execMode ?? 'cli';
+
 		debug(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
 		if(execMode === 'api') logger?.debug?.(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
 
+		const path = require('path');
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': '',
@@ -262,16 +409,19 @@ class PrepareCommandClass {
 		}
 
 		for(const targetFile of targetFiles) {
-			if(execMode === 'api' && !mergedOptions.quiet)
-				logger?.debug?.(`processing ${targetFile}`);
-			else
-				if(logger && !mergedOptions.quiet) logger.text = `processing ${targetFile}...`;
+			// eslint-disable-next-line curly
+			if(!options.quiet) {
+				if(execMode === 'api')
+					logger?.debug?.(`processing ${targetFile}`);
+				else
+					logger.text = `processing ${targetFile}...`;
+			}
 
 			replaceOptions.files = targetFile;
 			if(path.basename(targetFile).startsWith('package'))
-				replaceOptions.from = new RegExp(version, 'i');
+				replaceOptions.from = new RegExp(currentVersion, 'i');
 			else
-				replaceOptions.from = new RegExp(version, 'gi');
+				replaceOptions.from = new RegExp(currentVersion, 'gi');
 
 			const results = await replaceInFile(replaceOptions);
 			if(!results.length) continue;
@@ -282,7 +432,7 @@ class PrepareCommandClass {
 
 				debug(`${result.file} bumped to ${nextVersion}`);
 				// eslint-disable-next-line curly
-				if(!mergedOptions.quiet) {
+				if(!options.quiet) {
 					if(execMode === 'api')
 						logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
 					else
@@ -293,13 +443,6 @@ class PrepareCommandClass {
 
 		if(execMode !== 'api' && logger)
 			logger.prefixText = '';
-
-
-		debug(`done bumping version from ${version} to ${nextVersion}`);
-		if(execMode === 'api')
-			logger?.info?.(`done bumping version from ${version} to ${nextVersion}`);
-		else
-			logger?.succeed?.(`Done bumping version from ${version} to ${nextVersion}`);
 	}
 	// #endregion
 

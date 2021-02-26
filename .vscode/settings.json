@@ -15,5 +15,12 @@
 			"username": "postgres",
 			"password": "postgres"
 		}
+	],
+	"cSpell.words": [
+		"announcerc",
+		"endregion",
+		"fdir",
+		"prerelease",
+		"twy'r"
 	]
 }
