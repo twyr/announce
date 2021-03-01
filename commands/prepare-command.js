@@ -58,7 +58,7 @@ class PrepareCommandClass {
 	 *
 	 */
 	async execute(options) {
-	//  Step 1: Setup sane defaults for the options
+		// Step 1: Setup sane defaults for the options
 		const mergedOptions = this._mergeOptions(options);
 
 		// Step 2: Set up the logger according to the options passed in
@@ -363,6 +363,12 @@ class PrepareCommandClass {
 		}
 		catch(err) {
 			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
+			if(execMode === 'api')
+				logger?.error?.(`problem processing .gitignore: ${err.message}.`);
+			else
+				logger?.fail?.(`problem processing .gitignore: ${err.message}.`);
+
+			targetFiles = [];
 		}
 
 		return targetFiles;
@@ -418,7 +424,9 @@ class PrepareCommandClass {
 			}
 
 			replaceOptions.files = targetFile;
-			if(path.basename(targetFile).startsWith('package'))
+
+			const targetFileBaseName = path.basename(targetFile).trim();
+			if(targetFileBaseName.startsWith('package') || targetFileBaseName.startsWith('npm'))
 				replaceOptions.from = new RegExp(currentVersion, 'i');
 			else
 				replaceOptions.from = new RegExp(currentVersion, 'gi');
