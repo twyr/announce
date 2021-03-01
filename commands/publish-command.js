@@ -60,16 +60,43 @@ class PublishCommandClass {
 	 *
 	 */
 	async execute(options) {
-		const path = require('path');
-		const simpleGit = require('simple-git');
-		const safeJsonStringify = require('safe-json-stringify');
+		// Step 1: Setup sane defaults for the options
+		const mergedOptions = this._mergeOptions(options);
 
-		// Get package.json into memory... we'll use it in multiple places here
+		// Step 2: Set up the logger according to the options passed in
+		const logger = this._setupLogger(mergedOptions);
+
+		// Step 3: Get the upstream repository information - this is the one where the to-be-published release assets are hosted.
+		const repository = await this._getUpstreamRepositoryInfo(mergedOptions);
+
+		// Step 4: Get the details of the to-be-published release from Github
+		const releaseToBePublished = await this._getReleaseAssetInformation(mergedOptions, logger, repository);
+
+		// Step 5: Run the npm publish command with the specified options
+		await this._publishToNpm(mergedOptions, logger, releaseToBePublished);
+	}
+	// #endregion
+
+	// #region Private Methods
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_mergeOptions
+	 *
+	 * @param		{object} options - Parsed command-line options, or options passed in via API
+	 *
+	 * @return		{object} Merged options - input options > configured options.
+	 *
+	 * @summary  	Merges options passed in with configured ones - and puts in sane defaults if neither is available.
+	 *
+	 */
+	_mergeOptions(options) {
+		const path = require('path');
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		const pkg = require(projectPackageJson);
 
-		// Setup sane defaults for the options
-		const mergedOptions = {};
+		const mergedOptions = options ?? {};
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
 		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
@@ -87,124 +114,225 @@ class PublishCommandClass {
 
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
+	}
 
-		// Setting up the logs, according to the options passed in
-		if(mergedOptions.debug) debugLib.enable('announce:*');
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_setupLogger
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 *
+	 * @return		{object} Logger object with info / error functions.
+	 *
+	 * @summary  	Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.
+	 *
+	 */
+	_setupLogger(options) {
+		const execMode = options?.execMode ?? 'cli';
+		if(options?.debug) debugLib?.enable?.('announce:*');
 
 		let logger = null;
-		const execMode = mergedOptions.execMode;
-
-		if((execMode === 'api') && !mergedOptions.silent) { // eslint-disable-line curly
+		if((execMode === 'api') && !options?.silent) { // eslint-disable-line curly
 			logger = options?.logger;
 		}
 
-		if((execMode === 'cli') && !mergedOptions.silent) {
+		if((execMode === 'cli') && !options?.silent) {
 			const Ora = require('ora');
 			logger = new Ora({
 				'discardStdin': true,
-				'text': `Publishing...`
+				'text': `Preparing...`
 			});
 
 			logger?.start?.();
 		}
 
-		debug(`publishing with options - ${safeJsonStringify(mergedOptions)}`);
-
-		try {
-			// Step 1: Initialize the Git VCS API for the current working directory, get remote repository, trailer messages, etc.
-			const git = simpleGit?.({
-				'baseDir': process.cwd()
-			})
-			.outputHandler((_command, stdout, stderr) => {
-				// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
-				stderr.pipe(process.stderr);
-			});
-
-			debug(`initialized Git for the repository @ ${process.cwd()}`);
-			if(execMode === 'api' && !mergedOptions.quiet) logger?.debug?.(`initialized Git for the repository @ ${process.cwd()}`);
-
-			// Step 2: Create the URL for the release
-			const hostedGitInfo = require('hosted-git-info');
-			const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', mergedOptions?.upstream]);
-
-			const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
-			repository.project = repository?.project?.replace?.('.git\n', '');
-
-			debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
-			if(execMode === 'api' && !mergedOptions.quiet) logger?.debug?.(`repository info - ${safeJsonStringify(repository)}`);
-
-			// Step 3: Get the release details from Github
-			debug(`retrieving ${mergedOptions?.releaseName} release from github`);
-			if(execMode === 'api' && !mergedOptions.quiet)
-				logger?.debug?.(`retrieving ${mergedOptions?.releaseName} release from github`);
-			else
-				if(logger) logger.text = `Retrieving ${mergedOptions?.releaseName} release from github...`;
-
-			const githubReleases = await this?._getFromGithub?.(mergedOptions, `https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-			const releaseToBePublished = githubReleases?.filter?.((release) => { return (release?.name === mergedOptions?.releaseName); })?.shift?.();
-			if(!releaseToBePublished) throw new Error(`Unknown Release: ${mergedOptions.releaseName}`);
-			if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${mergedOptions.releaseName}`);
-
-			debug(`retrieved ${mergedOptions?.releaseName} release from github`);
-			if(execMode === 'api')
-				logger?.info?.(`retrieved ${mergedOptions?.releaseName} release from github`);
-			else
-				logger?.succeed?.(`Retrieved ${mergedOptions?.releaseName} release from github.`);
-
-			// eslint-disable-next-line curly
-			if((mergedOptions?.distTag ?? 'version_default') === 'version_default') {
-				if(releaseToBePublished?.prerelease)
-					mergedOptions.distTag = 'next';
-				else
-					mergedOptions.distTag = 'latest';
-			}
-
-			// Step 4: Run the npm publish command with the specified options
-			debug(`publishing ${mergedOptions?.releaseName} release to npm`);
-			if(execMode === 'api' && !mergedOptions.quiet)
-				logger?.debug?.(`publishing ${mergedOptions?.releaseName} release to npm`);
-			else
-				if(logger) logger.text = `Publishing ${mergedOptions?.releaseName} release to npm...`;
-
-			const execa = require('execa');
-
-			const publishOptions = ['publish'];
-			publishOptions?.push(releaseToBePublished?.tarball_url);
-			publishOptions?.push?.(`--tag ${mergedOptions.distTag}`);
-			publishOptions?.push?.(`--access ${mergedOptions.access}`);
-			if(mergedOptions?.dryRun) publishOptions?.push?.('--dry-run');
-
-			const publishProcess = execa?.('npm', publishOptions, {'all': true });
-			publishProcess?.stdout?.pipe?.(process.stdout);
-			publishProcess?.stderr?.pipe(process.stderr);
-
-			await publishProcess;
-
-			debug(`published ${mergedOptions?.releaseName} release: npm ${publishOptions.join(' ')}`);
-			if(execMode === 'api')
-				logger?.info?.(`published ${mergedOptions?.releaseName} release: npm ${publishOptions.join(' ')}`);
-			else
-				logger?.succeed?.(`Published ${mergedOptions?.releaseName} release to npm.`);
-		}
-		catch(err) {
-			if(execMode === 'api')
-				logger?.error?.(err.message);
-			else
-				logger?.fail?.(err.message);
-
-			throw err;
-		}
+		return logger;
 	}
-	// #endregion
 
-	// #region Private Methods
-	async _getFromGithub(mergedOptions, url) {
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_getUpstreamRepositoryInfo
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 *
+	 * @return		{object} POJO with information about the upstream repository URL, etc.
+	 *
+	 * @summary  	Instantiates a Git instance for the project, retrieves the upstream repository information, and returns a POJO with that info.
+	 *
+	 */
+	async _getUpstreamRepositoryInfo(options, logger) {
+		const safeJsonStringify = require('safe-json-stringify');
+		const simpleGit = require('simple-git');
+
+		const git = simpleGit?.({
+			'baseDir': process.cwd()
+		})
+		.outputHandler((_command, stdout, stderr) => {
+			stderr.pipe(process.stderr);
+		});
+
+		debug(`initialized Git for the repository @ ${process.cwd()}`);
+		const execMode = options?.execMode ?? 'cli';
+
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`initialized Git for the repository @ ${process.cwd()}. Fetching upstream repository information.`);
+			else
+				if(logger) logger.text = `Initialized Git for the repository @ ${process.cwd()}. Fetching upstream repository information...`;
+		}
+
+		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+
+		const hostedGitInfo = require('hosted-git-info');
+		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.info?.(`Fetched information for the ${gitRemote} upstream`);
+			else
+				logger?.succeed?.(`Fetched information for the ${gitRemote} upstream.`);
+		}
+
+		debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
+		return repository;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_getReleaseAssetInformation
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} repository - POJO containing information about the project/repo on Github hosting the assets
+	 *
+	 * @return		{object} POJO with information about the assets to-be-published.
+	 *
+	 * @summary  	Connects to the Github project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.
+	 *
+	 */
+	async _getReleaseAssetInformation(options, logger, repository) {
+		debug(`retrieving ${options?.releaseName} release from github`);
+		const execMode = options?.execMode ?? 'cli';
+
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`retrieving ${options?.releaseName} release from Github`);
+			else
+				if(logger) logger.text = `Retrieving ${options?.releaseName} release from Github...`;
+		}
+
+		const githubReleases = await this?._getFromGithub?.(options, `https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
+		const releaseToBePublished = githubReleases?.filter?.((release) => { return (release?.name === options?.releaseName); })?.shift?.();
+
+		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
+		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
+
+		debug(`retrieved ${options?.releaseName} release from github`);
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`retrieved ${options?.releaseName} release from github`);
+			else
+				logger?.succeed?.(`Retrieved ${options?.releaseName} release details from Github.`);
+		}
+
+		return releaseToBePublished;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_publishToNpm
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseToBePublished - POJO with information about the assets to-be-published
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Retrieves the release assets from Github, and publishes them to NPM.
+	 *
+	 */
+	async _publishToNpm(options, logger, releaseToBePublished) {
+		debug(`publishing ${options?.releaseName} release to npm`);
+		const execMode = options?.execMode ?? 'cli';
+
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`publishing ${options?.releaseName} release to npm`);
+			else
+				if(logger) logger.text = `Publishing ${options?.releaseName} release to npm...`;
+		}
+
+		let distTag = null;
+
+		// eslint-disable-next-line curly
+		if((options?.distTag ?? 'version_default') === 'version_default') {
+			if(releaseToBePublished?.prerelease)
+				distTag = 'next';
+			else
+				distTag = 'latest';
+		}
+
+		const execa = require('execa');
+
+		const publishOptions = ['publish'];
+		publishOptions?.push(releaseToBePublished?.tarball_url);
+		publishOptions?.push?.(`--tag ${distTag}`);
+		publishOptions?.push?.(`--access ${options.access}`);
+		if(options?.dryRun) publishOptions?.push?.('--dry-run');
+
+		const publishProcess = execa?.('npm', publishOptions, {'all': true });
+		publishProcess?.stdout?.pipe?.(process.stdout);
+		publishProcess?.stderr?.pipe?.(process.stderr);
+
+		await publishProcess;
+
+		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
+		if(execMode === 'api')
+			logger?.info?.(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
+		else
+			logger?.succeed?.(`Published ${options?.releaseName} release to npm.`);
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		 _getFromGithub
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{string} url - the url giving the information we seek
+	 *
+	 * @return		{object} Hopefully, the required information from Github.
+	 *
+	 * @summary  	Given a Github REST API endpoint, call it and give back the information returned.
+	 *
+	 */
+	async _getFromGithub(options, url) {
 		const Promise = require('bluebird');
 
 		return new Promise((resolve, reject) => {
 			try {
 				const octonode = require('octonode');
-				const client = octonode?.client?.(mergedOptions?.githubToken);
+				const client = octonode?.client?.(options?.githubToken);
 				debug('created client to connect to github');
 
 				client?.get?.(url, {}, (err, status, body) => {

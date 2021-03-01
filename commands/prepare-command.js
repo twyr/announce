@@ -62,7 +62,6 @@ class PrepareCommandClass {
 		const mergedOptions = this._mergeOptions(options);
 
 		// Step 2: Set up the logger according to the options passed in
-		const execMode = options?.execMode ?? 'cli';
 		const logger = this._setupLogger(mergedOptions);
 
 		// Step 3: Get the current version from package.json
@@ -76,13 +75,6 @@ class PrepareCommandClass {
 
 		// Step 6: Replace current version strong with next version string in all the target files
 		await this._bumpVersion(mergedOptions, logger, currentVersion, nextVersion, targetFiles);
-
-		// Finally, let the caller know...
-		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
-		if(execMode === 'api')
-			logger?.info?.(`done bumping version from ${currentVersion} to ${nextVersion}`);
-		else
-			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
 	}
 	// #endregion
 
@@ -177,10 +169,13 @@ class PrepareCommandClass {
 		const execMode = options?.execMode ?? 'cli';
 
 		debug(`processing ${projectPackageJson}`);
-		if(execMode === 'api')
-			logger?.debug?.(`processing ${projectPackageJson}`);
-		else
-			logger.text = `processing ${projectPackageJson}`;
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`processing ${projectPackageJson}`);
+			else
+				if(logger) logger.text = `processing ${projectPackageJson}`;
+		}
 
 		const { version } = require(projectPackageJson);
 		if(!version) {
@@ -206,7 +201,7 @@ class PrepareCommandClass {
 		if(execMode === 'api')
 			logger?.info?.(`${projectPackageJson} contains version ${version}`);
 		else
-			logger.text = `Preparing... current version: ${version}`;
+			if(logger) logger.text = `Preparing... current version: ${version}`;
 
 		return version;
 	}
@@ -316,10 +311,13 @@ class PrepareCommandClass {
 		const execMode = options?.execMode ?? 'cli';
 
 		debug(`crawling ${process.cwd()}`);
-		if(execMode === 'api')
-			logger?.debug?.(`crawling ${process.cwd()}s`);
-		else
-			logger.text = `crawling ${process.cwd()}s`;
+		// eslint-disable-next-line curly
+		if(!options?.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`crawling ${process.cwd()}s`);
+			else
+				if(logger) logger.text = `crawling ${process.cwd()}s`;
+		}
 
 		const crawler = new FDir().withFullPaths().crawl(process.cwd());
 		let targetFiles = await crawler.withPromise();
@@ -393,10 +391,8 @@ class PrepareCommandClass {
 	 *
 	 */
 	async _bumpVersion(options, logger, currentVersion, nextVersion, targetFiles) {
-		const execMode = options?.execMode ?? 'cli';
-
 		debug(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
-		if(execMode === 'api') logger?.debug?.(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
+		const execMode = options?.execMode ?? 'cli';
 
 		const path = require('path');
 		const replaceInFile = require('replace-in-file');
@@ -416,11 +412,11 @@ class PrepareCommandClass {
 
 		for(const targetFile of targetFiles) {
 			// eslint-disable-next-line curly
-			if(!options.quiet) {
+			if(!options?.quiet) {
 				if(execMode === 'api')
 					logger?.debug?.(`processing ${targetFile}`);
 				else
-					logger.text = `processing ${targetFile}...`;
+					if(logger) logger.text = `processing ${targetFile}...`;
 			}
 
 			replaceOptions.files = targetFile;
@@ -440,7 +436,7 @@ class PrepareCommandClass {
 
 				debug(`${result.file} bumped to ${nextVersion}`);
 				// eslint-disable-next-line curly
-				if(!options.quiet) {
+				if(!options?.quiet) {
 					if(execMode === 'api')
 						logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
 					else
@@ -451,6 +447,12 @@ class PrepareCommandClass {
 
 		if(execMode !== 'api' && logger)
 			logger.prefixText = '';
+
+		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
+		if(execMode === 'api')
+			logger?.info?.(`done bumping version from ${currentVersion} to ${nextVersion}`);
+		else
+			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
 	}
 	// #endregion
 
@@ -459,9 +461,8 @@ class PrepareCommandClass {
 }
 
 // Add the command to the cli
-let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	if(!commandObj) commandObj = new PrepareCommandClass(configuration?.prepare);
+	const commandObj = new PrepareCommandClass(configuration?.prepare);
 
 	commanderProcess
 		.command('prepare')
@@ -475,7 +476,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	if(!commandObj) commandObj = new PrepareCommandClass({ 'execMode': 'api' });
+	const commandObj = new PrepareCommandClass({ 'execMode': 'api' });
 	return {
 		'name': 'prepare',
 		'method': commandObj.execute.bind(commandObj)
