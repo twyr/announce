@@ -14,6 +14,17 @@
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
             "args": ["release", "--dont-release"]
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Announce Publish",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/bin/announce.js",
+            "cwd": "${workspaceFolder}",
+            "args": ["publish", "--dry-run"]
         }
     ]
 }
