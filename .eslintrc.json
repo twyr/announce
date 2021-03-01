@@ -39,7 +39,7 @@
 
 	"globals": {
 		"snooze": true,
-		"plantworksEnv": true
+		"twyrEnv": true
 	},
 
 	"plugins": [
@@ -232,9 +232,7 @@
 		"no-bitwise": 0,
 		"no-plusplus": 0,
 
-		"node/no-missing-require": ["error", {
-			"resolvePaths": ["./framework"]
-		}],
+		"node/no-missing-require": ["error"],
 
 		"jsdoc/check-param-names": 1,
 		"jsdoc/check-tag-names": 0,
