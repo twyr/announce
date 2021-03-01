@@ -67,7 +67,7 @@ class PublishCommandClass {
 		const logger = this._setupLogger(mergedOptions);
 
 		// Step 3: Get the upstream repository information - this is the one where the to-be-published release assets are hosted.
-		const repository = await this._getUpstreamRepositoryInfo(mergedOptions);
+		const repository = await this._getUpstreamRepositoryInfo(mergedOptions, logger);
 
 		// Step 4: Get the details of the to-be-published release from Github
 		const releaseToBePublished = await this._getReleaseAssetInformation(mergedOptions, logger, repository);
@@ -114,6 +114,8 @@ class PublishCommandClass {
 
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
+
+		return mergedOptions;
 	}
 
 	/**
@@ -197,9 +199,9 @@ class PublishCommandClass {
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
-				logger?.info?.(`Fetched information for the ${gitRemote} upstream`);
+				logger?.info?.(`Fetched information for the ${repository.user}/${repository.project} upstream`);
 			else
-				logger?.succeed?.(`Fetched information for the ${gitRemote} upstream.`);
+				logger?.succeed?.(`Fetched information for the ${repository.user}/${repository.project} upstream.`);
 		}
 
 		debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
@@ -290,14 +292,13 @@ class PublishCommandClass {
 				distTag = 'latest';
 		}
 
-		const execa = require('execa');
-
 		const publishOptions = ['publish'];
 		publishOptions?.push(releaseToBePublished?.tarball_url);
 		publishOptions?.push?.(`--tag ${distTag}`);
 		publishOptions?.push?.(`--access ${options.access}`);
 		if(options?.dryRun) publishOptions?.push?.('--dry-run');
 
+		const execa = require('execa');
 		const publishProcess = execa?.('npm', publishOptions, {'all': true });
 		publishProcess?.stdout?.pipe?.(process.stdout);
 		publishProcess?.stderr?.pipe?.(process.stderr);
