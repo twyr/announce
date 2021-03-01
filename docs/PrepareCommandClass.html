@@ -32,6 +32,12 @@
 			<ul>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="PrepareCommandClass.html#_bumpVersion">_bumpVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_computeNextVersion">_computeNextVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_getCurrentVersion">_getCurrentVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
@@ -102,6 +108,360 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
+					<h4 class="name" id="_bumpVersion"><span class="type-signature">(async) </span>_bumpVersion<span class="signature">(options, logger, currentVersion, nextVersion, targetFiles)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<p class="summary usertext">
+					<p>Replaces the old version string with the new version string.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line377">line 377</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>currentVersion</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>String representing the current version in package.json that needs to be replaced</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>nextVersion</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>String representing the next version of the package</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>targetFiles</code></td>
+								<td class="type">
+									<span class="param-type">Array</span>
+								</td>
+								<td class="description last">
+									<p>List of files where the current version string should be replaced with the new version string</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_computeNextVersion"><span class="type-signature"></span>_computeNextVersion<span class="signature">(options, logger, currentVersion)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<p class="summary usertext">
+					<p>Computes the next version to be applied based on current version, the series, and the version ladder - and returns the string representation of it.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line214">line 214</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>currentVersion</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>Version contained in the package.json file currently</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>String representing the next version</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">string</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_getCurrentVersion"><span class="type-signature"></span>_getCurrentVersion<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<p class="summary usertext">
+					<p>Returns the version contained in the package.json file.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line158">line 158</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Current version contained in the package.json file, if present and semantically valid</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">string</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_getTargetFileList"><span class="type-signature">(async) </span>_getTargetFileList<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<p class="summary usertext">
+					<p>Looks at all the files in the project folder/sub-folders, removes files ignored by .gitignore, then removes files in folders marked ignore in the config, and returns the remaining.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line297">line 297</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>List of files in which the current version should be replaced with the new version</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">string</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Merges options passed in with configured ones - and puts in sane defaults if neither is available.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line90">line 90</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Parsed command-line options, or options passed in via API</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Merged options - input options &gt; configured options.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_setupLogger"><span class="type-signature"></span>_setupLogger<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line123">line 123</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Logger object with info / error functions.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>The main method to prepare the codebase for the next release.</p>
@@ -116,7 +476,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line43">line 43</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line42">line 42</a>
 								</li>
 							</ul>
 						</dd>
