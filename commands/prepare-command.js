@@ -63,7 +63,7 @@ class PrepareCommandClass {
 
 		// Step 2: Set up the logger according to the options passed in
 		const execMode = options?.execMode ?? 'cli';
-		const logger = this.__setupLogger(mergedOptions);
+		const logger = this._setupLogger(mergedOptions);
 
 		// Step 3: Get the current version from package.json
 		const currentVersion = this._getCurrentVersion(mergedOptions, logger);
