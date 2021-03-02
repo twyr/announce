@@ -314,9 +314,9 @@ class PrepareCommandClass {
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
-				logger?.debug?.(`crawling ${process.cwd()}s`);
+				logger?.debug?.(`Crawling for target files in ${process.cwd()}`);
 			else
-				if(logger) logger.text = `crawling ${process.cwd()}s`;
+				if(logger) logger.text = `Crawling for target files in${process.cwd()}`;
 		}
 
 		const crawler = new FDir().withFullPaths().crawl(process.cwd());
@@ -358,13 +358,18 @@ class PrepareCommandClass {
 
 			debug(`applying .gitignore to possible targets`);
 			targetFiles = targetFiles.filter(gitIgnore.accepts);
+
+			if(execMode === 'api')
+				logger?.info?.(`Retrieved target files from ${process.cwd()}`);
+			else
+				logger?.succeed?.(`Retrieved target files from ${process.cwd()}`);
 		}
 		catch(err) {
 			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
 			if(execMode === 'api')
-				logger?.error?.(`problem processing .gitignore: ${err.message}.`);
+				logger?.error?.(`Problem processing .gitignore: ${err.message}.`);
 			else
-				logger?.fail?.(`problem processing .gitignore: ${err.message}.`);
+				logger?.fail?.(`Problem processing .gitignore: ${err.message}.`);
 
 			targetFiles = [];
 		}
@@ -407,7 +412,7 @@ class PrepareCommandClass {
 			if(logger) logger.prefixText = '  ';
 		}
 		else {
-			logger?.info?.(`modifying target files now`);
+			logger?.info?.(`Modifying target files`);
 		}
 
 		for(const targetFile of targetFiles) {
@@ -450,7 +455,7 @@ class PrepareCommandClass {
 
 		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
 		if(execMode === 'api')
-			logger?.info?.(`done bumping version from ${currentVersion} to ${nextVersion}`);
+			logger?.info?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
 		else
 			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
 	}

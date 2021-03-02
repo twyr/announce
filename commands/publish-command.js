@@ -196,13 +196,10 @@ class PublishCommandClass {
 		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
 
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.info?.(`Fetched information for the ${repository.user}/${repository.project} upstream`);
-			else
-				logger?.succeed?.(`Fetched information for the ${repository.user}/${repository.project} upstream.`);
-		}
+		if(execMode === 'api')
+			logger?.info?.(`Fetched information for the ${repository.user}/${repository.project} upstream`);
+		else
+			logger?.succeed?.(`Fetched information for the ${repository.user}/${repository.project} upstream.`);
 
 		debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
 		return repository;
@@ -231,7 +228,7 @@ class PublishCommandClass {
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
-				logger?.debug?.(`retrieving ${options?.releaseName} release from Github`);
+				logger?.debug?.(`Retrieving ${options?.releaseName} release from Github`);
 			else
 				if(logger) logger.text = `Retrieving ${options?.releaseName} release from Github...`;
 		}
@@ -243,13 +240,10 @@ class PublishCommandClass {
 		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
 
 		debug(`retrieved ${options?.releaseName} release from github`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`retrieved ${options?.releaseName} release from github`);
-			else
-				logger?.succeed?.(`Retrieved ${options?.releaseName} release details from Github.`);
-		}
+		if(execMode === 'api')
+			logger?.debug?.(`Retrieved ${options?.releaseName} release from Github`);
+		else
+			logger?.succeed?.(`Retrieved ${options?.releaseName} release details from Github.`);
 
 		return releaseToBePublished;
 	}
@@ -271,13 +265,13 @@ class PublishCommandClass {
 	 *
 	 */
 	async _publishToNpm(options, logger, releaseToBePublished) {
-		debug(`publishing ${options?.releaseName} release to npm`);
 		const execMode = options?.execMode ?? 'cli';
 
+		debug(`publishing ${options?.releaseName} release to npm`);
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
-				logger?.debug?.(`publishing ${options?.releaseName} release to npm`);
+				logger?.debug?.(`Publishing ${options?.releaseName} release to npm`);
 			else
 				if(logger) logger.text = `Publishing ${options?.releaseName} release to npm...`;
 		}
@@ -307,7 +301,7 @@ class PublishCommandClass {
 
 		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
 		if(execMode === 'api')
-			logger?.info?.(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
+			logger?.info?.(`Published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
 		else
 			logger?.succeed?.(`Published ${options?.releaseName} release to npm.`);
 	}
