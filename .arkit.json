@@ -20,7 +20,8 @@
 		"**/coverage/",
 		"**/docs/",
 		"**/jsdoc_default/",
-		"**/logs/"
+		"**/logs/",
+		"gruntfile.js"
 	],
 	"output": [{
 		"path": [

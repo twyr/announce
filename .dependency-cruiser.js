@@ -95,22 +95,14 @@ module.exports = {
 		}
 	],
 	options: {
-
 		/* conditions specifying which files not to follow further when encountered:
 		   - path: a regular expression to match
 		   - dependencyTypes: see https://github.com/sverweij/dependency-cruiser/blob/master/doc/rules-reference.md#dependencytypes
 		   for a complete list
 		*/
 		doNotFollow: {
-			// path: 'node_modules',
-			dependencyTypes: [
-				'npm',
-				'npm-dev',
-				'npm-optional',
-				'npm-peer',
-				'npm-bundled',
-				'npm-no-pkg'
-			]
+			path: 'node_modules',
+			// dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-bundled', 'npm-no-pkg']
 		},
 
 		/* conditions specifying which dependencies to exclude
@@ -119,14 +111,14 @@ module.exports = {
 		      leave out if you want to exclude neither (recommended!)
 		*/
 		exclude: {
-			path: '.circleci|.github|.vscode|buildresults|coverage|deploy|docs|jsdoc_default|log|node_modules|stats|ecosystem.config.js|gruntfile.js|test/setup_mocks.js',
+			path: '.dependency-cruiser.js|.commitlintrc.js|gruntfile.js|test',
 			dynamic: true
 		},
 
 		/* pattern specifying which files to include (regular expression)
 		   dependency-cruiser will skip everything not matching this pattern
 		*/
-		includeOnly: 'server|test',
+		// includeOnly: 'index.js|bin|commands',
 
 		/* list of module systems to cruise */
 		// moduleSystems: ['amd', 'cjs', 'es6', 'tsd'],
@@ -194,7 +186,7 @@ module.exports = {
 				   collapses everything in node_modules to one folder deep so you see
 				   the external modules, but not the innards your app depends upon.
 				 */
-				collapsePattern: 'node_modules/[^/]+',
+				collapsePattern: '^(node_modules)/[^/]+',
 
 				/* Options to tweak the appearance of your graph.See
 				   https://github.com/sverweij/dependency-cruiser/blob/master/doc/rules-reference.md#dot
@@ -249,7 +241,7 @@ module.exports = {
 				  dependency graph reporter (`archi`) you probably want to tweak
 				  this collapsePattern to your situation.
 				*/
-				collapsePattern: '^(node_modules|packages|src|lib|app|bin|test(s?)|spec(s?))/[^/]+',
+				collapsePattern: '^(node_modules)/[^/]+',
 
 				/* Options to tweak the appearance of your graph.See
 				   https://github.com/sverweij/dependency-cruiser/blob/master/doc/rules-reference.md#dot
