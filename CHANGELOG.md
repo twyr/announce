@@ -1,5 +1,35 @@
 #### CHANGE LOG
 
+
+##### 02-Mar-2021
+
+docs(all): updated menu with new methods in publish ([6dfa84be66068942383a4bc7abe9ad1ae625e0e7](https://github.com/twyr/announce/commit/6dfa84be66068942383a4bc7abe9ad1ae625e0e7))
+
+
+##### 01-Mar-2021
+
+docs(prepare): updated docs after refactoring ([7fab39f5b2fb58c5bbbe0daca3ff1861c6239bc3](https://github.com/twyr/announce/commit/7fab39f5b2fb58c5bbbe0daca3ff1861c6239bc3))
+
+
+##### 24-Feb-2021
+
+docs(release): updated to match latest changes in source code ([ae79152e76275111a935a39f62a18ed6f349bf5a](https://github.com/twyr/announce/commit/ae79152e76275111a935a39f62a18ed6f349bf5a))
+
+
+##### 17-Feb-2021
+
+fix(release): minor bug-fix ([7b3ffeb5f6e04a1bbf3a2176c0daa87661fb2e71](https://github.com/twyr/announce/commit/7b3ffeb5f6e04a1bbf3a2176c0daa87661fb2e71))
+
+
+##### 16-Feb-2021
+
+docs(release): re-generated for latest code ([c16f474c6395ff6b37fd5eb5a95ce4110d7c510a](https://github.com/twyr/announce/commit/c16f474c6395ff6b37fd5eb5a95ce4110d7c510a))
+
+
+##### 02-Feb-2021
+
+docs(changelog): clean up ([a7117bdb5ce27da292dbac2d912bcd63706b9877](https://github.com/twyr/announce/commit/a7117bdb5ce27da292dbac2d912bcd63706b9877))#### CHANGE LOG
+
 ##### 30-Jan-2021
 
 docs(all): updated for 0.4.0 release ([7d3bd762eaca84dab2fdfddc522a93d33b1f2c29](https://github.com/twyr/announce/commit/7d3bd762eaca84dab2fdfddc522a93d33b1f2c29))
