@@ -61,16 +61,66 @@ class ReleaseCommandClass {
 	 *
 	 */
 	async execute(options) {
-		const es6DynTmpl = require('es6-dynamic-template');
+		// Step 1: Setup sane defaults for the options
+		const mergedOptions = this._mergeOptions(options);
+
+		// Step 2: Set up the logger according to the options passed in
+		const logger = this._setupLogger(mergedOptions);
+
+		// Step 3: Initialize Git client for the project repository
+		const git = this._initializeGit(mergedOptions, logger);
+
+		// Step 4: Stash or Commit the current branch, if required
+		const shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
+
+		// Step 5: Generate the CHANGELOG and commit it
+		await this._generateChangelog(mergedOptions, logger, git);
+
+		// Step 6: Tag the last commit, if required
+		await this._tagCode(mergedOptions, logger, git);
+
+		// Step 7: Push the new commits, and tag, upstream
+		await this._pushUpstream(mergedOptions, logger, git);
+
+		// Step 8: Create the release notes...
+		const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
+
+		// Step 9: Create the release on Github
+		await this?._releaseCode?.(mergedOptions, logger, releaseData);
+
+		// Step 10: pop the stash if needed...
+		if(shouldPopOnError) {
+			await git?.stash?.(['pop']);
+
+			const execMode = options?.execMode ?? 'cli';
+			if(execMode === 'api')
+				logger?.info?.(`Popped the stash`);
+			else
+				logger?.succeed?.(`Popped the stash`);
+		}
+	}
+	// #endregion
+
+	// #region Private Methods
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_mergeOptions
+	 *
+	 * @param		{object} options - Parsed command-line options, or options passed in via API
+	 *
+	 * @return		{object} Merged options - input options > configured options.
+	 *
+	 * @summary  	Merges options passed in with configured ones - and puts in sane defaults if neither is available.
+	 *
+	 */
+	_mergeOptions(options) {
 		const path = require('path');
-		const safeJsonStringify = require('safe-json-stringify');
-		const simpleGit = require('simple-git');
 
-		// Get package.json into memory... we'll use it in multiple places here
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
+		const { version } = require(projectPackageJson);
 
-		// Setup sane defaults for the options
 		const mergedOptions = {};
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
@@ -87,265 +137,225 @@ class ReleaseCommandClass {
 
 		mergedOptions.dontTag = options?.dontTag ?? (this?._commandOptions.dontTag ?? false);
 		mergedOptions.tag = options?.tag ?? (this?._commandOptions.tag ?? '');
-		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${pkg.version}`);
-		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${pkg.version}`);
+		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${version}`);
+		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${version}`);
 
 		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
-		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
+		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
 		mergedOptions.releaseMessage = options?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
 
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
-		// Setting up the logs, according to the options passed in
-		if(mergedOptions.debug) debugLib.enable('announce:*');
+		return mergedOptions;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_setupLogger
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 *
+	 * @return		{object} Logger object with info / error functions.
+	 *
+	 * @summary  	Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.
+	 *
+	 */
+	_setupLogger(options) {
+		const execMode = options?.execMode ?? 'cli';
+		if(options?.debug) debugLib?.enable?.('announce:*');
 
 		let logger = null;
-		const execMode = mergedOptions.execMode;
-
-		if((execMode === 'api') && !mergedOptions.silent) { // eslint-disable-line curly
+		if((execMode === 'api') && !options?.silent) { // eslint-disable-line curly
 			logger = options?.logger;
 		}
 
-		if((execMode === 'cli') && !mergedOptions.silent) {
+		if((execMode === 'cli') && !options?.silent) {
 			const Ora = require('ora');
 			logger = new Ora({
 				'discardStdin': true,
-				'text': `Releasing...`
+				'text': `Preparing...`
 			});
 
 			logger?.start?.();
 		}
 
-		debug(`releasing with options - ${safeJsonStringify(mergedOptions)}`);
-
-		let git = null;
-		let shouldPopOnError = false;
-
-		try {
-			// Step 1: Initialize the Git VCS API for the current working directory, get remote repository, trailer messages, etc.
-			git = simpleGit?.({
-				'baseDir': process.cwd()
-			})
-			.outputHandler?.((_command, stdout, stderr) => {
-				// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
-				stderr.pipe(process.stderr);
-			});
-
-			debug(`initialized Git for the repository @ ${process.cwd()}`);
-			if(execMode === 'api' && !mergedOptions.quiet) logger?.debug?.(`initialized Git for the repository @ ${process.cwd()}`);
-
-			// Step 2: Check if branch is dirty - commit/stash as required
-			let stashOrCommitStatus = null;
-
-			let branchStatus = await git?.status?.();
-			if(branchStatus?.files?.length) {
-				debug(`${branchStatus.current} branch is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`);
-				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`${branchStatus.current} branch is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`);
-				else
-					if(logger) logger.text = `Branch "${branchStatus.current}" is dirty. Starting ${mergedOptions?.commit ? 'commit' : 'stash'} process`;
-
-				if(!mergedOptions?.commit) {
-					stashOrCommitStatus = await git?.stash?.(['push']);
-					shouldPopOnError = true;
-				}
-				else {
-					const commitMessage = es6DynTmpl?.(mergedOptions?.message, pkg);
-					debug(`Commit message: ${commitMessage}`);
-
-					let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-					trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
-					debug(`Trailer messages: ${trailerMessages}`);
-
-					const consolidatedMessage = (commitMessage ?? '') + (trailerMessages ?? '');
-					stashOrCommitStatus = await git?.commit?.(consolidatedMessage, null, {
-						'--all': true,
-						'--allow-empty': true,
-						'--signoff': true
-					});
-
-					stashOrCommitStatus = stashOrCommitStatus?.commit;
-				}
-
-				debug(`${mergedOptions.commit ? 'commit' : 'stash'} status: ${safeJsonStringify((stashOrCommitStatus ?? {}), null, '\t')}`);
-				if(execMode === 'api')
-					logger?.info?.(`${branchStatus.current} ${mergedOptions?.commit ? 'commit' : 'stash'} process done`);
-				else
-					logger?.succeed?.(`Branch "${branchStatus.current}" ${mergedOptions?.commit ? 'commit' : 'stash'} process done.`);
-			}
-			else {
-				debug(`branch clean. No requirement to ${mergedOptions?.commit ? 'Commit' : 'Stash'}`);
-				if(execMode === 'api')
-					logger?.info?.(`${branchStatus.current} branch clean - proceeding`);
-				else
-					logger?.succeed?.(`Branch "${branchStatus.current}" is clean. Proceeding.`);
-			}
-
-			// Step 3: Generate CHANGELOG, commit it, and tag the code
-			if((mergedOptions?.tag === '') && !mergedOptions?.dontTag) {
-				debug(`tag name specified, and dontTag is false - starting tagging`);
-				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`tagging ${branchStatus.current} branch`);
-				else
-					logger?.succeed?.(`Tagging ${branchStatus.current} branch...`);
-
-				await this?._tagCode?.(git, mergedOptions, logger);
-
-				debug(`tagged ${branchStatus.current} branch`);
-				if(execMode === 'api')
-					logger?.info?.(`tagged ${branchStatus.current} branch`);
-				else
-					logger?.succeed?.(`Tagged ${branchStatus.current} branch.`);
-			}
-			else {
-				debug(`tag specified, or --dont-tag is true - not tagging the code`);
-				if(execMode === 'api')
-					logger?.info?.(`tag name specified, or dontTag option passed in - skipping the tag`);
-				else
-					logger?.succeed?.(`Tag name specified or --dont-tag passed in. Skipping tagging the code`);
-			}
-
-			// Step 4: Push commits/tags to the specified upstream
-			branchStatus = await git?.status?.();
-			if(branchStatus?.ahead) {
-				debug(`pushing ${branchStatus.current} branch commits upstream to ${mergedOptions?.upstream}`);
-				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`pushing ${branchStatus.current} branch commits upstream to ${mergedOptions?.upstream}`);
-				else
-					if(logger) logger.text = `Pushing ${branchStatus.current} branch commits upstream to ${mergedOptions?.upstream}...`;
-
-				const pushCommitStatus = await git?.push?.(mergedOptions?.upstream, branchStatus?.current, {
-					'--atomic': true,
-					'--progress': true,
-					'--signed': 'if-asked'
-				});
-
-				debug(`pushing ${branchStatus.current} branch tags upstream to ${mergedOptions?.upstream}`);
-				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`pushing ${branchStatus?.current} branch tags upstream to ${mergedOptions?.upstream}`);
-				else
-					if(logger) logger.text = `Pushing ${branchStatus?.current} branch tags upstream to ${mergedOptions?.upstream}...`;
-
-				const pushTagStatus = await git?.pushTags?.(mergedOptions?.upstream, {
-					'--atomic': true,
-					'--force': true,
-					'--progress': true,
-					'--signed': 'if-asked'
-				});
-
-				debug(`pushed ${branchStatus.current} branch tags upstream to ${mergedOptions?.upstream}:\nCommit: ${safeJsonStringify((pushCommitStatus ?? {}), null, '\t')}\nTag: ${safeJsonStringify((pushTagStatus ?? {}), null, '\t')}`);
-				if(execMode === 'api')
-					logger?.info?.(`pushed ${branchStatus.current} branch commits and tags upstream to ${mergedOptions?.upstream}`);
-				else
-					logger?.succeed?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${mergedOptions?.upstream}.`);
-			}
-
-			// Step 5: Create the release notes, and create the release itself
-			if(!mergedOptions?.dontRelease) {
-				debug(`releasing to ${mergedOptions?.upstream}`);
-				if(execMode === 'api' && !mergedOptions.quiet)
-					logger?.debug?.(`releasing to ${mergedOptions?.upstream}`);
-				else
-					logger?.succeed?.(`Releasing to ${mergedOptions?.upstream}...`);
-
-				await this?._releaseCode?.(git, mergedOptions, logger);
-
-				debug(`released to ${mergedOptions?.upstream}`);
-				if(execMode === 'api')
-					logger?.info?.(`released to ${mergedOptions?.upstream}`);
-				else
-					logger?.succeed?.(`Released to ${mergedOptions?.upstream}...`);
-			}
-			else {
-				debug(`--dont-release passed in - exiting without releasing`);
-				if(execMode === 'api')
-					logger?.info?.(`--dont-release passed in - exitng without releasing`);
-				else
-					logger?.succeed?.(`Skipping releasing - CLI option --dont-release passed in.`);
-			}
-		}
-		catch(err) {
-			if(execMode === 'api')
-				logger?.error?.(`release process error: ${err.message}`);
-			else
-				logger?.fail?.(`Release process error: ${err.message}`);
-
-			throw err;
-		}
-		// Finally, pop stash if necessary
-		finally {
-			if(shouldPopOnError) {
-				debug(`restoring code - popping the stash`);
-				if(execMode === 'api')
-					logger?.debug?.(`restoring code - popping the stash`);
-				else
-					if(logger) logger.text = 'restoring code - popping the stash';
-
-				await git?.stash?.(['pop']);
-
-				debug(`restoring code - popped the stash`);
-				if(execMode === 'api')
-					logger?.info?.(`restored code - stash popped`);
-				else
-					logger?.succeed?.('Restored code - stash popped');
-			}
-		}
+		return logger;
 	}
-	// #endregion
 
-	// #region Private Methods
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_initializeGit
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 *
+	 * @return		{object} The Git client instance for the project repository.
+	 *
+	 * @summary  	Creates a Git client instance for the current project repository and returns it.
+	 *
+	 */
+	_initializeGit(options, logger) {
+		const execMode = options?.execMode ?? 'cli';
+
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Initializing Git for the repository @ ${process.cwd()}`);
+			else
+				if(logger) logger.text = `Initializing Git for the repository @ ${process.cwd()}`;
+		}
+
+		const simpleGit = require('simple-git');
+		const git = simpleGit?.({
+			'baseDir': process.cwd()
+		})
+		.outputHandler?.((_command, stdout, stderr) => {
+			// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
+			stderr.pipe(process.stderr);
+		});
+
+		if(execMode === 'api')
+			logger?.info?.(`Initialized Git for the repository @ ${process.cwd()}`);
+		else
+			logger?.succeed?.(`Initialized Git for the repository @ ${process.cwd()}`);
+
+		debug(`initialized Git for the repository @ ${process.cwd()}`);
+		return git;
+	}
+
 	/**
 	 * @async
 	 * @function
 	 * @instance
-	 * @memberof ReleaseCommandClass
-	 * @name     _tagCode
+	 * @memberof	ReleaseCommandClass
+	 * @name		_stashOrCommit
 	 *
-	 * @param    {object} git - GIT API instance
-	 * @param    {object} mergedOptions - Parsed command-line options, or options passed in via API
-	 * @param    {object} logger - Logger supporting the usual commands (debug, info, warn, error, etc.)
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
 	 *
-	 * @return {null} Nothing.
+	 * @return		{boolean} status of the stash/commit operation.
 	 *
-	 * @summary  Tags the codebase.
+	 * @summary  	Depending on the configuration, stashes/commits code in the current branch - if required.
 	 *
 	 */
-	async _tagCode(git, mergedOptions, logger) {
-		const execMode = mergedOptions.execMode;
+	async _stashOrCommit(options, logger, git) {
+		const execMode = options?.execMode ?? 'cli';
 
-		const es6DynTmpl = require('es6-dynamic-template');
-		const path = require('path');
-		const safeJsonStringify = require('safe-json-stringify');
+		const gitOperation = options?.commit ? 'commit' : 'stash';
+		const branchStatus = await git?.status?.();
 
-		// Get package.json into memory...
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
-
-		// Get trailer messages to append to git commit...
-		let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-		trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
-
-		debug(`trailer messages: ${trailerMessages}`);
+		debug(`checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`);
 		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`trailer messages: ${trailerMessages}`);
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`);
+			else
+				if(logger) logger.text = `Checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`;
 		}
 
+		if(!branchStatus?.files?.length) {
+			debug(`${branchStatus.current} branch clean - ${gitOperation} operation not required.`);
+			// eslint-disable-next-line curly
+			if(!options.quiet) {
+				if(execMode === 'api')
+					logger?.info?.(`${branchStatus.current} branch clean - ${gitOperation} operation not required`);
+				else
+					logger?.succeed?.(`"${branchStatus.current}" branch is clean - ${gitOperation} operation not required`);
+			}
 
-		// Get upstream repository info to use for generating links to commits in the CHANGELOG...
-		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', mergedOptions?.upstream]);
-
-		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
-		repository.project = repository?.project?.replace?.('.git\n', '');
-
-		debug(`repository info: ${safeJsonStringify(repository)}`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`repository info: ${safeJsonStringify(repository)}`);
+			return false;
 		}
 
-		// Step 1: Get the last tag, the commit that was tagged, and the most recent commit
+		debug(`${branchStatus.current} branch dirty - proceeding with ${gitOperation} operation`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`${branchStatus.current} branch is dirty - proceeding with ${gitOperation} operation`);
+			else
+				if(logger) logger.text = `${branchStatus.current} branch is dirty - proceeding with ${gitOperation} operation`;
+		}
+
+		let stashOrCommitStatus = null;
+		if(gitOperation === 'stash') {
+			stashOrCommitStatus = await git?.stash?.(['push']);
+		}
+		else {
+			const es6DynTmpl = require('es6-dynamic-template');
+			const path = require('path');
+
+			const projectPackageJson = path.join(process.cwd(), 'package.json');
+			const pkg = require(projectPackageJson);
+
+			const commitMessage = es6DynTmpl?.(options?.message, pkg);
+			debug(`Commit message: ${commitMessage}`);
+
+			let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+			trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
+			debug(`Trailer messages: ${trailerMessages}`);
+
+			const consolidatedMessage = `${(commitMessage ?? '')} ${(trailerMessages ?? '')}`;
+			stashOrCommitStatus = await git?.commit?.(consolidatedMessage, null, {
+				'--all': true,
+				'--allow-empty': true,
+				'--signoff': true
+			});
+
+			stashOrCommitStatus = stashOrCommitStatus?.commit;
+		}
+
+		if(execMode === 'api')
+			logger?.info?.(`Branch "${branchStatus.current}" ${gitOperation} process done`);
+		else
+			logger?.succeed?.(`Branch "${branchStatus.current}" ${gitOperation} process done.`);
+
+		debug(`${gitOperation} status: ${JSON.stringify((stashOrCommitStatus ?? {}), null, '\t')}`);
+		return true;
+	}
+
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_generateChangelog
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Generates a CHANGELOG from the relevant Git Log events, and commits the modified file.
+	 *
+	 */
+	async _generateChangelog(options, logger, git) {
+		const execMode = options?.execMode ?? 'cli';
+
+		debug(`generating the changelog containing significant git log events from the last tag`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Generating CHANGELOG containing significant Git log events from the last tag`);
+			else
+				if(logger) logger.text = `Generating CHANGELOG containing significant Git log events from the last tag`;
+		}
+
+		if(options?.dontTag || (options.tagName !== '')) {
+			if(execMode === 'api')
+				logger?.info?.(`Tag Name specified, or --dont-tag is true. Skipping CHANGELOG generation`);
+			else
+				logger?.succeed?.(`Tag Name specified, or --dont-tag is true. Skipping CHANGELOG generation`);
+
+			return;
+		}
+
+		// Step 1: Get the last tag, the commit for the last tag, and the last commit
 		let lastTag = await git?.tag?.(['--sort=-creatordate']);
 		lastTag = lastTag?.split?.('\n')?.shift()?.replace?.(/\\n/g, '')?.trim?.();
 
@@ -358,19 +368,7 @@ class ReleaseCommandClass {
 		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
 		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
 
-		debug(`last Tag: ${lastTag}, commit sha: ${lastTaggedCommit}, current commit sha: ${lastCommit}`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api') {
-			logger?.debug?.(`last Tag: ${lastTag}, commit sha: ${lastTaggedCommit}, current commit sha: ${lastCommit}`);
-		}
-
-		// Step 2: Generate the CHANGELOG using the commit messages in the git log - from the last tag to the most recent commit
-		debug(`generating CHANGELOG.md`);
-		if(execMode === 'api')
-			logger?.debug?.(`generating CHANGELOG.md`);
-		else
-			if(logger) logger.text = 'Generating CHANGELOG.md...';
-
+		// Step 2: Get the Git Log events from the last commit to the commit of the last tag
 		let gitLogsInRange = null;
 
 		if(lastTaggedCommit && lastCommit)
@@ -389,6 +387,7 @@ class ReleaseCommandClass {
 				'all': []
 			};
 
+		// Step 3: Filter the Git Logs - keep only the ones relevant to the CHANGELOG (features, bug fixes, and documentation)
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
 			// eslint-disable-next-line curly
@@ -417,6 +416,23 @@ class ReleaseCommandClass {
 			});
 		});
 
+		if(!relevantGitLogs.length) {
+			if(execMode === 'api')
+				logger?.info?.(`No significant Git Log events between the last tag and the current commit. Skipping CHANGELOG generation`);
+			else
+				logger?.succeed?.(`No significant Git Log events between the last tag and the current commit. Skipping CHANGELOG generation`);
+
+			return;
+		}
+
+		// Step 4: Get the upstream repository information - to be used to generate the URLs pointing to the commits
+		const hostedGitInfo = require('hosted-git-info');
+		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+
+		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
+		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		// Step 5: Generate the changelogs - prepend to an existing file, or create a whole new one
 		const changeLogText = [`#### CHANGE LOG`];
 		const processedDates = [];
 
@@ -431,85 +447,130 @@ class ReleaseCommandClass {
 			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash}))`);
 		});
 
-		if(changeLogText.length > 1) {
-			const replaceInFile = require('replace-in-file');
+		const path = require('path');
+		const replaceInFile = require('replace-in-file');
+		while(changeLogText.length) {
+			const thisChangeSet = [];
 
-			while(changeLogText.length) {
-				const thisChangeSet = [];
-
-				let thisChangeLog = changeLogText?.pop?.();
-				while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
-					thisChangeSet?.unshift?.(thisChangeLog);
-					thisChangeLog = changeLogText?.pop?.();
-				}
-
+			let thisChangeLog = changeLogText?.pop?.();
+			while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
 				thisChangeSet?.unshift?.(thisChangeLog);
-
-				const replaceOptions = {
-					'files': path.join(process.cwd(), 'CHANGELOG.md'),
-					'from': thisChangeLog,
-					'to': thisChangeSet?.join?.('\n')
-				};
-
-				const changelogResult = await replaceInFile?.(replaceOptions);
-				if(changelogResult?.[0]?.['hasChanged']) continue;
-
-				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
-
-				const prependFile = require('prepend-file');
-				await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
-				break;
+				thisChangeLog = changeLogText?.pop?.();
 			}
 
-			debug(`generated CHANGELOG.md`);
-			if(execMode === 'api')
-				logger?.info?.(`generated CHANGELOG.md`);
-			else
-				logger?.succeed?.('Generated CHANGELOG.md...');
+			thisChangeSet?.unshift?.(thisChangeLog);
+
+			const replaceOptions = {
+				'files': path.join(process.cwd(), 'CHANGELOG.md'),
+				'from': thisChangeLog,
+				'to': thisChangeSet?.join?.('\n')
+			};
+
+			const changelogResult = await replaceInFile?.(replaceOptions);
+			if(changelogResult?.[0]?.['hasChanged'])
+				continue;
+
+
+			const prependFile = require('prepend-file');
+
+			while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
+			await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
+
+			break;
 		}
 
-		// Step 3: Commit CHANGELOG
-		const branchStatus = await git?.status?.();
-		let tagCommitSha = null;
+		// Step 6: Commit the CHANGELOG
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const pkg = require(projectPackageJson);
 
-		if(branchStatus?.files?.length) {
-			const addStatus = await git?.add?.('.');
-			debug(`Added files to commit with status: ${safeJsonStringify(addStatus, null, '\t')}`);
+		let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+		trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 
-			const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
-			tagCommitSha = await git?.commit?.(consolidatedMessage, null, {
-				'--allow-empty': true,
-				'--no-verify': true
-			});
-			tagCommitSha = tagCommitSha?.commit;
+		const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
 
-			debug(`Committed change log: ${tagCommitSha}`);
+		await git?.add?.('.');
+		await git?.commit?.(consolidatedMessage, null, {
+			'--allow-empty': true,
+			'--no-verify': true
+		});
+
+		if(execMode === 'api')
+			logger?.debug?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
+		else
+			logger?.succeed?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_tagCode
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Tags the codebase.
+	 *
+	 */
+	async _tagCode(options, logger, git) {
+		const execMode = options.execMode;
+
+		debug(`tagging commit with the CHANGELOG...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
 			if(execMode === 'api')
-				logger?.info?.(`committed CHANGELOG.md`);
+				logger?.debug?.(`Tagging commit with the CHANGELOG`);
 			else
-				logger?.succeed?.('Committed CHANGELOG.md...');
+				if(logger) logger.text = `Tagging commit with the CHANGELOG`;
 		}
 
-		// Step 4: Tag this commit
-		debug(`generating tag name / message...`);
-		if(execMode === 'api')
-			logger?.debug?.(`generating tag name / message`);
-		else
-			if(logger) logger.text = 'Generating tag name / message...';
+		if(options?.dontTag || (options.tagName !== '')) {
+			if(execMode === 'api')
+				logger?.info?.(`Tag Name specified, or --dont-tag is true. Skipping tag operation`);
+			else
+				logger?.succeed?.(`Tag Name specified, or --dont-tag is true. Skipping tag operation`);
 
-		const tagName = es6DynTmpl?.(mergedOptions?.tagName, pkg);
-		const tagMessage = es6DynTmpl?.(mergedOptions?.tagMessage, pkg);
+			return;
+		}
 
-		debug(`tagging the code`);
-		if(execMode === 'api')
-			logger?.debug?.(`tagging the code...`);
-		else
-			if(logger) logger.text = 'Tagging...';
+		let lastTag = await git?.tag?.(['--sort=-creatordate']);
+		lastTag = lastTag?.split?.('\n')?.shift()?.replace?.(/\\n/g, '')?.trim?.();
 
+		let lastTaggedCommit = null;
+		if(lastTag) {
+			lastTaggedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastTaggedCommit = lastTaggedCommit?.replace?.(/\\n/g, '')?.trim?.();
+		}
 
-		const tagStatus = await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, tagCommitSha || lastCommit]);
+		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
+		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
 
-		debug(`tag ${tagName}: ${tagMessage} created with status: ${safeJsonStringify((tagStatus ?? {}), null, '\t')}`);
+		if(lastTaggedCommit === lastCommit) {
+			debug(`no commits since last tag. no tagging required.`);
+			if(execMode === 'api')
+				logger?.info?.(`No commits since last tag - tagging not required`);
+			else
+				logger?.succeed?.(`No commits since last tag - tagging not required`);
+
+			return;
+		}
+
+		const es6DynTmpl = require('es6-dynamic-template');
+		const path = require('path');
+
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const pkg = require(projectPackageJson);
+
+		const tagName = es6DynTmpl?.(options?.tagName, pkg);
+		const tagMessage = es6DynTmpl?.(options?.tagMessage, pkg);
+
+		await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, lastTaggedCommit || lastCommit]);
+
+		debug(`tag ${tagName}: ${tagMessage} created`);
 		if(execMode === 'api')
 			logger?.info?.(`tag ${tagName}: ${tagMessage} created`);
 		else
@@ -520,63 +581,111 @@ class ReleaseCommandClass {
 	 * @async
 	 * @function
 	 * @instance
-	 * @memberof ReleaseCommandClass
-	 * @name     _releaseCode
+	 * @memberof	ReleaseCommandClass
+	 * @name		_pushUpstream
 	 *
-	 * @param    {object} git - GIT API instance
-	 * @param    {object} mergedOptions - Parsed command-line options, or options passed in via API
-	 * @param    {object} logger - Logger supporting the usual commands (debug, info, warn, error, etc.)
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
 	 *
-	 * @return {null} Nothing.
+	 * @return		{null} Nothing.
 	 *
-	 * @summary  Creates a release on Github, and marks it as pre-release if required.
+	 * @summary		Pushes new commits/tags to the configured upstream git remote.
 	 *
 	 */
-	async _releaseCode(git, mergedOptions, logger) {
-		const path = require('path');
-		const safeJsonStringify = require('safe-json-stringify');
+	async _pushUpstream(options, logger, git) {
+		const execMode = options.execMode;
 
-		// Step 1: Instantiate the Github Client for this repo
-		const octonode = require('octonode');
-		const client = octonode?.client?.(mergedOptions?.githubToken);
-
-		const execMode = mergedOptions?.execMode;
-
-		debug('created client to connect to github');
+		debug(`pushing commits and tag upstream...`);
 		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`github client created`);
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Pushing commits and tag upstream`);
+			else
+				if(logger) logger.text = `Pushing commits and tag upstream`;
 		}
 
-		// Step 2: Get upstream repository info to use for getting required details...
+		const branchStatus = await git?.status?.();
+		if(!branchStatus?.aheaad) {
+			if(execMode === 'api')
+				logger?.info?.(`Nothing to push upstream`);
+			else
+				logger?.succeed?.(`Skipping push to upstream operation - no commits/tags to push`);
+
+			return;
+		}
+
+		await git?.push?.(options?.upstream, branchStatus?.current, {
+			'--atomic': true,
+			'--progress': true,
+			'--signed': 'if-asked'
+		});
+
+		await git?.pushTags?.(options?.upstream, {
+			'--atomic': true,
+			'--force': true,
+			'--progress': true,
+			'--signed': 'if-asked'
+		});
+
+		debug(`pushed ${branchStatus.current} branch tags upstream to ${options?.upstream}`);
+		if(execMode === 'api')
+			logger?.info?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}`);
+		else
+			logger?.succeed?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}.`);
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_generateReleaseNotes
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 *
+	 * @return		{string} The generated release notes for this release.
+	 *
+	 * @summary		Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.
+	 *
+	 */
+	async _generateReleaseNotes(options, logger, git) {
+		const execMode = options.execMode;
+
+		debug(`generating release notes...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Generating release notes`);
+			else
+				if(logger) logger.text = `Generating release notes...`;
+		}
+
+		if(options?.dontRelease) {
+			if(execMode === 'api')
+				logger?.info?.(`--dont-release is true. Skipping generating release notes`);
+			else
+				logger?.succeed?.(`--dont-release is true. Skipping generating release notes`);
+
+			return null;
+		}
+
+		// Step 1: Get upstream repository info to use for getting required details...
 		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', mergedOptions?.upstream]);
+		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
 
 		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
 		repository.project = repository?.project?.replace?.('.git\n', '');
 
-		debug(`repository Info: ${safeJsonStringify((repository ?? {}), null, '\t')}`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`upstream repository info: ${safeJsonStringify((repository ?? {}), null, '\t')}`);
-		}
+		// Step 2: Instantiate the Github Client for this Repo, and create a repo object
+		const octonode = require('octonode');
 
-		// Step 3: Create a repo object
+		const client = octonode?.client?.(options?.githubToken);
 		const ghRepo = client?.repo?.(`${repository?.user}/${repository?.project}`);
 
-		debug(`connecting to: ${repository?.user}/${repository?.project}`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`connecting to: ${repository?.user}/${repository?.project}`);
-		}
-
-		// Step 4: Get all the releases for the repository
-		debug(`fetching last release info...`);
-		if(execMode === 'api')
-			logger?.debug?.(`fetching last release info...`);
-		else
-			if(logger) logger.text = `fetching last release info...`;
-
+		// Step 3: Get the last release for the repository
 		const ghReleases = await ghRepo?.releasesAsync?.();
 		const lastRelease = ghReleases?.[0]?.map?.((release) => {
 			return {
@@ -590,19 +699,7 @@ class ReleaseCommandClass {
 		})
 		?.shift?.();
 
-		debug(`fetched last release info.`);
-		if(execMode === 'api')
-			logger?.info?.(`fetched last release info...`);
-		else
-			logger?.succeed?.(`Fetched last release info.`);
-
-		// Step 5: Get the last released commit, and the most recent tag / specified tag commit
-		debug(`getting tag used for the last release`);
-		if(execMode === 'api' && !mergedOptions.quiet)
-			logger?.debug?.(`getting tag used for the last release`);
-		else
-			if(logger) logger.text = `Getting tag used for the last release`;
-
+		// Step 4: Get the last released commit, and the most recent tag / specified tag commit
 		let lastReleasedCommit = null;
 		if(lastRelease) {
 			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
@@ -611,11 +708,11 @@ class ReleaseCommandClass {
 
 		let lastTag = await git?.tag?.(['--sort=-creatordate']);
 		// If a specific tag name is not given, use the commit associated with the last tag
-		if(mergedOptions?.tag === '')
+		if(options?.tag === '')
 			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
 		// Otherwise, use the commit associated with the specified tag
 		else
-			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === mergedOptions?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
+			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
 
 		let lastCommit = null;
 		if(lastTag) {
@@ -623,19 +720,7 @@ class ReleaseCommandClass {
 			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
 		}
 
-		debug(`last release tag: ${lastRelease?.tag}, last release commit sha: ${lastReleasedCommit}, current tag: ${lastTag}, current commit sha: ${lastCommit}`);
-		if(execMode === 'api' && !mergedOptions.quiet)
-			logger?.debug?.(`last release tag: ${lastRelease?.tag}, last release commit sha: ${lastReleasedCommit}, current tag: ${lastTag}, current commit sha: ${lastCommit}`);
-		else
-			logger?.succeed?.(`Retrieved tag used for the last release`);
-
-		// Step 6: Get data required for generating the RELEASE NOTES
-		debug(`generating release notes...`);
-		if(execMode === 'api' && !mergedOptions.quiet)
-			logger?.debug?.(`generating release notes`);
-		else
-			if(logger) logger.text = `Generating release notes...`;
-
+		// Step 5: Get the Git Log events from the commit of the last release to the commit of the last tag
 		let gitLogsInRange = null;
 		if(lastReleasedCommit && lastCommit)
 			gitLogsInRange = await git?.log?.({
@@ -653,6 +738,7 @@ class ReleaseCommandClass {
 				'all': []
 			};
 
+		// Step 6: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
 		const dateFormat = require('date-fns/format');
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
@@ -684,24 +770,34 @@ class ReleaseCommandClass {
 			});
 		});
 
-		debug(`finished filtering out irrelevant git logs`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`filtered out irrelevant git logs`);
-		}
+		// Step 7: Fetch Author information for each of the relevant Git Log events
+		const contributorSet = {};
+		let authorProfiles = [];
 
+		relevantGitLogs?.forEach?.((commitLog) => {
+			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
+				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
+				authorProfiles?.push?.(ghRepo?.commitAsync?.(commitLog?.hash));
+			}
+		});
+
+		authorProfiles = await Promise?.allSettled?.(authorProfiles);
+		authorProfiles = authorProfiles.map((authorProfile) => {
+			authorProfile = authorProfile?.value?.[0];
+
+			return {
+				'name': authorProfile?.commit?.author?.name,
+				'email': authorProfile?.commit?.author?.email,
+				'profile': authorProfile?.author?.html_url,
+				'avatar': authorProfile?.author?.avatar_url
+			};
+		});
+
+		// Step 8: Bucket the Git Log events based on the Conventional Changelog fields
 		const featureSet = [];
 		const bugfixSet = [];
 		const documentationSet = [];
-		const contributorSet = {};
 
-		debug(`fetching author information`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`fetching author information`);
-		}
-
-		let resolutions = [];
 		relevantGitLogs?.forEach?.((commitLog) => {
 			const commitObject = {
 				'hash': commitLog?.hash,
@@ -709,6 +805,7 @@ class ReleaseCommandClass {
 				'message': commitLog?.message,
 				'author_name': commitLog?.['author_name'],
 				'author_email': commitLog?.['author_email'],
+				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
 				'date': commitLog?.date
 			};
 
@@ -739,77 +836,10 @@ class ReleaseCommandClass {
 			}
 
 			set?.push?.(commitObject);
-			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
-				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
-				resolutions?.push?.(ghRepo?.commitAsync?.(commitLog?.hash));
-			}
 		});
 
-		const promises = require('bluebird');
-		resolutions = await promises?.all?.(resolutions);
-
-		debug(`fetching author information`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`fetched author information`);
-		}
-
-		// Step 7: Record authors / contributors
-		debug(`processing author information`);
-		// eslint-disable-next-line curly
-		if(execMode === 'api' && !mergedOptions.quiet) {
-			logger?.debug?.(`processing author information`);
-		}
-
-		const commits = resolutions?.shift?.();
-		const authorList = [];
-		commits?.forEach?.((ghCommit, idx) => {
-			const authorEmail = Object.keys(contributorSet)[idx];
-			if(!authorEmail) return;
-
-			authorList?.push?.({
-				'name': contributorSet?.[authorEmail],
-				'email': authorEmail,
-				'profile': ghCommit?.author?.html_url,
-				'avatar': ghCommit?.author?.avatar_url
-			});
-		});
-
-		featureSet?.forEach?.((feature) => {
-			const thisAuthor = authorList?.filter?.((author) => { return author?.email === feature?.author_email; })?.shift?.();
-			feature['author_profile'] = thisAuthor?.profile;
-		});
-
-		bugfixSet?.forEach?.((fix) => {
-			const thisAuthor = authorList?.filter?.((author) => { return author?.email === fix?.author_email; })?.shift?.();
-			fix['author_profile'] = thisAuthor?.profile;
-		});
-
-		documentationSet?.forEach((doc) => {
-			const thisAuthor = authorList?.filter?.((author) => { return author?.email === doc?.author_email; })?.shift?.();
-			doc['author_profile'] = thisAuthor?.profile;
-		});
-
-		const releaseMessageData = {
-			'REPO': repository,
-			'RELEASE_NAME': mergedOptions?.releaseName,
-			'NUM_FEATURES': featureSet?.length,
-			'NUM_FIXES': bugfixSet?.length,
-			'NUM_DOCS': documentationSet?.length,
-			'NUM_AUTHORS': authorList?.length,
-			'FEATURES': featureSet,
-			'FIXES': bugfixSet,
-			'DOCS': documentationSet,
-			'AUTHORS': authorList
-		};
-
-		// Step 8: EJS the Release Notes template
-		let releaseMessagePath = mergedOptions?.releaseMessage ?? '';
-		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
-		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
-
-		// Get package.json into memory...
-		const ejs = promises?.promisifyAll?.(require('ejs'));
+		// Step 9: Compute if this is a pre-release, or a proper release
+		const path = require('path');
 		const semver = require('semver');
 
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
@@ -825,9 +855,32 @@ class ReleaseCommandClass {
 		}
 
 		const parsedVersion = semver?.parse?.(version);
-		releaseMessageData['RELEASE_TYPE'] = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
+		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
 
-		const releaseNotes = await ejs?.renderFileAsync?.(releaseMessagePath, releaseMessageData, {
+		// Step 10: Generate the release notes
+		const releaseData = {
+			'REPO': repository,
+			'RELEASE_NAME': options?.releaseName,
+			'RELEASE_TYPE': releaseType,
+			'RELEASE_TAG': lastTag,
+			'NUM_FEATURES': featureSet?.length,
+			'NUM_FIXES': bugfixSet?.length,
+			'NUM_DOCS': documentationSet?.length,
+			'NUM_AUTHORS': authorProfiles?.length,
+			'FEATURES': featureSet,
+			'FIXES': bugfixSet,
+			'DOCS': documentationSet,
+			'AUTHORS': authorProfiles
+		};
+
+		let releaseMessagePath = options?.releaseMessage ?? '';
+		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
+		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
+
+		const promises = require('bluebird');
+		const ejs = promises?.promisifyAll?.(require('ejs'));
+
+		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
 			'async': true,
 			'cache': false,
 			'debug': false,
@@ -835,34 +888,71 @@ class ReleaseCommandClass {
 			'strict': false
 		});
 
-		debug(`generated release notes`);
+		// Finally, return...
 		if(execMode === 'api')
-			logger?.info?.(`generated release notes`);
+			logger?.info?.(`Generated release notes`);
 		else
-			logger?.succeed?.(`Generated release notes.`);
+			logger?.succeed(`Generated release notes.`);
 
-		// Step 9: Create the release...
-		debug(`pushing release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-		if(execMode === 'api' && !mergedOptions.quiet)
-			logger?.debug?.(`pushing release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-		else
-			if(logger) logger.text = `Pushing release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases...`;
+		return releaseData;
+	}
 
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_releaseCode
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseData - Data needed to push the release, returned by _generateReleaseNotes
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Creates a release on Github, and marks it as pre-release if required.
+	 *
+	 */
+	async _releaseCode(options, logger, releaseData) {
+		const execMode = options?.execMode;
+
+		debug(`creating the release...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Creating the release...`);
+			else
+				if(logger) logger.text = `Creating the release...`;
+		}
+
+		if(options?.dontRelease) {
+			if(execMode === 'api')
+				logger?.info?.(`--dont-release is true. Skipping generating release notes`);
+			else
+				logger?.succeed?.(`--dont-release is true. Skipping generating release notes`);
+
+			return;
+		}
+
+		const promises = require('bluebird');
+		const octonode = require('octonode');
+
+		const client = octonode?.client?.(options?.githubToken);
 		const clientPost = promises?.promisify?.(client?.post?.bind?.(client));
 
+		const repository = releaseData['REPO'];
 		await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 			'accept': 'application/vnd.github.v3+json',
-			'tag_name': lastTag,
-			'name': releaseMessageData?.['RELEASE_NAME'],
-			'body': releaseNotes,
-			'prerelease': !!parsedVersion?.prerelease?.length
+			'tag_name': releaseData?.['RELEASE_TAG'],
+			'name': releaseData?.['RELEASE_NAME'],
+			'body': releaseData?.['RELEASE_NOTES'],
+			'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
 		});
 
-		debug(`pushed release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
 		if(execMode === 'api')
-			logger?.info?.(`pushed release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
+			logger?.debug?.(`Created the release`);
 		else
-			logger?.succeed?.(`Pushed release to https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases.`);
+			logger?.succeed(`Created the release`);
 	}
 	// #endregion
 
