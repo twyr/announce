@@ -4,7 +4,7 @@
 <div align="center">
     <a href="https://spdx.org/licenses/MITNFA.html"><img src="https://img.shields.io/badge/License-MIT%20%2Bno--false--attribs-blue" /></a>
     <a href="https://github.com/twyr/announce/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" /></a>
-    <a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=5b5a7170.5.009604624b6e25cee1552e6174315" /></a>
+    <a href="https://circleci.com/gh/twyr/announce"><img src="https://circleci.com/gh/twyr/announce.svg?style=shield&circle-token=5b5a717014a209604624b6e25cee1552e6174315" /></a>
 </div>
 <hr />
 
@@ -33,20 +33,21 @@
 | Publish Status | ![node-current](https://img.shields.io/node/v/@twyr/announce) ![npm bundle size](https://img.shields.io/bundlephobia/min/@twyr/announce) ![npm](https://img.shields.io/npm/dy/@twyr/announce) |
 
 #### TABLE OF CONTENTS
-- [Raison d'etre](#why-announce)
-- [Workflow](#workflow)
-- [Using the CLI](#using-the-cli)
-   - [Installation](#cli-installation)
-   - [Commands](#cli-commands)
-- [Integrating with another Module](#integrating-announce-cli-into-another-module)
-   - [Installation](#module-installation)
-   - [API](#module-api)
-- [Contributing](#contributing)
-   - [Code of Conduct](#code-of-conduct)
-   - [Developing](#developing)
-   - [Project Contributors](#contributors)
-- [License](#license)
-- [See Also](#see-also)
+- [TABLE OF CONTENTS](#table-of-contents)
+- [WHY ANNOUNCE](#why-announce)
+- [WORKFLOW](#workflow)
+- [USING THE CLI](#using-the-cli)
+	- [CLI Installation](#cli-installation)
+	- [CLI Commands](#cli-commands)
+- [INTEGRATING ANNOUNCE CLI INTO ANOTHER MODULE](#integrating-announce-cli-into-another-module)
+	- [Module Installation](#module-installation)
+	- [Module API](#module-api)
+- [CONTRIBUTING](#contributing)
+	- [Code of Conduct](#code-of-conduct)
+	- [Developing](#developing)
+	- [Contributors](#contributors)
+- [LICENSE](#license)
+- [SEE ALSO](#see-also)
 
 #### WHY ANNOUNCE
 Most node.js projects follow a fairly simple set of steps during development - bump the (semantic) version for the next release, commit code,
@@ -129,7 +130,7 @@ Details on getting the code, setting up the development environment, and instruc
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors)
-<!-- ALL-CONTRIBUTORS-BADGE:END --> 
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 This project owes its existence to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->

@@ -54,7 +54,14 @@
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -114,9 +121,484 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(git, mergedOptions, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_generateChangelog"><span class="type-signature">(async) </span>_generateChangelog<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<p class="summary usertext">
+					<p>Generates a CHANGELOG from the relevant Git Log events, and commits the modified file.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line321">line 321</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_generateReleaseNotes"><span class="type-signature">(async) </span>_generateReleaseNotes<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<p class="summary usertext">
+					<p>Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line651">line 651</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The generated release notes for this release.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">string</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_initializeGit"><span class="type-signature"></span>_initializeGit<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Creates a Git client instance for the current project repository and returns it.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line187">line 187</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The Git client instance for the project repository.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Merges options passed in with configured ones - and puts in sane defaults if neither is available.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line105">line 105</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Parsed command-line options, or options passed in via API</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Merged options - input options &gt; configured options.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_pushUpstream"><span class="type-signature">(async) </span>_pushUpstream<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<p class="summary usertext">
+					<p>Pushes new commits/tags to the configured upstream git remote.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line590">line 590</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Creates a release on Github, and marks it as pre-release if required.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line915">line 915</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>releaseData</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Data needed to push the release, returned by _generateReleaseNotes</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_setupLogger"><span class="type-signature"></span>_setupLogger<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line152">line 152</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Logger object with info / error functions.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_stashOrCommit"><span class="type-signature">(async) </span>_stashOrCommit<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+					<p class="summary usertext">
+					<p>Depending on the configuration, stashes/commits code in the current branch - if required.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line230">line 230</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>status of the stash/commit operation.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">boolean</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<p class="summary usertext">
+					<p>Tags the codebase.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
@@ -139,21 +621,12 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>git</code></td>
+								<td class="name"><code>options</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>GIT API instance</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>mergedOptions</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
+									<p>merged options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
@@ -162,72 +635,16 @@
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger supporting the usual commands (debug, info, warn, error, etc.)</p>
+									<p>Logger instance returned by the _setupLogger method</p>
 								</td>
 							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Nothing.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">null</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(git, mergedOptions, logger)</span><span class="type-signature"> &rarr; {null}</span></h4>
-					<p class="summary usertext">
-					<p>Tags the codebase.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line297">line 297</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
 							<tr>
 								<td class="name"><code>git</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>GIT API instance</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>mergedOptions</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Logger supporting the usual commands (debug, info, warn, error, etc.)</p>
+									<p>Git client instance returned by the _initializeGit method</p>
 								</td>
 							</tr>
 						</tbody>

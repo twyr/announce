@@ -54,7 +54,14 @@
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -63,7 +70,7 @@
 		</nav>
 		<div id="main">
 			<section class="package">
-				<h3>@twyr/announce 0.4.2</h3>
+				<h3>@twyr/announce 0.5.0</h3>
 			</section>
 			<section class="readme usertext">
 				<article>
@@ -138,29 +145,30 @@
 					</table>
 					<h4>TABLE OF CONTENTS</h4>
 					<ul>
-						<li><a href="#why-announce">Raison d'etre</a></li>
-						<li><a href="#workflow">Workflow</a></li>
-						<li><a href="#using-the-cli">Using the CLI</a>
+						<li><a href="#table-of-contents">TABLE OF CONTENTS</a></li>
+						<li><a href="#why-announce">WHY ANNOUNCE</a></li>
+						<li><a href="#workflow">WORKFLOW</a></li>
+						<li><a href="#using-the-cli">USING THE CLI</a>
 							<ul>
-								<li><a href="#cli-installation">Installation</a></li>
-								<li><a href="#cli-commands">Commands</a></li>
+								<li><a href="#cli-installation">CLI Installation</a></li>
+								<li><a href="#cli-commands">CLI Commands</a></li>
 							</ul>
 						</li>
-						<li><a href="#integrating-announce-cli-into-another-module">Integrating with another Module</a>
+						<li><a href="#integrating-announce-cli-into-another-module">INTEGRATING ANNOUNCE CLI INTO ANOTHER MODULE</a>
 							<ul>
-								<li><a href="#module-installation">Installation</a></li>
-								<li><a href="#module-api">API</a></li>
+								<li><a href="#module-installation">Module Installation</a></li>
+								<li><a href="#module-api">Module API</a></li>
 							</ul>
 						</li>
-						<li><a href="#contributing">Contributing</a>
+						<li><a href="#contributing">CONTRIBUTING</a>
 							<ul>
 								<li><a href="#code-of-conduct">Code of Conduct</a></li>
 								<li><a href="#developing">Developing</a></li>
-								<li><a href="#contributors">Project Contributors</a></li>
+								<li><a href="#contributors">Contributors</a></li>
 							</ul>
 						</li>
-						<li><a href="#license">License</a></li>
-						<li><a href="#see-also">See Also</a></li>
+						<li><a href="#license">LICENSE</a></li>
+						<li><a href="#see-also">SEE ALSO</a></li>
 					</ul>
 					<h4>WHY ANNOUNCE</h4>
 					<p>Most node.js projects follow a fairly simple set of steps during development - bump the (semantic) version for the next release, commit code,
@@ -343,7 +351,7 @@
 							<dt class="tag-version">Version:</dt>
 							<dd class="tag-version">
 								<ul class="dummy">
-									<li>0.4.2</li>
+									<li>0.5.0</li>
 								</ul>
 							</dd>
 							<dt class="tag-author">Author:</dt>
