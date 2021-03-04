@@ -197,12 +197,12 @@ class PrepareCommandClass {
 			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 		}
 
-		debug(`${projectPackageJson} contains version ${version}`);
 		if(execMode === 'api')
 			logger?.info?.(`${projectPackageJson} contains version ${version}`);
 		else
 			if(logger) logger.text = `Preparing... current version: ${version}`;
 
+		debug(`${projectPackageJson} contains version ${version}`);
 		return version;
 	}
 
@@ -277,15 +277,14 @@ class PrepareCommandClass {
 				break;
 		}
 
-		debug(`incrementing version using semver.inc(${incArgs.join(', ')})`);
 		const nextVersion = incArgs.length ? semver.inc(...incArgs) : options.series;
 
-		debug(`${currentVersion} will be bumped to ${nextVersion}`);
 		if(execMode === 'api')
-			logger?.info?.(`${currentVersion} will be bumped to ${nextVersion}`);
+			logger?.info?.(`Preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
 		else
 			logger?.succeed?.(`Preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
 
+		debug(`preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
 		return nextVersion;
 	}
 
@@ -356,21 +355,22 @@ class PrepareCommandClass {
 			const gitIgnoreParser = require('gitignore-parser');
 			const gitIgnore = gitIgnoreParser.compile(gitIgnoreFile);
 
-			debug(`applying .gitignore to possible targets`);
 			targetFiles = targetFiles.filter(gitIgnore.accepts);
 
 			if(execMode === 'api')
 				logger?.info?.(`Retrieved target files from ${process.cwd()}`);
 			else
 				logger?.succeed?.(`Retrieved target files from ${process.cwd()}`);
+
+			debug(`applying .gitignore to possible targets`);
 		}
 		catch(err) {
-			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
 			if(execMode === 'api')
 				logger?.error?.(`Problem processing .gitignore: ${err.message}.`);
 			else
 				logger?.fail?.(`Problem processing .gitignore: ${err.message}.`);
 
+			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
 			targetFiles = [];
 		}
 
@@ -453,11 +453,14 @@ class PrepareCommandClass {
 		if(execMode !== 'api' && logger)
 			logger.prefixText = '';
 
-		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
 		if(execMode === 'api')
 			logger?.info?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
 		else
 			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
+
+
+		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
+		return;
 	}
 	// #endregion
 

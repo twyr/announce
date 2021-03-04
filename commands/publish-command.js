@@ -169,6 +169,8 @@ class PublishCommandClass {
 	 *
 	 */
 	async _getUpstreamRepositoryInfo(options, logger) {
+		const execMode = options?.execMode ?? 'cli';
+
 		const safeJsonStringify = require('safe-json-stringify');
 		const simpleGit = require('simple-git');
 
@@ -180,8 +182,6 @@ class PublishCommandClass {
 		});
 
 		debug(`initialized Git for the repository @ ${process.cwd()}`);
-		const execMode = options?.execMode ?? 'cli';
-
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
@@ -222,9 +222,9 @@ class PublishCommandClass {
 	 *
 	 */
 	async _getReleaseAssetInformation(options, logger, repository) {
-		debug(`retrieving ${options?.releaseName} release from github`);
 		const execMode = options?.execMode ?? 'cli';
 
+		debug(`retrieving ${options?.releaseName} release from github`);
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
@@ -239,12 +239,12 @@ class PublishCommandClass {
 		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
 		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
 
-		debug(`retrieved ${options?.releaseName} release from github`);
 		if(execMode === 'api')
 			logger?.debug?.(`Retrieved ${options?.releaseName} release from Github`);
 		else
 			logger?.succeed?.(`Retrieved ${options?.releaseName} release details from Github.`);
 
+		debug(`retrieved ${options?.releaseName} release from github`);
 		return releaseToBePublished;
 	}
 
@@ -299,11 +299,13 @@ class PublishCommandClass {
 
 		await publishProcess;
 
-		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
 		if(execMode === 'api')
 			logger?.info?.(`Published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
 		else
 			logger?.succeed?.(`Published ${options?.releaseName} release to npm.`);
+
+		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
+		return;
 	}
 
 	/**

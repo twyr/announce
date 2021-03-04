@@ -259,7 +259,6 @@ class ReleaseCommandClass {
 		}
 
 		if(!branchStatus?.files?.length) {
-			debug(`${branchStatus.current} branch clean - ${gitOperation} operation not required.`);
 			// eslint-disable-next-line curly
 			if(!options.quiet) {
 				if(execMode === 'api')
@@ -268,6 +267,7 @@ class ReleaseCommandClass {
 					logger?.succeed?.(`"${branchStatus.current}" branch is clean - ${gitOperation} operation not required`);
 			}
 
+			debug(`${branchStatus.current} branch clean - ${gitOperation} operation not required.`);
 			return false;
 		}
 
@@ -346,12 +346,13 @@ class ReleaseCommandClass {
 				if(logger) logger.text = `Generating CHANGELOG containing significant Git log events from the last tag`;
 		}
 
-		if(options?.dontTag || (options.tagName !== '')) {
+		if(options?.dontTag || (options.tag !== '')) {
 			if(execMode === 'api')
-				logger?.info?.(`Tag Name specified, or --dont-tag is true. Skipping CHANGELOG generation`);
+				logger?.info?.(`Existing tag specified, or --dont-tag is true. Skipping CHANGELOG generation`);
 			else
-				logger?.succeed?.(`Tag Name specified, or --dont-tag is true. Skipping CHANGELOG generation`);
+				logger?.succeed?.(`Existing tag specified, or --dont-tag is true. Skipping CHANGELOG generation`);
 
+			debug(`existing tag specified, or --dont-tag is true - skipping CHANGELOG generation`);
 			return;
 		}
 
@@ -422,6 +423,7 @@ class ReleaseCommandClass {
 			else
 				logger?.succeed?.(`No significant Git Log events between the last tag and the current commit. Skipping CHANGELOG generation`);
 
+			debug(`no significant Git Log events between the last tag and the current commit - skipping CHANGELOG generation`);
 			return;
 		}
 
@@ -480,6 +482,17 @@ class ReleaseCommandClass {
 		}
 
 		// Step 6: Commit the CHANGELOG
+		const branchStatus = await git?.status?.();
+		if(!branchStatus?.files?.length) {
+			if(execMode === 'api')
+				logger?.info?.(`No CHANGELOG events. Skipping commit operation`);
+			else
+				logger?.succeed?.(`No CHANGELOG events. Skipping commit operation`);
+
+			debug(`no CHANGELOG events - skipping commit operation`);
+			return;
+		}
+
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		const pkg = require(projectPackageJson);
 
@@ -495,9 +508,12 @@ class ReleaseCommandClass {
 		});
 
 		if(execMode === 'api')
-			logger?.debug?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
+			logger?.info?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
 		else
 			logger?.succeed?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
+
+		debug(`generated CHANGELOG containing significant Git log events from the last tag`);
+		return;
 	}
 
 	/**
@@ -528,34 +544,13 @@ class ReleaseCommandClass {
 				if(logger) logger.text = `Tagging commit with the CHANGELOG`;
 		}
 
-		if(options?.dontTag || (options.tagName !== '')) {
+		if(options?.dontTag || (options.tag !== '')) {
 			if(execMode === 'api')
-				logger?.info?.(`Tag Name specified, or --dont-tag is true. Skipping tag operation`);
+				logger?.info?.(`Existing tag specified, or --dont-tag is true. Skipping tag operation`);
 			else
-				logger?.succeed?.(`Tag Name specified, or --dont-tag is true. Skipping tag operation`);
+				logger?.succeed?.(`Existing tag specified, or --dont-tag is true. Skipping tag operation`);
 
-			return;
-		}
-
-		let lastTag = await git?.tag?.(['--sort=-creatordate']);
-		lastTag = lastTag?.split?.('\n')?.shift()?.replace?.(/\\n/g, '')?.trim?.();
-
-		let lastTaggedCommit = null;
-		if(lastTag) {
-			lastTaggedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
-			lastTaggedCommit = lastTaggedCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
-		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-
-		if(lastTaggedCommit === lastCommit) {
-			debug(`no commits since last tag. no tagging required.`);
-			if(execMode === 'api')
-				logger?.info?.(`No commits since last tag - tagging not required`);
-			else
-				logger?.succeed?.(`No commits since last tag - tagging not required`);
-
+			debug(`existing tag specified or --dont-tag is true - skipping tag operation`);
 			return;
 		}
 
@@ -568,13 +563,28 @@ class ReleaseCommandClass {
 		const tagName = es6DynTmpl?.(options?.tagName, pkg);
 		const tagMessage = es6DynTmpl?.(options?.tagMessage, pkg);
 
-		await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, lastTaggedCommit || lastCommit]);
+		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
+		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
 
-		debug(`tag ${tagName}: ${tagMessage} created`);
+		if(!lastCommit) {
+			if(execMode === 'api')
+				logger?.info?.(`No commits found in the repository. Skipping tag operation`);
+			else
+				logger?.succeed?.(`No commits found in the repository. Skipping tag operation`);
+
+			debug(`no commits found in the repository - skipping tag operation`);
+			return;
+		}
+
+		await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, lastCommit]);
+
 		if(execMode === 'api')
-			logger?.info?.(`tag ${tagName}: ${tagMessage} created`);
+			logger?.info?.(`Tag ${tagName}: ${tagMessage} created`);
 		else
 			logger?.succeed?.(`Tag ${tagName}: ${tagMessage} created`);
+
+		debug(`tag ${tagName}: ${tagMessage} created`);
+		return;
 	}
 
 	/**
@@ -606,12 +616,13 @@ class ReleaseCommandClass {
 		}
 
 		const branchStatus = await git?.status?.();
-		if(!branchStatus?.aheaad) {
+		if(!branchStatus?.ahead) {
 			if(execMode === 'api')
-				logger?.info?.(`Nothing to push upstream`);
+				logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
 			else
-				logger?.succeed?.(`Skipping push to upstream operation - no commits/tags to push`);
+				logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
 
+			debug(`skipping push upstream operation - no commits/tags to push`);
 			return;
 		}
 
@@ -628,11 +639,13 @@ class ReleaseCommandClass {
 			'--signed': 'if-asked'
 		});
 
-		debug(`pushed ${branchStatus.current} branch tags upstream to ${options?.upstream}`);
 		if(execMode === 'api')
 			logger?.info?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}`);
 		else
 			logger?.succeed?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}.`);
+
+		debug(`pushed ${branchStatus.current} branch tags upstream to ${options?.upstream}`);
+		return;
 	}
 
 	/**
@@ -665,10 +678,11 @@ class ReleaseCommandClass {
 
 		if(options?.dontRelease) {
 			if(execMode === 'api')
-				logger?.info?.(`--dont-release is true. Skipping generating release notes`);
+				logger?.info?.(`--dont-release is true. Skipping release notes generation`);
 			else
-				logger?.succeed?.(`--dont-release is true. Skipping generating release notes`);
+				logger?.succeed?.(`--dont-release is true. Skipping release notes generation`);
 
+			debug(`--dont-release is true - skipping release notes generation`);
 			return null;
 		}
 
@@ -892,8 +906,9 @@ class ReleaseCommandClass {
 		if(execMode === 'api')
 			logger?.info?.(`Generated release notes`);
 		else
-			logger?.succeed(`Generated release notes.`);
+			logger?.succeed?.(`Generated release notes.`);
 
+		debug(`generated release notes.`);
 		return releaseData;
 	}
 
@@ -927,10 +942,11 @@ class ReleaseCommandClass {
 
 		if(options?.dontRelease) {
 			if(execMode === 'api')
-				logger?.info?.(`--dont-release is true. Skipping generating release notes`);
+				logger?.info?.(`--dont-release is true. Skipping create release operation`);
 			else
-				logger?.succeed?.(`--dont-release is true. Skipping generating release notes`);
+				logger?.succeed?.(`--dont-release is true. Skipping create release operation`);
 
+			debug(`--dont-release is true - skipping create release operation`);
 			return;
 		}
 
@@ -950,9 +966,13 @@ class ReleaseCommandClass {
 		});
 
 		if(execMode === 'api')
-			logger?.debug?.(`Created the release`);
+			logger?.info?.(`Created the release`);
 		else
-			logger?.succeed(`Created the release`);
+			logger?.succeed?.(`Created the release`);
+
+
+		debug(`created the release`);
+		return;
 	}
 	// #endregion
 
