@@ -1,6 +1,13 @@
 #### CHANGE LOG
 
 
+##### 04-Mar-2021
+
+docs(all): updated for 0.5.0 ([83c5bdc02bbdd859e50023c7e079be9f6815ac12](https://github.com/twyr/announce/commit/83c5bdc02bbdd859e50023c7e079be9f6815ac12))
+
+docs(version): updated version for the next publish ([7eef50970d86d0bb0ef5d3874a385aef0c1da956](https://github.com/twyr/announce/commit/7eef50970d86d0bb0ef5d3874a385aef0c1da956))#### CHANGE LOG
+
+
 ##### 02-Mar-2021
 
 docs(all): updated menu with new methods in publish ([6dfa84be66068942383a4bc7abe9ad1ae625e0e7](https://github.com/twyr/announce/commit/6dfa84be66068942383a4bc7abe9ad1ae625e0e7))
