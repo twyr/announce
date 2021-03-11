@@ -110,6 +110,7 @@ class PublishCommandClass {
 		mergedOptions.dryRun = options?.dryRun ?? (this?._commandOptions?.dryRun ?? false);
 
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.gitlabToken = options?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
 		mergedOptions.npmToken = options?.npmToken ?? (this?._commandOptions?.npmToken ?? process.env.NPM_TOKEN);
 
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
@@ -224,25 +225,29 @@ class PublishCommandClass {
 	async _getReleaseAssetInformation(options, logger, repository) {
 		const execMode = options?.execMode ?? 'cli';
 
-		debug(`retrieving ${options?.releaseName} release from github`);
+		debug(`retrieving ${options?.releaseName} release from ${repository.domain}`);
 		// eslint-disable-next-line curly
 		if(!options?.quiet) {
 			if(execMode === 'api')
-				logger?.debug?.(`Retrieving ${options?.releaseName} release from Github`);
+				logger?.debug?.(`Retrieving ${options?.releaseName} release from  ${repository.domain}`);
 			else
-				if(logger) logger.text = `Retrieving ${options?.releaseName} release from Github...`;
+				if(logger) logger.text = `Retrieving ${options?.releaseName} release from  ${repository.domain}...`;
 		}
 
-		const githubReleases = await this?._getFromGithub?.(options, `https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-		const releaseToBePublished = githubReleases?.filter?.((release) => { return (release?.name === options?.releaseName); })?.shift?.();
+		let gitHostWrapper = null;
+		if(repository?.domain?.includes?.('github')) {
+			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
 
+		const releaseToBePublished = gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
 		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
 		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
 
 		if(execMode === 'api')
-			logger?.debug?.(`Retrieved ${options?.releaseName} release from Github`);
+			logger?.debug?.(`Retrieved ${options?.releaseName} release from  ${repository.domain}`);
 		else
-			logger?.succeed?.(`Retrieved ${options?.releaseName} release details from Github.`);
+			logger?.succeed?.(`Retrieved ${options?.releaseName} release details from  ${repository.domain}.`);
 
 		debug(`retrieved ${options?.releaseName} release from github`);
 		return releaseToBePublished;
@@ -287,7 +292,7 @@ class PublishCommandClass {
 		}
 
 		const publishOptions = ['publish'];
-		publishOptions?.push(releaseToBePublished?.tarball_url);
+		publishOptions?.push?.(releaseToBePublished?.tarball_url);
 		publishOptions?.push?.(`--tag ${distTag}`);
 		publishOptions?.push?.(`--access ${options.access}`);
 		if(options?.dryRun) publishOptions?.push?.('--dry-run');
@@ -306,50 +311,6 @@ class PublishCommandClass {
 
 		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
 		return;
-	}
-
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	PublishCommandClass
-	 * @name		 _getFromGithub
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{string} url - the url giving the information we seek
-	 *
-	 * @return		{object} Hopefully, the required information from Github.
-	 *
-	 * @summary  	Given a Github REST API endpoint, call it and give back the information returned.
-	 *
-	 */
-	async _getFromGithub(options, url) {
-		const Promise = require('bluebird');
-
-		return new Promise((resolve, reject) => {
-			try {
-				const octonode = require('octonode');
-				const client = octonode?.client?.(options?.githubToken);
-				debug('created client to connect to github');
-
-				client?.get?.(url, {}, (err, status, body) => {
-					if(err) {
-						reject?.(err);
-						return;
-					}
-
-					if(status !== 200) {
-						reject?.(status);
-						return;
-					}
-
-					resolve?.(body);
-				});
-			}
-			catch(err) {
-				reject?.(err);
-			}
-		});
 	}
 	// #endregion
 
@@ -373,7 +334,8 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dist-tag <tag>', 'Tag to use for the published release', 'version_default')
 		.option('--dry-run', 'Dry run publish', false)
 
-		.option('-gt, --github-token <token>', 'Token to use for accessing the release on Github', process.env.GITHUB_TOKEN)
+		.option('-ght, --github-token <token>', 'Token to use for accessing the release on Github', process.env.GITHUB_TOKEN)
+		.option('-glt, --gitlab-token <token>', 'Token to use for accessing the release on Gitlab', process.env.GITLAB_TOKEN)
 		.option('-nt, --npm-token <token>', 'Automation Token to use for publishing the release to NPM', process.env.NPM_TOKEN)
 
 		.option('-rn, --release-name <name>', 'Github release name for fetching the compressed assets', `V${version} Release`)
