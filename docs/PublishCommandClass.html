@@ -36,6 +36,11 @@
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
 					</ul>
 				</li>
+				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+					</ul>
+				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="PrepareCommandClass.html#_bumpVersion">_bumpVersion</a></li>
@@ -128,7 +133,7 @@
 					<h3 class="subsection-title">Methods</h3>
 					<h4 class="name" id="_getReleaseAssetInformation"><span class="type-signature">(async) </span>_getReleaseAssetInformation<span class="signature">(options, logger, repository)</span><span class="type-signature"> &rarr; {object}</span></h4>
 					<p class="summary usertext">
-					<p>Connects to the Github project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.</p>
+					<p>Connects to the GitHub project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
@@ -174,7 +179,7 @@
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>POJO containing information about the project/repo on Github hosting the assets</p>
+									<p>POJO containing information about the project/repo on GitHub hosting the assets</p>
 								</td>
 							</tr>
 						</tbody>
@@ -296,14 +301,14 @@
 					</dl>
 					<h4 class="name" id="_publishToNpm"><span class="type-signature">(async) </span>_publishToNpm<span class="signature">(options, logger, releaseToBePublished)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Retrieves the release assets from Github, and publishes them to NPM.</p>
+					<p>Retrieves the release assets from GitHub, and publishes them to NPM.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line256">line 256</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line261">line 261</a>
 								</li>
 							</ul>
 						</dd>
@@ -408,10 +413,10 @@
 					</dl>
 					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>The main method to publish the Github release to NPM.</p>
+					<p>The main method to publish the GitHub release to NPM.</p>
 					<p>This method does 2 things:</p>
 					<ul>
-						<li>Gets the URL to the compressed asset for the last/specified release from Github</li>
+						<li>Gets the URL to the compressed asset for the last/specified release from GitHub</li>
 						<li>Publishes the asset to NPM</li>
 					</ul>
 					</p>
