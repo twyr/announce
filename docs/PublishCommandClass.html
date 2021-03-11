@@ -30,6 +30,12 @@
 			<h2><a href="https://github.com/twyr/announce" target="_blank" class="menu-item" id="github_link">GitHub</a></h2>
 			<h3>Classes</h3>
 			<ul>
+				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+					</ul>
+				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="PrepareCommandClass.html#_bumpVersion">_bumpVersion</a></li>
@@ -43,7 +49,6 @@
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getFromGithub">_getFromGithub</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
@@ -121,62 +126,6 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_getFromGithub"><span class="type-signature">(async) </span>_getFromGithub<span class="signature">(options, url)</span><span class="type-signature"> &rarr; {object}</span></h4>
-					<p class="summary usertext">
-					<p>Given a Github REST API endpoint, call it and give back the information returned.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line311">line 311</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>options</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>url</code></td>
-								<td class="type">
-									<span class="param-type">string</span>
-								</td>
-								<td class="description last">
-									<p>the url giving the information we seek</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Hopefully, the required information from Github.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">object</span>
-						</dd>
-					</dl>
 					<h4 class="name" id="_getReleaseAssetInformation"><span class="type-signature">(async) </span>_getReleaseAssetInformation<span class="signature">(options, logger, repository)</span><span class="type-signature"> &rarr; {object}</span></h4>
 					<p class="summary usertext">
 					<p>Connects to the Github project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.</p>
@@ -186,7 +135,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line208">line 208</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line209">line 209</a>
 								</li>
 							</ul>
 						</dd>
@@ -251,7 +200,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line156">line 156</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line157">line 157</a>
 								</li>
 							</ul>
 						</dd>
@@ -354,7 +303,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line251">line 251</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line256">line 256</a>
 								</li>
 							</ul>
 						</dd>
@@ -419,7 +368,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line121">line 121</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line122">line 122</a>
 								</li>
 							</ul>
 						</dd>

@@ -3,7 +3,7 @@
 
 	<head>
 		<meta charset="utf-8">
-		<title>index.js - Announce CLI - API Reference</title>
+		<title>git_host_utilities/github.js - Announce CLI - API Reference</title>
 		<meta name="description" content="Announce CLI - API Reference" />
 		<meta name="keywords" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
 		<meta name="keyword" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
@@ -74,21 +74,10 @@
 			</ul>
 		</nav>
 		<div id="main">
-			<h1 class="page-title">index.js</h1>
+			<h1 class="page-title">git_host_utilities/github.js</h1>
 			<section>
 				<article>
-					<pre class="prettyprint source linenums"><code>/**
- * @name		index.js
- * @file		Main entry point of the Twy'r Announce CLI tool
- * @version		0.5.0
- *
- * @author		Vish Desai &lt;shadyvd@hotmail.com>
- * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2021
- *
- * @license		MITNFA
- */
-
-'use strict';
+					<pre class="prettyprint source linenums"><code>'use strict';
 
 /**
  * Module dependencies, required for ALL Twy'r modules
@@ -100,43 +89,101 @@
  * @ignore
  */
 
-// Sanity check for node versions
-const pkg = require('./package.json');
-require('please-upgrade-node')(
-	Object.assign({}, pkg, {
-		'engines': {
-			// eslint-disable-next-line no-inline-comments
-			'node': '>=14.0' // First version with optional chaining and nullish coalescing
-		}
-	})
-);
+/**
+ * @class		GitHubWrapper
+ * @classdesc	The command class that wraps GitHub related functionality for Release and Publish.
+ *
+ * @param		{string} githubToken - The Github Personal Access Token to be used to access the repositories
+ *
+ * @description
+ * The wrapper class that provides an API interface for all GitHub related operations.
+ *
+ */
+class GitHubWrapper {
+	// #region Constructor
+	constructor(githubToken) {
+		Object.defineProperty(this, 'gitHubToken', {
+			'value': githubToken
+		});
+	}
+	// #endregion
 
-// Step 1: Crawl the commands folder and get the list of available commands
-const { 'fdir': FDir } = require('fdir');
-const { join } = require('path');
+	// #region Public API
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
+	 * @name		fetchReleaseInformation
+	 *
+	 * @param		{object} repository - the Github repository to query for the release
+	 * @param		{string} releaseName - the name of the release
+	 *
+	 * @return		{object} The required information about the release from Github.
+	 *
+	 * @summary  	Given a Github repository, and the required release name, returns information about the release.
+	 *
+	 */
+	async fetchReleaseInformation(repository, releaseName) {
+		const allReleases = await this._fetchData(`https: //api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
+		const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
-const crawler = new FDir()
-	.withFullPaths()
-	.withErrors()
-	.glob('./**/*-command.js');
+		return {
+			'prerelease': releaseInfo?.prerelease,
+			'tarball_url': releaseInfo?.tarball_url
+		};
+	}
+	// #endregion
 
-const commandDefinitionFolder = join(__dirname, './commands');
-const availableCommandDefinitionFiles = crawler.crawl(commandDefinitionFolder).sync();
+	// #region Private Methods
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
+	 * @name		_fetchData
+	 *
+	 * @param		{string} url - the url giving the information we seek
+	 *
+	 * @return		{object} Hopefully, the required information from Github.
+	 *
+	 * @summary  	Given a Github REST API endpoint, call it and give back the information returned.
+	 *
+	 */
+	async _fetchData(url) {
+		const Promise = require('bluebird');
 
-// Step 2: Initialize the API and return that
-for(const commandDefinitionFile of availableCommandDefinitionFiles) {
-	// eslint-disable-next-line
-	const { apiCreator } = require(commandDefinitionFile);
-	const api = apiCreator?.();
+		return new Promise((resolve, reject) => {
+			try {
+				const octonode = require('octonode');
+				const client = octonode?.client?.(this?.githubToken);
 
-	if(!api?.name || !api?.method)
-		continue;
+				client?.get?.(url, {}, (err, status, body) => {
+					if(err) {
+						reject?.(err);
+						return;
+					}
 
-	if(typeof api?.method !== 'function')
-		continue;
+					if(status !== 200) {
+						reject?.(status);
+						return;
+					}
 
-	exports[api?.name] = api?.method;
+					resolve?.(body);
+				});
+			}
+			catch(err) {
+				reject?.(err);
+			}
+		});
+	}
+	// #endregion
+
+	// #region Private Fields
+	// #endregion
 }
+
+exports.GitHubWrapper = GitHubWrapper;
 </code></pre>
 				</article>
 			</section>
