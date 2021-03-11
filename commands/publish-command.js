@@ -52,10 +52,10 @@ class PublishCommandClass {
 	 *
 	 * @return {null} Nothing.
 	 *
-	 * @summary  The main method to publish the Github release to NPM.
+	 * @summary  The main method to publish the GitHub release to NPM.
 	 *
 	 * This method does 2 things:
-	 * - Gets the URL to the compressed asset for the last/specified release from Github
+	 * - Gets the URL to the compressed asset for the last/specified release from GitHub
 	 * - Publishes the asset to NPM
 	 *
 	 */
@@ -69,7 +69,7 @@ class PublishCommandClass {
 		// Step 3: Get the upstream repository information - this is the one where the to-be-published release assets are hosted.
 		const repository = await this._getUpstreamRepositoryInfo(mergedOptions, logger);
 
-		// Step 4: Get the details of the to-be-published release from Github
+		// Step 4: Get the details of the to-be-published release from GitHub
 		const releaseToBePublished = await this._getReleaseAssetInformation(mergedOptions, logger, repository);
 
 		// Step 5: Run the npm publish command with the specified options
@@ -215,11 +215,11 @@ class PublishCommandClass {
 	 *
 	 * @param		{object} options - merged options object returned by the _mergeOptions method
 	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} repository - POJO containing information about the project/repo on Github hosting the assets
+	 * @param		{object} repository - POJO containing information about the project/repo on GitHub hosting the assets
 	 *
 	 * @return		{object} POJO with information about the assets to-be-published.
 	 *
-	 * @summary  	Connects to the Github project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.
+	 * @summary  	Connects to the GitHub project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.
 	 *
 	 */
 	async _getReleaseAssetInformation(options, logger, repository) {
@@ -235,9 +235,14 @@ class PublishCommandClass {
 		}
 
 		let gitHostWrapper = null;
-		if(repository?.domain?.includes?.('github')) {
+		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
 			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
 			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
+
+		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
+			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
 		}
 
 		const releaseToBePublished = gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
@@ -266,7 +271,7 @@ class PublishCommandClass {
 	 *
 	 * @return		{null} Nothing.
 	 *
-	 * @summary  	Retrieves the release assets from Github, and publishes them to NPM.
+	 * @summary  	Retrieves the release assets from GitHub, and publishes them to NPM.
 	 *
 	 */
 	async _publishToNpm(options, logger, releaseToBePublished) {
@@ -334,11 +339,11 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dist-tag <tag>', 'Tag to use for the published release', 'version_default')
 		.option('--dry-run', 'Dry run publish', false)
 
-		.option('-ght, --github-token <token>', 'Token to use for accessing the release on Github', process.env.GITHUB_TOKEN)
+		.option('-ght, --github-token <token>', 'Token to use for accessing the release on GitHub', process.env.GITHUB_TOKEN)
 		.option('-glt, --gitlab-token <token>', 'Token to use for accessing the release on Gitlab', process.env.GITLAB_TOKEN)
 		.option('-nt, --npm-token <token>', 'Automation Token to use for publishing the release to NPM', process.env.NPM_TOKEN)
 
-		.option('-rn, --release-name <name>', 'Github release name for fetching the compressed assets', `V${version} Release`)
+		.option('-rn, --release-name <name>', 'GitHub release name for fetching the compressed assets', `V${version} Release`)
 		.option('-u, --upstream <remote>', 'Git remote to use for accessing the release', configuration?.publish?.upstream ?? 'upstream')
 
 		.action(commandObj.execute.bind(commandObj));

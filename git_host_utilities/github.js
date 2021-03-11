@@ -14,7 +14,7 @@
  * @class		GitHubWrapper
  * @classdesc	The command class that wraps GitHub related functionality for Release and Publish.
  *
- * @param		{string} githubToken - The Github Personal Access Token to be used to access the repositories
+ * @param		{string} githubToken - The GitHub Personal Access Token to be used to access the repositories
  *
  * @description
  * The wrapper class that provides an API interface for all GitHub related operations.
@@ -23,8 +23,12 @@
 class GitHubWrapper {
 	// #region Constructor
 	constructor(githubToken) {
-		Object.defineProperty(this, 'gitHubToken', {
+		Object.defineProperty(this, 'pat', {
 			'value': githubToken
+		});
+
+		Object.defineProperty(this, 'client', {
+			'value': require('octonode')?.client?.(this?.pat)
 		});
 	}
 	// #endregion
@@ -37,16 +41,16 @@ class GitHubWrapper {
 	 * @memberof	GitHubWrapper
 	 * @name		fetchReleaseInformation
 	 *
-	 * @param		{object} repository - the Github repository to query for the release
+	 * @param		{object} repository - the GitHub repository to query for the release
 	 * @param		{string} releaseName - the name of the release
 	 *
-	 * @return		{object} The required information about the release from Github.
+	 * @return		{object} The required information about the release from GitHub.
 	 *
-	 * @summary  	Given a Github repository, and the required release name, returns information about the release.
+	 * @summary  	Given a GitHub repository, and the required release name, returns information about the release.
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
-		const allReleases = await this._fetchData(`https: //api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
+		const allReleases = await this._fetchData(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
 		const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
 		return {
@@ -66,20 +70,16 @@ class GitHubWrapper {
 	 *
 	 * @param		{string} url - the url giving the information we seek
 	 *
-	 * @return		{object} Hopefully, the required information from Github.
+	 * @return		{object} Hopefully, the required information from GitHub.
 	 *
-	 * @summary  	Given a Github REST API endpoint, call it and give back the information returned.
+	 * @summary  	Given a GitHub REST API endpoint, call it and give back the information returned.
 	 *
 	 */
 	async _fetchData(url) {
 		const Promise = require('bluebird');
-
 		return new Promise((resolve, reject) => {
 			try {
-				const octonode = require('octonode');
-				const client = octonode?.client?.(this?.githubToken);
-
-				client?.get?.(url, {}, (err, status, body) => {
+				this?.client?.get?.(url, {}, (err, status, body) => {
 					if(err) {
 						reject?.(err);
 						return;
