@@ -769,20 +769,22 @@ class ReleaseCommandClass {
 			return;
 		}
 
-		const promises = require('bluebird');
-		const octonode = require('octonode');
+		console.log(JSON.stringify(releaseData, null, '\t'));
 
-		const client = octonode?.client?.(options?.githubToken);
-		const clientPost = promises?.promisify?.(client?.post?.bind?.(client));
+		// const promises = require('bluebird');
+		// const octonode = require('octonode');
 
-		const repository = releaseData['REPO'];
-		await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
-			'accept': 'application/vnd.github.v3+json',
-			'tag_name': releaseData?.['RELEASE_TAG'],
-			'name': releaseData?.['RELEASE_NAME'],
-			'body': releaseData?.['RELEASE_NOTES'],
-			'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
-		});
+		// const client = octonode?.client?.(options?.githubToken);
+		// const clientPost = promises?.promisify?.(client?.post?.bind?.(client));
+
+		// const repository = releaseData['REPO'];
+		// await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
+		// 	'accept': 'application/vnd.github.v3+json',
+		// 	'tag_name': releaseData?.['RELEASE_TAG'],
+		// 	'name': releaseData?.['RELEASE_NAME'],
+		// 	'body': releaseData?.['RELEASE_NOTES'],
+		// 	'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
+		// });
 
 		if(execMode === 'api')
 			logger?.info?.(`Created the release`);
