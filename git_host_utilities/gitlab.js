@@ -90,7 +90,7 @@ class GitLabWrapper {
 				'name': release?.name,
 				'prerelease': release?.upcoming_release,
 				'published': release?.created_at,
-				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tarball_url': release?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
 				'tag': release?.tag_name
 			};
 		})
