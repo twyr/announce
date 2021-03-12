@@ -1,6 +1,25 @@
 #### CHANGE LOG
 
 
+##### 12-Mar-2021
+
+fix(publish): adding missed await ([6a0d2dae4993018429b0ba439331f7fd42b453a6](https://github.com/twyr/announce/commit/6a0d2dae4993018429b0ba439331f7fd42b453a6))
+
+
+##### 11-Mar-2021
+
+docs(publish): gitlab support ([12371ce4b596dd4f285255a9dc2152731b9f66a4](https://github.com/twyr/announce/commit/12371ce4b596dd4f285255a9dc2152731b9f66a4))
+
+feat(publish): publish Gitlab Release Tarball ([9f26caf32c86c8231f0e7ab6a38153e750c7f75a](https://github.com/twyr/announce/commit/9f26caf32c86c8231f0e7ab6a38153e750c7f75a))
+
+docs(publish): re-factored documentation to match current code structure ([98749bb9416f7e127dd370dcc10ba5c354fe7e00](https://github.com/twyr/announce/commit/98749bb9416f7e127dd370dcc10ba5c354fe7e00))
+
+
+##### 10-Mar-2021
+
+docs(all): copyright change ([2d66272f3ae70fe764aca2afe6860833431a7e88](https://github.com/twyr/announce/commit/2d66272f3ae70fe764aca2afe6860833431a7e88))#### CHANGE LOG
+
+
 ##### 04-Mar-2021
 
 docs(all): updated for 0.5.0 ([83c5bdc02bbdd859e50023c7e079be9f6815ac12](https://github.com/twyr/announce/commit/83c5bdc02bbdd859e50023c7e079be9f6815ac12))
