@@ -27,8 +27,9 @@ class GitHubWrapper {
 			'value': githubToken
 		});
 
+		const octonode = require('octonode');
 		Object.defineProperty(this, 'client', {
-			'value': require('octonode')?.client?.(this?.pat)
+			'value': octonode?.client?.(this?.pat)
 		});
 	}
 	// #endregion
