@@ -235,17 +235,17 @@ class PublishCommandClass {
 		}
 
 		let gitHostWrapper = null;
-		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
+		if(repository?.type === 'github') {
 			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
 			gitHostWrapper = new GitHubWrapper(options?.githubToken);
 		}
 
-		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
+		if(repository?.type === 'gitlab') {
 			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
 			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
 		}
 
-		const releaseToBePublished = gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
+		const releaseToBePublished = await gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
 		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
 		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
 
@@ -340,7 +340,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dry-run', 'Dry run publish', false)
 
 		.option('-ght, --github-token <token>', 'Token to use for accessing the release on GitHub', process.env.GITHUB_TOKEN)
-		.option('-glt, --gitlab-token <token>', 'Token to use for accessing the release on Gitlab', process.env.GITLAB_TOKEN)
+		.option('-glt, --gitlab-token <token>', 'Token to use for accessing the release on GitLab', process.env.GITLAB_TOKEN)
 		.option('-nt, --npm-token <token>', 'Automation Token to use for publishing the release to NPM', process.env.NPM_TOKEN)
 
 		.option('-rn, --release-name <name>', 'GitHub release name for fetching the compressed assets', `V${version} Release`)
