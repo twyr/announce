@@ -77,8 +77,8 @@ class GitLabWrapper {
 		return {
 			'name': commit?.author_name,
 			'email': commit?.author_email,
-			'profile': author?.web_url,
-			'avatar': author?.avatar_url
+			'profile': author?.[0]?.web_url,
+			'avatar': author?.[0]?.avatar_url
 		};
 	}
 
