@@ -78,8 +78,8 @@ class GitHubWrapper {
 		commit = commit[0];
 
 		return {
-			'name': commit?.author?.name,
-			'email': commit?.author?.email,
+			'name': commit?.commit?.author?.name,
+			'email': commit?.commit?.author?.email,
 			'profile': commit?.author?.html_url,
 			'avatar': commit?.author?.avatar_url
 		};
