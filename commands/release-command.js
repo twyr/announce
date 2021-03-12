@@ -919,14 +919,7 @@ class ReleaseCommandClass {
 
 		authorProfiles = await Promise?.allSettled?.(authorProfiles);
 		authorProfiles = authorProfiles.map((authorProfile) => {
-			authorProfile = authorProfile?.value;
-
-			return {
-				'name': authorProfile?.name,
-				'email': authorProfile?.email,
-				'profile': authorProfile?.html_url,
-				'avatar': authorProfile?.avatar_url
-			};
+			return authorProfile?.value;
 		});
 
 		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
