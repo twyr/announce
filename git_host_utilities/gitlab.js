@@ -72,12 +72,13 @@ class GitLabWrapper {
 	 */
 	async fetchCommitAuthorInformation(repository, commitLog) {
 		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+		const author = await this.client.Users.search(commit?.author_email);
 
 		return {
 			'name': commit?.author_name,
 			'email': commit?.author_email,
-			'profile': commit?.author?.html_url,
-			'avatar': commit?.author?.avatar_url
+			'profile': author?.web_url,
+			'avatar': author?.avatar_url
 		};
 	}
 
