@@ -1,7 +1,9 @@
-#### CHANGE LOG
+#### CHANGE LOG#### CHANGE LOG
 
 
 ##### 12-Mar-2021
+
+fix(gitlab): error in getting last release information ([56a69f28445cda6c744715f426d3f79f5063d42e](https://github.com/twyr/announce/commit/56a69f28445cda6c744715f426d3f79f5063d42e))
 
 fix(publish): adding missed await ([6a0d2dae4993018429b0ba439331f7fd42b453a6](https://github.com/twyr/announce/commit/6a0d2dae4993018429b0ba439331f7fd42b453a6))
 
