@@ -71,32 +71,37 @@ class ReleaseCommandClass {
 		const git = this._initializeGit(mergedOptions, logger);
 
 		// Step 4: Stash or Commit the current branch, if required
-		const shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
+		let shouldPopOnError = false;
 
-		// Step 5: Generate the CHANGELOG and commit it
-		await this._generateChangelog(mergedOptions, logger, git);
+		try {
+			shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
 
-		// Step 6: Tag the last commit, if required
-		await this._tagCode(mergedOptions, logger, git);
+			// Step 5: Generate the CHANGELOG and commit it
+			await this._generateChangelog(mergedOptions, logger, git);
 
-		// Step 7: Push the new commits, and tag, upstream
-		await this._pushUpstream(mergedOptions, logger, git);
+			// Step 6: Tag the last commit, if required
+			await this._tagCode(mergedOptions, logger, git);
 
-		// Step 8: Create the release notes...
-		const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
+			// Step 7: Push the new commits, and tag, upstream
+			await this._pushUpstream(mergedOptions, logger, git);
 
-		// Step 9: Create the release on Github
-		await this?._releaseCode?.(mergedOptions, logger, releaseData);
+			// Step 8: Create the release notes...
+			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
-		// Step 10: pop the stash if needed...
-		if(shouldPopOnError) {
-			await git?.stash?.(['pop']);
+			// Step 9: Create the release on Github
+			await this?._releaseCode?.(mergedOptions, logger, releaseData);
+		}
+		finally {
+			// Step 10: pop the stash if needed...
+			if(shouldPopOnError) {
+				await git?.stash?.(['pop']);
 
-			const execMode = options?.execMode ?? 'cli';
-			if(execMode === 'api')
-				logger?.info?.(`Popped the stash`);
-			else
-				logger?.succeed?.(`Popped the stash`);
+				const execMode = options?.execMode ?? 'cli';
+				if(execMode === 'api')
+					logger?.info?.(`Popped the stash`);
+				else
+					logger?.succeed?.(`Popped the stash`);
+			}
 		}
 	}
 	// #endregion
@@ -132,6 +137,7 @@ class ReleaseCommandClass {
 
 		mergedOptions.commit = options?.commit ?? (this?._commandOptions?.commit ?? false);
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.gitlabToken = options?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
 
 		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
 
@@ -429,10 +435,23 @@ class ReleaseCommandClass {
 
 		// Step 4: Get the upstream repository information - to be used to generate the URLs pointing to the commits
 		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		const upstreamForLinks = upstreamRemoteList?.shift?.();
 
-		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
+		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', upstreamForLinks]);
+		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		let gitHostWrapper = null;
+		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
+			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
+
+		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
+			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+		}
 
 		// Step 5: Generate the changelogs - prepend to an existing file, or create a whole new one
 		const changeLogText = [`#### CHANGE LOG`];
@@ -446,7 +465,8 @@ class ReleaseCommandClass {
 				changeLogText?.push?.(`\n\n##### ${commitDate}`);
 			}
 
-			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash}))`);
+			const commitLink = gitHostWrapper.getCommitLink(repository, commitLog);
+			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
 		});
 
 		const path = require('path');
@@ -626,18 +646,23 @@ class ReleaseCommandClass {
 			return;
 		}
 
-		await git?.push?.(options?.upstream, branchStatus?.current, {
-			'--atomic': true,
-			'--progress': true,
-			'--signed': 'if-asked'
-		});
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
 
-		await git?.pushTags?.(options?.upstream, {
-			'--atomic': true,
-			'--force': true,
-			'--progress': true,
-			'--signed': 'if-asked'
-		});
+			await git?.push?.(thisUpstreamRemote, branchStatus?.current, {
+				'--atomic': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+
+			await git?.pushTags?.(thisUpstreamRemote, {
+				'--atomic': true,
+				'--force': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+		}
 
 		if(execMode === 'api')
 			logger?.info?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}`);
@@ -686,221 +711,15 @@ class ReleaseCommandClass {
 			return null;
 		}
 
-		// Step 1: Get upstream repository info to use for getting required details...
-		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+		// Get release notes for each of the configured upstreams...
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		const releaseData = {};
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const upstreamReleaseNotes = await this._generateReleaseNotesPerRemote(options, logger, git, thisUpstreamRemote);
 
-		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
-		repository.project = repository?.project?.replace?.('.git\n', '');
-
-		// Step 2: Instantiate the Github Client for this Repo, and create a repo object
-		const octonode = require('octonode');
-
-		const client = octonode?.client?.(options?.githubToken);
-		const ghRepo = client?.repo?.(`${repository?.user}/${repository?.project}`);
-
-		// Step 3: Get the last release for the repository
-		const ghReleases = await ghRepo?.releasesAsync?.();
-		const lastRelease = ghReleases?.[0]?.map?.((release) => {
-			return {
-				'name': release?.name,
-				'published': release?.published_at,
-				'tag': release?.tag_name
-			};
-		})
-		?.sort?.((left, right) => {
-			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
-		})
-		?.shift?.();
-
-		// Step 4: Get the last released commit, and the most recent tag / specified tag commit
-		let lastReleasedCommit = null;
-		if(lastRelease) {
-			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
-			lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
+			releaseData[thisUpstreamRemote] = upstreamReleaseNotes;
 		}
-
-		let lastTag = await git?.tag?.(['--sort=-creatordate']);
-		// If a specific tag name is not given, use the commit associated with the last tag
-		if(options?.tag === '')
-			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
-		// Otherwise, use the commit associated with the specified tag
-		else
-			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
-
-		let lastCommit = null;
-		if(lastTag) {
-			lastCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
-			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		// Step 5: Get the Git Log events from the commit of the last release to the commit of the last tag
-		let gitLogsInRange = null;
-		if(lastReleasedCommit && lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'from': lastReleasedCommit,
-				'to': lastCommit
-			});
-
-		if(!lastReleasedCommit && lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'to': lastCommit
-			});
-
-		if(!lastReleasedCommit && !lastCommit)
-			gitLogsInRange = {
-				'all': []
-			};
-
-		// Step 6: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
-		const dateFormat = require('date-fns/format');
-		const relevantGitLogs = [];
-		gitLogsInRange?.all?.forEach?.((commitLog) => {
-			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
-
-			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
-				relevantGitLogs?.push?.({
-					'hash': commitLog?.hash,
-					'date': commitDate,
-					'message': commitLog?.message,
-					'author_name': commitLog?.author_name,
-					'author_email': commitLog?.author_email
-				});
-			}
-
-			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace?.(/\\n/g, '\n')?.split?.('\n');
-			commitLogBody?.forEach?.((commitBody) => {
-				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
-					relevantGitLogs?.push?.({
-						'hash': commitLog?.hash,
-						'date': commitDate,
-						'message': commitBody?.trim?.(),
-						'author_name': commitLog?.author_name,
-						'author_email': commitLog?.author_email
-					});
-				}
-			});
-		});
-
-		// Step 7: Fetch Author information for each of the relevant Git Log events
-		const contributorSet = {};
-		let authorProfiles = [];
-
-		relevantGitLogs?.forEach?.((commitLog) => {
-			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
-				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
-				authorProfiles?.push?.(ghRepo?.commitAsync?.(commitLog?.hash));
-			}
-		});
-
-		authorProfiles = await Promise?.allSettled?.(authorProfiles);
-		authorProfiles = authorProfiles.map((authorProfile) => {
-			authorProfile = authorProfile?.value?.[0];
-
-			return {
-				'name': authorProfile?.commit?.author?.name,
-				'email': authorProfile?.commit?.author?.email,
-				'profile': authorProfile?.author?.html_url,
-				'avatar': authorProfile?.author?.avatar_url
-			};
-		});
-
-		// Step 8: Bucket the Git Log events based on the Conventional Changelog fields
-		const featureSet = [];
-		const bugfixSet = [];
-		const documentationSet = [];
-
-		relevantGitLogs?.forEach?.((commitLog) => {
-			const commitObject = {
-				'hash': commitLog?.hash,
-				'component': '',
-				'message': commitLog?.message,
-				'author_name': commitLog?.['author_name'],
-				'author_email': commitLog?.['author_email'],
-				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
-				'date': commitLog?.date
-			};
-
-			let set = null;
-			if(commitLog?.message?.startsWith?.('feat')) {
-				commitObject.message = commitObject?.message?.replace?.('feat', '');
-				set = featureSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('fix')) {
-				commitObject.message = commitObject?.message?.replace?.('fix', '');
-				set = bugfixSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('docs')) {
-				commitObject.message = commitObject?.message?.replace?.('docs', '');
-				set = documentationSet;
-			}
-
-			if(commitObject?.message?.startsWith?.('(')) {
-				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
-				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
-
-				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
-			}
-			else {
-				commitObject.message = commitObject?.message?.substr?.(1);
-			}
-
-			set?.push?.(commitObject);
-		});
-
-		// Step 9: Compute if this is a pre-release, or a proper release
-		const path = require('path');
-		const semver = require('semver');
-
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const { version } = require(projectPackageJson);
-
-		if(!version) {
-			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-		}
-		if(!semver.valid(version)) {
-			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-		}
-
-		const parsedVersion = semver?.parse?.(version);
-		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
-
-		// Step 10: Generate the release notes
-		const releaseData = {
-			'REPO': repository,
-			'RELEASE_NAME': options?.releaseName,
-			'RELEASE_TYPE': releaseType,
-			'RELEASE_TAG': lastTag,
-			'NUM_FEATURES': featureSet?.length,
-			'NUM_FIXES': bugfixSet?.length,
-			'NUM_DOCS': documentationSet?.length,
-			'NUM_AUTHORS': authorProfiles?.length,
-			'FEATURES': featureSet,
-			'FIXES': bugfixSet,
-			'DOCS': documentationSet,
-			'AUTHORS': authorProfiles
-		};
-
-		let releaseMessagePath = options?.releaseMessage ?? '';
-		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
-		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
-
-		const promises = require('bluebird');
-		const ejs = promises?.promisifyAll?.(require('ejs'));
-
-		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
-			'async': true,
-			'cache': false,
-			'debug': false,
-			'rmWhitespace': false,
-			'strict': false
-		});
 
 		// Finally, return...
 		if(execMode === 'api')
@@ -974,6 +793,238 @@ class ReleaseCommandClass {
 		debug(`created the release`);
 		return;
 	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_generateReleaseNotesPerRemote
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{string} remote - The remote for which the release notes should be generated
+	 *
+	 * @return		{string} The generated release notes for this release.
+	 *
+	 * @summary		Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.
+	 *
+	 */
+	async _generateReleaseNotesPerRemote(options, logger, git, remote) {
+		// Step 1: Get upstream repository info to use for getting required details...
+		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', remote]);
+
+		const hostedGitInfo = require('hosted-git-info');
+		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		// Step 2: Get the last release for the repository
+		let gitHostWrapper = null;
+		if(repository?.type === 'github') {
+			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
+
+		if(repository?.type === 'gitlab') {
+			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+		}
+
+		const lastRelease = await gitHostWrapper.fetchReleaseInformation(repository);
+
+		// Step 3: Get the last released commit, and the most recent tag / specified tag commit
+		let lastReleasedCommit = null;
+		if(lastRelease) {
+			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
+			lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
+		}
+
+		let lastTag = await git?.tag?.(['--sort=-creatordate']);
+		// If a specific tag name is not given, use the commit associated with the last tag
+		if(options?.tag === '')
+			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
+		// Otherwise, use the commit associated with the specified tag
+		else
+			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
+
+		let lastCommit = null;
+		if(lastTag) {
+			lastCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
+		}
+
+		// Step 4: Get the Git Log events from the commit of the last release to the commit of the last tag
+		let gitLogsInRange = null;
+		if(lastReleasedCommit && lastCommit)
+			gitLogsInRange = await git?.log?.({
+				'from': lastReleasedCommit,
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit && lastCommit)
+			gitLogsInRange = await git?.log?.({
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit && !lastCommit)
+			gitLogsInRange = {
+				'all': []
+			};
+
+		// Step 5: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
+		const dateFormat = require('date-fns/format');
+		const relevantGitLogs = [];
+		gitLogsInRange?.all?.forEach?.((commitLog) => {
+			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
+
+			// eslint-disable-next-line curly
+			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
+				relevantGitLogs?.push?.({
+					'hash': commitLog?.hash,
+					'date': commitDate,
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
+				});
+			}
+
+			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace?.(/\\n/g, '\n')?.split?.('\n');
+			commitLogBody?.forEach?.((commitBody) => {
+				// eslint-disable-next-line curly
+				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
+					relevantGitLogs?.push?.({
+						'hash': commitLog?.hash,
+						'date': commitDate,
+						'message': commitBody?.trim?.(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
+					});
+				}
+			});
+		});
+
+		// Step 6: Fetch Author information for each of the relevant Git Log events
+		const contributorSet = {};
+		let authorProfiles = [];
+
+		relevantGitLogs?.forEach?.((commitLog) => {
+			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
+				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
+				authorProfiles?.push?.(gitHostWrapper?.fetchCommitInformation?.(repository, commitLog));
+			}
+		});
+
+		authorProfiles = await Promise?.allSettled?.(authorProfiles);
+		authorProfiles = authorProfiles.map((authorProfile) => {
+			authorProfile = authorProfile?.value;
+
+			return {
+				'name': authorProfile?.commit?.author?.name,
+				'email': authorProfile?.commit?.author?.email,
+				'profile': authorProfile?.author?.html_url,
+				'avatar': authorProfile?.author?.avatar_url
+			};
+		});
+
+		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
+		const featureSet = [];
+		const bugfixSet = [];
+		const documentationSet = [];
+
+		relevantGitLogs?.forEach?.((commitLog) => {
+			const commitObject = {
+				'hash': commitLog?.hash,
+				'component': '',
+				'message': commitLog?.message,
+				'author_name': commitLog?.['author_name'],
+				'author_email': commitLog?.['author_email'],
+				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
+				'date': commitLog?.date
+			};
+
+			let set = null;
+			if(commitLog?.message?.startsWith?.('feat')) {
+				commitObject.message = commitObject?.message?.replace?.('feat', '');
+				set = featureSet;
+			}
+
+			if(commitLog?.message?.startsWith?.('fix')) {
+				commitObject.message = commitObject?.message?.replace?.('fix', '');
+				set = bugfixSet;
+			}
+
+			if(commitLog?.message?.startsWith?.('docs')) {
+				commitObject.message = commitObject?.message?.replace?.('docs', '');
+				set = documentationSet;
+			}
+
+			if(commitObject?.message?.startsWith?.('(')) {
+				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
+				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
+
+				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
+			}
+			else {
+				commitObject.message = commitObject?.message?.substr?.(1);
+			}
+
+			set?.push?.(commitObject);
+		});
+
+		// Step 8: Compute if this is a pre-release, or a proper release
+		const path = require('path');
+		const semver = require('semver');
+
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const { version } = require(projectPackageJson);
+
+		if(!version) {
+			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+		}
+		if(!semver.valid(version)) {
+			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+		}
+
+		const parsedVersion = semver?.parse?.(version);
+		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
+
+		// Step 9: Generate the release notes
+		const releaseData = {
+			'REPO': repository,
+			'RELEASE_NAME': options?.releaseName,
+			'RELEASE_TYPE': releaseType,
+			'RELEASE_TAG': lastTag,
+			'NUM_FEATURES': featureSet?.length,
+			'NUM_FIXES': bugfixSet?.length,
+			'NUM_DOCS': documentationSet?.length,
+			'NUM_AUTHORS': authorProfiles?.length,
+			'FEATURES': featureSet,
+			'FIXES': bugfixSet,
+			'DOCS': documentationSet,
+			'AUTHORS': authorProfiles
+		};
+
+		let releaseMessagePath = options?.releaseMessage ?? '';
+		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
+		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
+
+		const promises = require('bluebird');
+		const ejs = promises?.promisifyAll?.(require('ejs'));
+
+		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
+			'async': true,
+			'cache': false,
+			'debug': false,
+			'rmWhitespace': false,
+			'strict': false
+		});
+
+		// Finally, return...
+		return releaseData;
+	}
 	// #endregion
 
 	// #region Private Fields
@@ -993,7 +1044,8 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	commanderProcess
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
-		.option('-gt, --github-token <token>', 'Token to use for creating the release on Github', process.env.GITHUB_TOKEN)
+		.option('-ght, --github-token <token>', 'Token to use for creating the release on GitHub', process.env.GITHUB_TOKEN)
+		.option('-glt, --gitlab-token <token>', 'Token to use for creating the release on GitLab', process.env.GITLAB_TOKEN)
 
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 
@@ -1006,7 +1058,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('-rn, --release-name <name>', 'Name to use for this release', `V${pkg.version} Release`)
 		.option('-rm, --release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
 
-		.option('-u, --upstream <remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
+		.option('-u, --upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
 	return;

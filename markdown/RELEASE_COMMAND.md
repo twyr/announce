@@ -7,14 +7,14 @@ steps.
 
 In this step, the workflow generates a changelog containing all the features/fixes since the
 last release (using commit messages in the git log), commits and pushes the code to the upstream
-repository, creates a tag, and uses that to publish a release in Github.
+repository, creates a tag, and uses that to publish a release in GitHub / GitLab.
 
 ###### NOTE
-This command assumes that a Github Token, with the required permissions to create a release,
+This command assumes that a GitHub / GitLab Token, with the required permissions to create a release,
 has been configured and available for use.
 
 If no token has been passed in via the CLI options / API configuration, it expects a token to
-be present at the environment variable GITHUB_TOKEN
+be present at the environment variable GITHUB_TOKEN / GITLAB_TOKEN
 
 ##### Command Flow
 
@@ -27,7 +27,7 @@ The release command executes the following steps:
 1. Push the commit and the tag to the specified upstream repository/branch
 1. Generate the Release Notes using commit messages in the git log - starting from the last release
 1. Embed generated release notes into the release file using EJS tags
-1. Create a Github Release with the tag, and set the release notes using the generated notes
+1. Create a GitHub/GitLab Release with the tag, and set the release notes using the generated notes
 1. Un-stash dirty code if stashed in the first step
 
 ##### CLI Options
@@ -37,7 +37,8 @@ Release Command Options:
 | Option | Description |
 | --- | --- |
 | -c, --commit | Commit code if the branch is dirty |
-| -gt, --github-token | Token to be use when generating the release on the Github repository |
+| -ght, --github-token | Token to use when accessing the release on the GitHub repository |
+| -glt, --gitlab-token | Token to use when accessing the release on the GitLab repository |
 |   |   |
 | -m, --message | Message to use while committing code. Ignored if commit = false |
 |   |   |
@@ -50,7 +51,7 @@ Release Command Options:
 | -rn, --release-name | Release Name to use for this release |
 | -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
 |   |   |
-| -u, --upstream | Git remote name of the upstream repository for the release |
+| -u, --upstream | Comma separated list of Git remote(s) to push the release to |
 
 Global Options inherited by the Release Command:
 
@@ -68,6 +69,7 @@ Global Options inherited by the Release Command:
     'release': {
         'commit': true/false, // Default is to stash and un-stash [default: false]
         'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
+        'gitlabToken': 'GITLAB_TOKEN', // default: $GITLAB_TOKEN environment variable
 
         'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
 
@@ -80,7 +82,7 @@ Global Options inherited by the Release Command:
         'releaseName': 'release name', // [default: V${package version} Release]
         'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
 
-        'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
+        'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 
         'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
         'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
@@ -97,7 +99,8 @@ The release command can be integrated into another module, and invoked as:
 const announce = require('@twyr/announce);
 announce.release({
     'commit': true/false, // Commit code if branch is dirty [default: false]
-    'githubToken': 'XXX', // Token to use for creating the release on Github [default: process.env.GITHUB_TOKEN environment variable]
+    'githubToken': 'XXX', // Token to use for creating the release on GitHub [default: $GITHUB_TOKEN environment variable]
+    'gitlabToken': 'XXX', // Token to use for creating the release on GitLab [default: $GITLAB_TOKEN environment variable]
 
     'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
 
@@ -110,7 +113,7 @@ announce.release({
     'releaseName': 'release name', // Name of the release [default: V${package version} Release]
     'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
 
-    'upstream': 'git remote name of the upstream repository', // [default: 'upstream']
+    'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 
     'debug': true/false, // Enable debug logging as announce:release if enabled [default: false]
     'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]

@@ -1,10 +1,18 @@
 #### Table Of Contents
 
 1. [Overview](#overview)
+<% if(NUM_FEATURES) { -%>
 1. [Features](#features)
+<% } -%>
+<% if(NUM_FIXES) { -%>
 1. [Bug Fixes](#bug-fixes)
+<% } -%>
+<% if(NUM_DOCS) { -%>
 1. [Documentation](#documentation)
+<% } -%>
+<% if(NUM_AUTHORS) { -%>
 1. [Contributors](#contributors)
+<% } -%>
 
 
 #### Overview
@@ -47,6 +55,7 @@ This <%- RELEASE_TYPE -%> adds documentation for:
 <% } -%>
 <% } -%>
 
+<% if(NUM_AUTHORS) { -%>
 #### Contributors
 The [<%- REPO.user -%>/<%- REPO.project -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>) team would like to thank the following people for contributing to this release:
 
@@ -61,4 +70,5 @@ The [<%- REPO.user -%>/<%- REPO.project -%>](https://<%- REPO.domain -%>/<%- REP
     </td>
   </tr>
 </table>
+<% } -%>
 <% } -%>

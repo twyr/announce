@@ -39,6 +39,28 @@ class GitHubWrapper {
 	 * @function
 	 * @instance
 	 * @memberof	GitHubWrapper
+	 * @name		fetchCommitInformation
+	 *
+	 * @param		{object} repository - the GitHub repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which commit information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit from GitHub.
+	 *
+	 * @summary  	Given a GitHub repository, returns information about the commit pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitInformation(repository, commitLog) {
+		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
+		const commit = await ghRepo?.commitAsync?.(commitLog?.hash);
+
+		return commit[0];
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
 	 * @name		fetchReleaseInformation
 	 *
 	 * @param		{object} repository - the GitHub repository to query for the release
@@ -46,17 +68,60 @@ class GitHubWrapper {
 	 *
 	 * @return		{object} The required information about the release from GitHub.
 	 *
-	 * @summary  	Given a GitHub repository, and the required release name, returns information about the release.
+	 * @summary  	Given a GitHub repository, returns information about the release - either the latest, or the one matching the specified release name.
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
-		const allReleases = await this._fetchData(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`);
-		const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
+		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
 
-		return {
-			'prerelease': releaseInfo?.prerelease,
-			'tarball_url': releaseInfo?.tarball_url
-		};
+		let allReleases = await ghRepo?.releasesAsync?.();
+		allReleases = allReleases[0];
+
+		if(releaseName && releaseName?.trim?.()?.length) {
+			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
+
+			return {
+				'name': releaseInfo?.name,
+				'prerelease': releaseInfo?.prerelease,
+				'published': releaseInfo?.published_at,
+				'tarball_url': releaseInfo?.tarball_url,
+				'tag': releaseInfo?.tag_name
+			};
+		}
+
+		const releaseInfo = allReleases?.map?.((release) => {
+			return {
+				'name': release?.name,
+				'prerelease': release?.prerelease,
+				'published': release?.published_at,
+				'tarball_url': release?.tarball_url,
+				'tag': release?.tag_name
+			};
+		})
+		?.sort?.((left, right) => {
+			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
+		})
+		?.shift?.();
+
+		return releaseInfo;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
+	 * @name		getCommitLink
+	 *
+	 * @param		{object} repository - the GitHub repository to query for the release
+	 * @param		{object} commitLog - the commit information
+	 *
+	 * @return		{object} The URL to access the commit on GitHub.
+	 *
+	 * @summary  	Given a GitHub repository, and a commit, returns the URL to access the commit directly.
+	 *
+	 */
+	getCommitLink(repository, commitLog) {
+		return `https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash})`;
 	}
 	// #endregion
 

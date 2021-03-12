@@ -40,6 +40,26 @@ class GitLabWrapper {
 	 * @function
 	 * @instance
 	 * @memberof	GitLabWrapper
+	 * @name		fetchCommitInformation
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which commit information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit from GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, returns information about the commit pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitInformation(repository, commitLog) {
+		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+		return commit;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
 	 * @name		fetchReleaseInformation
 	 *
 	 * @param		{object} repository - the GitLab repository to query for the release
@@ -47,17 +67,57 @@ class GitLabWrapper {
 	 *
 	 * @return		{object} The required information about the release from GitLab.
 	 *
-	 * @summary  	Given a GitLab repository, and the required release name, returns information about the release.
+	 * @summary  	Given a GitLab repository, returns information about the release - either the latest, or the one matching the specified release name.
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
 		const allReleases = await this.client.Releases.all(`${repository.user}/${repository.project}`);
-		const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
-		return {
-			'prerelease': releaseInfo?.upcoming_release,
-			'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url']
-		};
+		if(releaseName && releaseName?.trim?.()?.length) {
+			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
+
+			return {
+				'name': releaseInfo?.name,
+				'prerelease': releaseInfo?.upcoming_release,
+				'published': releaseInfo?.created_at,
+				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tag': releaseInfo?.tag_name
+			};
+		}
+
+		const releaseInfo = allReleases?.map?.((release) => {
+			return {
+				'name': release?.name,
+				'prerelease': release?.upcoming_release,
+				'published': release?.created_at,
+				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tag': release?.tag_name
+			};
+		})
+		?.sort?.((left, right) => {
+			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
+		})
+		?.shift?.();
+
+		return releaseInfo;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
+	 * @name		getCommitLink
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{object} commitLog - the commit information
+	 *
+	 * @return		{object} The URL to access the commit on GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, and a commit, returns the URL to access the commit directly.
+	 *
+	 */
+	getCommitLink(repository, commitLog) {
+		return `https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash})`;
 	}
 	// #endregion
 
