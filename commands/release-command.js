@@ -913,7 +913,7 @@ class ReleaseCommandClass {
 		relevantGitLogs?.forEach?.((commitLog) => {
 			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
 				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
-				authorProfiles?.push?.(gitHostWrapper?.fetchCommitInformation?.(repository, commitLog));
+				authorProfiles?.push?.(gitHostWrapper?.fetchCommitAuthorInformation?.(repository, commitLog));
 			}
 		});
 
@@ -922,10 +922,10 @@ class ReleaseCommandClass {
 			authorProfile = authorProfile?.value;
 
 			return {
-				'name': authorProfile?.commit?.author?.name,
-				'email': authorProfile?.commit?.author?.email,
-				'profile': authorProfile?.author?.html_url,
-				'avatar': authorProfile?.author?.avatar_url
+				'name': authorProfile?.name,
+				'email': authorProfile?.email,
+				'profile': authorProfile?.html_url,
+				'avatar': authorProfile?.avatar_url
 			};
 		});
 

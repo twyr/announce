@@ -61,6 +61,35 @@ class GitHubWrapper {
 	 * @function
 	 * @instance
 	 * @memberof	GitHubWrapper
+	 * @name		fetchCommitAuthorInformation
+	 *
+	 * @param		{object} repository - the GitHub repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which the author information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit author from GitHub.
+	 *
+	 * @summary  	Given a GitHub repository, returns information about the commit author pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitAuthorInformation(repository, commitLog) {
+		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
+
+		let commit = await ghRepo?.commitAsync?.(commitLog?.hash);
+		commit = commit[0];
+
+		return {
+			'name': commit?.author?.name,
+			'email': commit?.author?.email,
+			'profile': commit?.author?.html_url,
+			'avatar': commit?.author?.avatar_url
+		};
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
 	 * @name		fetchReleaseInformation
 	 *
 	 * @param		{object} repository - the GitHub repository to query for the release

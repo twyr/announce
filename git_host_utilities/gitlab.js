@@ -60,6 +60,32 @@ class GitLabWrapper {
 	 * @function
 	 * @instance
 	 * @memberof	GitLabWrapper
+	 * @name		fetchCommitAuthorInformation
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which the author information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit author from GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, returns information about the commit author pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitAuthorInformation(repository, commitLog) {
+		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+
+		return {
+			'name': commit?.author_name,
+			'email': commit?.author_email,
+			'profile': commit?.author?.html_url,
+			'avatar': commit?.author?.avatar_url
+		};
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
 	 * @name		fetchReleaseInformation
 	 *
 	 * @param		{object} repository - the GitLab repository to query for the release
