@@ -13,7 +13,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["release", "--dont-release"]
+            "args": ["release", "-u", "twyr", "--dont-tag"]
         },
         {
             "type": "pwa-node",
@@ -24,7 +24,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["publish", "-u", "twyr", "--dry-run"]
+            "args": ["publish", "-u", "twyr", "-rn", "V0.5.0 Release", "--dry-run"]
         }
     ]
 }
