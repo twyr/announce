@@ -904,7 +904,6 @@ class ReleaseCommandClass {
 
 		// Step 5: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
 		const dateFormat = require('date-fns/format');
-		const humanizeString = require('humanize-string');
 
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
@@ -915,7 +914,7 @@ class ReleaseCommandClass {
 				relevantGitLogs?.push?.({
 					'hash': commitLog?.hash,
 					'date': commitDate,
-					'message': humanizeString(commitLog?.message),
+					'message': commitLog?.message,
 					'author_name': commitLog?.author_name,
 					'author_email': commitLog?.author_email
 				});
@@ -928,7 +927,7 @@ class ReleaseCommandClass {
 					relevantGitLogs?.push?.({
 						'hash': commitLog?.hash,
 						'date': commitDate,
-						'message': humanizeString(commitBody?.trim?.()),
+						'message': commitBody?.trim?.(),
 						'author_name': commitLog?.author_name,
 						'author_email': commitLog?.author_email
 					});
@@ -957,6 +956,7 @@ class ReleaseCommandClass {
 		const bugfixSet = [];
 		const documentationSet = [];
 
+		const humanizeString = require('humanize-string');
 		relevantGitLogs?.forEach?.((commitLog) => {
 			const commitObject = {
 				'hash': commitLog?.hash,
@@ -996,6 +996,7 @@ class ReleaseCommandClass {
 				commitObject.message = commitObject?.message?.substr?.(1);
 			}
 
+			commitObject.message = humanizeString?.(commitObject?.message);
 			set?.push?.(commitObject);
 		});
 
