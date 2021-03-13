@@ -1,4 +1,9 @@
-#### CHANGE LOG#### CHANGE LOG
+#### CHANGE LOG
+
+
+##### 13-Mar-2021
+
+feat(release): non-github git host support ([ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23](https://github.com/twyr/announce/commit/ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23))#### CHANGE LOG#### CHANGE LOG
 
 
 ##### 12-Mar-2021
