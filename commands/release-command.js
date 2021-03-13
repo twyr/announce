@@ -493,6 +493,8 @@ class ReleaseCommandClass {
 			if(changelogResult?.[0]?.['hasChanged'])
 				continue;
 
+			if(!changeLogText.length)
+				continue;
 
 			const prependFile = require('prepend-file');
 
