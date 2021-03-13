@@ -968,7 +968,9 @@ class ReleaseCommandClass {
 
 				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
 			}
-			else {
+
+			// eslint-disable-next-line curly
+			if(commitObject?.message?.startsWith?.(':')) {
 				commitObject.message = commitObject?.message?.substr?.(1);
 			}
 
