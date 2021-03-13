@@ -879,6 +879,8 @@ class ReleaseCommandClass {
 
 		// Step 5: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
 		const dateFormat = require('date-fns/format');
+		const humanizeString = require('humanize-string');
+
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
 			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
@@ -888,7 +890,7 @@ class ReleaseCommandClass {
 				relevantGitLogs?.push?.({
 					'hash': commitLog?.hash,
 					'date': commitDate,
-					'message': commitLog?.message,
+					'message': humanizeString(commitLog?.message),
 					'author_name': commitLog?.author_name,
 					'author_email': commitLog?.author_email
 				});
@@ -901,7 +903,7 @@ class ReleaseCommandClass {
 					relevantGitLogs?.push?.({
 						'hash': commitLog?.hash,
 						'date': commitDate,
-						'message': commitBody?.trim?.(),
+						'message': humanizeString(commitBody?.trim?.()),
 						'author_name': commitLog?.author_name,
 						'author_email': commitLog?.author_email
 					});
