@@ -1,7 +1,11 @@
-#### CHANGE LOG
+#### CHANGE LOG#### CHANGE LOG
 
 
 ##### 13-Mar-2021
+
+docs(changelog): clean up ([ff86af6d77a799418abf5e9745298d6a6ac63804](https://github.com/twyr/announce/commit/ff86af6d77a799418abf5e9745298d6a6ac63804))
+
+feat(release): humanized strings in the Release notes for improved readability ([1c901bfd8d411719c548059c8a9d774055823b9c](https://github.com/twyr/announce/commit/1c901bfd8d411719c548059c8a9d774055823b9c))
 
 feat(release): non-github git host support ([ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23](https://github.com/twyr/announce/commit/ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23))
 
