@@ -398,7 +398,18 @@ class ReleaseCommandClass {
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
 			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
+			if(commitLog?.message?.startsWith?.('feat(') || commitLog?.message?.startsWith?.('fix(') || commitLog?.message?.startsWith?.('docs(')) {
+				relevantGitLogs?.push?.({
+					'hash': commitLog?.hash,
+					'date': commitLog?.date,
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
+				});
+			}
+
+			// eslint-disable-next-line curly
+			if(commitLog?.message?.startsWith?.('feat:') || commitLog?.message?.startsWith?.('fix:') || commitLog?.message?.startsWith?.('docs:')) {
 				relevantGitLogs?.push?.({
 					'hash': commitLog?.hash,
 					'date': commitLog?.date,
@@ -411,7 +422,18 @@ class ReleaseCommandClass {
 			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split?.('\n');
 			commitLogBody?.forEach?.((commitBody) => {
 				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
+				if(commitBody?.startsWith?.('feat(') || commitBody?.startsWith?.('fix(') || commitBody?.startsWith?.('docs(')) {
+					relevantGitLogs.push?.({
+						'hash': commitLog?.hash,
+						'date': commitLog?.date,
+						'message': commitBody?.trim(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
+					});
+				}
+
+				// eslint-disable-next-line curly
+				if(commitBody?.startsWith?.('feat:') || commitBody?.startsWith?.('fix:') || commitBody?.startsWith?.('docs:')) {
 					relevantGitLogs.push?.({
 						'hash': commitLog?.hash,
 						'date': commitLog?.date,
