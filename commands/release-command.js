@@ -984,6 +984,9 @@ class ReleaseCommandClass {
 				set = documentationSet;
 			}
 
+			if(!commitObject?.message?.startsWith?.('(') && !commitObject?.message?.startsWith?.(':'))
+				return;
+
 			if(commitObject?.message?.startsWith?.('(')) {
 				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
 				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
