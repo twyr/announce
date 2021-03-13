@@ -769,22 +769,25 @@ class ReleaseCommandClass {
 			return;
 		}
 
-		console.log(JSON.stringify(releaseData, null, '\t'));
+		// Iterate over each release upstream, and call the git host wrapper...
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const upstreamReleaseData = releaseData[thisUpstreamRemote];
 
-		// const promises = require('bluebird');
-		// const octonode = require('octonode');
+			let gitHostWrapper = null;
+			if(upstreamReleaseData?.REPO?.type === 'github') {
+				const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+				gitHostWrapper = new GitHubWrapper(options?.githubToken);
+			}
 
-		// const client = octonode?.client?.(options?.githubToken);
-		// const clientPost = promises?.promisify?.(client?.post?.bind?.(client));
+			if(upstreamReleaseData?.REPO?.type === 'gitlab') {
+				const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+				gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+			}
 
-		// const repository = releaseData['REPO'];
-		// await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
-		// 	'accept': 'application/vnd.github.v3+json',
-		// 	'tag_name': releaseData?.['RELEASE_TAG'],
-		// 	'name': releaseData?.['RELEASE_NAME'],
-		// 	'body': releaseData?.['RELEASE_NOTES'],
-		// 	'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
-		// });
+			await gitHostWrapper.createRelease(upstreamReleaseData);
+		}
 
 		if(execMode === 'api')
 			logger?.info?.(`Created the release`);
@@ -1016,6 +1019,14 @@ class ReleaseCommandClass {
 			'rmWhitespace': false,
 			'strict': false
 		});
+
+		// Step 10: Clean up a bit...
+		delete releaseData['REPO']['protocols'];
+		delete releaseData['REPO']['treepath'];
+		delete releaseData['REPO']['auth'];
+		delete releaseData['REPO']['committish'];
+		delete releaseData['REPO']['default'];
+		delete releaseData['REPO']['opts'];
 
 		// Finally, return...
 		return releaseData;

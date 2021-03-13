@@ -130,6 +130,30 @@ class GitLabWrapper {
 	}
 
 	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
+	 * @name		createRelease
+	 *
+	 * @param		{object} releaseData - The data required for creating a release on GitLab
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Given the required data, creates a release on GitLab.
+	 *
+	 */
+	async createRelease(releaseData) {
+		const repository = releaseData['REPO'];
+		await this.client.Releases.create(`${repository.user}/${repository.project}`, {
+			'name': releaseData?.['RELEASE_NAME'],
+			'tag_name': releaseData?.['RELEASE_TAG'],
+			'description': releaseData?.['RELEASE_NOTES'],
+			'released_at': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release') ? '9999-12-31T23:59:59.9999Z' : null
+		});
+	}
+
+	/**
 	 * @function
 	 * @instance
 	 * @memberof	GitLabWrapper

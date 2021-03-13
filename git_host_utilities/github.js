@@ -136,6 +136,34 @@ class GitHubWrapper {
 	}
 
 	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitHubWrapper
+	 * @name		createRelease
+	 *
+	 * @param		{object} releaseData - The data required for creating a release on GitHub
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Given the required data, creates a release on Github.
+	 *
+	 */
+	async createRelease(releaseData) {
+		const promises = require('bluebird');
+		const clientPost = promises?.promisify?.(this?.client?.post?.bind?.(this?.client));
+
+		const repository = releaseData['REPO'];
+		await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
+			'accept': 'application/vnd.github.v3+json',
+			'tag_name': releaseData?.['RELEASE_TAG'],
+			'name': releaseData?.['RELEASE_NAME'],
+			'body': releaseData?.['RELEASE_NOTES'],
+			'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
+		});
+	}
+
+	/**
 	 * @function
 	 * @instance
 	 * @memberof	GitHubWrapper
