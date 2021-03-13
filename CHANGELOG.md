@@ -3,6 +3,14 @@
 
 ##### 13-Mar-2021
 
+fix(release): when filtering git logs ([e2271644f45a71cd7170807449bb30324f308950](https://github.com/twyr/announce/commit/e2271644f45a71cd7170807449bb30324f308950))
+
+fix(release): when filtering git logs ([0963828f6708c96b343933e152126db69878f18a](https://github.com/twyr/announce/commit/0963828f6708c96b343933e152126db69878f18a))
+
+fix(release): changelog generation ([201d079848a794a972850757bf2384032cef3447](https://github.com/twyr/announce/commit/201d079848a794a972850757bf2384032cef3447))
+
+docs(changelog): changes for today ([a5e7bc8d0818fafb9b77039fb0dbcc9397967645](https://github.com/twyr/announce/commit/a5e7bc8d0818fafb9b77039fb0dbcc9397967645))
+
 feat(release): non-github git host support ([ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23](https://github.com/twyr/announce/commit/ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23))
 
 
