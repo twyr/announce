@@ -3,7 +3,7 @@
 
 ##### 13-Mar-2021
 
-feat(release): non-github git host support ([ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23](https://github.com/twyr/announce/commit/ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23))#### CHANGE LOG#### CHANGE LOG
+feat(release): non-github git host support ([ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23](https://github.com/twyr/announce/commit/ab8d6cf6d46fd3045be4ebadc2ac8e394a07fb23))
 
 
 ##### 12-Mar-2021
@@ -24,14 +24,14 @@ docs(publish): re-factored documentation to match current code structure ([98749
 
 ##### 10-Mar-2021
 
-docs(all): copyright change ([2d66272f3ae70fe764aca2afe6860833431a7e88](https://github.com/twyr/announce/commit/2d66272f3ae70fe764aca2afe6860833431a7e88))#### CHANGE LOG
+docs(all): copyright change ([2d66272f3ae70fe764aca2afe6860833431a7e88](https://github.com/twyr/announce/commit/2d66272f3ae70fe764aca2afe6860833431a7e88))
 
 
 ##### 04-Mar-2021
 
 docs(all): updated for 0.5.0 ([83c5bdc02bbdd859e50023c7e079be9f6815ac12](https://github.com/twyr/announce/commit/83c5bdc02bbdd859e50023c7e079be9f6815ac12))
 
-docs(version): updated version for the next publish ([7eef50970d86d0bb0ef5d3874a385aef0c1da956](https://github.com/twyr/announce/commit/7eef50970d86d0bb0ef5d3874a385aef0c1da956))#### CHANGE LOG
+docs(version): updated version for the next publish ([7eef50970d86d0bb0ef5d3874a385aef0c1da956](https://github.com/twyr/announce/commit/7eef50970d86d0bb0ef5d3874a385aef0c1da956))
 
 
 ##### 02-Mar-2021
@@ -61,7 +61,7 @@ docs(release): re-generated for latest code ([c16f474c6395ff6b37fd5eb5a95ce4110d
 
 ##### 02-Feb-2021
 
-docs(changelog): clean up ([a7117bdb5ce27da292dbac2d912bcd63706b9877](https://github.com/twyr/announce/commit/a7117bdb5ce27da292dbac2d912bcd63706b9877))#### CHANGE LOG
+docs(changelog): clean up ([a7117bdb5ce27da292dbac2d912bcd63706b9877](https://github.com/twyr/announce/commit/a7117bdb5ce27da292dbac2d912bcd63706b9877))
 
 ##### 30-Jan-2021
 
