@@ -434,11 +434,12 @@ class ReleaseCommandClass {
 		}
 
 		// Step 4: Get the upstream repository information - to be used to generate the URLs pointing to the commits
-		const hostedGitInfo = require('hosted-git-info');
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		const upstreamForLinks = upstreamRemoteList?.shift?.();
 
 		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', upstreamForLinks]);
+
+		const hostedGitInfo = require('hosted-git-info');
 		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
 
