@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -99,7 +109,7 @@
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line22">line 22</a>
+										<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line23">line 23</a>
 									</li>
 								</ul>
 							</dd>
@@ -140,7 +150,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line321">line 321</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line335">line 335</a>
 								</li>
 							</ul>
 						</dd>
@@ -205,7 +215,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line651">line 651</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line710">line 710</a>
 								</li>
 							</ul>
 						</dd>
@@ -261,6 +271,80 @@
 							<span class="param-type">string</span>
 						</dd>
 					</dl>
+					<h4 class="name" id="_generateReleaseNotesPerRemote"><span class="type-signature">(async) </span>_generateReleaseNotesPerRemote<span class="signature">(options, logger, git, remote)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<p class="summary usertext">
+					<p>Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line929">line 929</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>remote</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>The remote for which the release notes should be generated</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The generated release notes for this release.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">string</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="_initializeGit"><span class="type-signature"></span>_initializeGit<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {object}</span></h4>
 					<p class="summary usertext">
 					<p>Creates a Git client instance for the current project repository and returns it.</p>
@@ -270,7 +354,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line187">line 187</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line201">line 201</a>
 								</li>
 							</ul>
 						</dd>
@@ -326,7 +410,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line105">line 105</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line114">line 114</a>
 								</li>
 							</ul>
 						</dd>
@@ -373,7 +457,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line590">line 590</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line644">line 644</a>
 								</li>
 							</ul>
 						</dd>
@@ -438,7 +522,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line915">line 915</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line768">line 768</a>
 								</li>
 							</ul>
 						</dd>
@@ -503,7 +587,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line152">line 152</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line166">line 166</a>
 								</li>
 							</ul>
 						</dd>
@@ -550,7 +634,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line230">line 230</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line244">line 244</a>
 								</li>
 							</ul>
 						</dd>
@@ -606,6 +690,71 @@
 							<span class="param-type">boolean</span>
 						</dd>
 					</dl>
+					<h4 class="name" id="_storeReleaseNotes"><span class="type-signature">(async) </span>_storeReleaseNotes<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<p class="summary usertext">
+					<p>Stores the release notes in the specified formats, at the specified location.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line836">line 836</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>releaseData</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Data needed to push the release, returned by _generateReleaseNotes</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Tags the codebase.</p>
@@ -615,7 +764,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line519">line 519</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line573">line 573</a>
 								</li>
 							</ul>
 						</dd>
@@ -686,7 +835,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line44">line 44</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line45">line 45</a>
 								</li>
 							</ul>
 						</dd>

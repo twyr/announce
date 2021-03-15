@@ -51,6 +51,9 @@ Release Command Options:
 | -rn, --release-name | Release Name to use for this release |
 | -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
 |   |   |
+| -of, --output-format | Format(s) to output the generated release notes' |
+| -op, --output-path | 'Path to store the generated release notes at' |
+|   |   |
 | -u, --upstream | Comma separated list of Git remote(s) to push the release to |
 
 Global Options inherited by the Release Command:
@@ -82,6 +85,9 @@ Global Options inherited by the Release Command:
         'releaseName': 'release name', // [default: V${package version} Release]
         'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
 
+        'outputFormat': 'format(s) to output generated release notes', // Output the generated release notes in JSON, PDF, or Both formats [default: none]
+        'outputPath': 'path to store the generated release notes at', // Store the generated release notes [default: .]
+
         'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 
         'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
@@ -112,6 +118,9 @@ announce.release({
     'dontRelease': true/false, // Don't release now. Simply tag and exit
     'releaseName': 'release name', // Name of the release [default: V${package version} Release]
     'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
+
+    'outputFormat': 'format(s) to output generated release notes', // Output the generated release notes in JSON, PDF, or Both formats [default: none]
+    'outputPath': 'path to store the generated release notes at', // Store the generated release notes [default: .]
 
     'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 

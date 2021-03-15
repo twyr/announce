@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -319,17 +329,17 @@ class PublishCommandClass {
 		}
 
 		let gitHostWrapper = null;
-		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
+		if(repository?.type === 'github') {
 			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
 			gitHostWrapper = new GitHubWrapper(options?.githubToken);
 		}
 
-		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
+		if(repository?.type === 'gitlab') {
 			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
 			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
 		}
 
-		const releaseToBePublished = gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
+		const releaseToBePublished = await gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
 		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
 		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
 
@@ -424,7 +434,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dry-run', 'Dry run publish', false)
 
 		.option('-ght, --github-token &lt;token>', 'Token to use for accessing the release on GitHub', process.env.GITHUB_TOKEN)
-		.option('-glt, --gitlab-token &lt;token>', 'Token to use for accessing the release on Gitlab', process.env.GITLAB_TOKEN)
+		.option('-glt, --gitlab-token &lt;token>', 'Token to use for accessing the release on GitLab', process.env.GITLAB_TOKEN)
 		.option('-nt, --npm-token &lt;token>', 'Automation Token to use for publishing the release to NPM', process.env.NPM_TOKEN)
 
 		.option('-rn, --release-name &lt;name>', 'GitHub release name for fetching the compressed assets', `V${version} Release`)

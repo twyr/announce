@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -124,6 +134,53 @@ class GitLabWrapper {
 	 * @function
 	 * @instance
 	 * @memberof	GitLabWrapper
+	 * @name		fetchCommitInformation
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which commit information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit from GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, returns information about the commit pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitInformation(repository, commitLog) {
+		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+		return commit;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
+	 * @name		fetchCommitAuthorInformation
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{string} commitLog - the git commit object for which the author information needs to be fetched
+	 *
+	 * @return		{object} The required information about the commit author from GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, returns information about the commit author pointed to by the commitLog object.
+	 *
+	 */
+	async fetchCommitAuthorInformation(repository, commitLog) {
+		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+		const author = await this.client.Users.search(commit?.author_email);
+
+		return {
+			'name': commit?.author_name,
+			'email': commit?.author_email,
+			'profile': author?.[0]?.web_url,
+			'avatar': author?.[0]?.avatar_url
+		};
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
 	 * @name		fetchReleaseInformation
 	 *
 	 * @param		{object} repository - the GitLab repository to query for the release
@@ -131,17 +188,81 @@ class GitLabWrapper {
 	 *
 	 * @return		{object} The required information about the release from GitLab.
 	 *
-	 * @summary  	Given a GitLab repository, and the required release name, returns information about the release.
+	 * @summary  	Given a GitLab repository, returns information about the release - either the latest, or the one matching the specified release name.
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
 		const allReleases = await this.client.Releases.all(`${repository.user}/${repository.project}`);
-		const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
-		return {
-			'prerelease': releaseInfo?.upcoming_release,
-			'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url']
-		};
+		if(releaseName &amp;&amp; releaseName?.trim?.()?.length) {
+			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
+
+			return {
+				'name': releaseInfo?.name,
+				'prerelease': releaseInfo?.upcoming_release,
+				'published': releaseInfo?.created_at,
+				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tag': releaseInfo?.tag_name
+			};
+		}
+
+		const releaseInfo = allReleases?.map?.((release) => {
+			return {
+				'name': release?.name,
+				'prerelease': release?.upcoming_release,
+				'published': release?.created_at,
+				'tarball_url': release?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tag': release?.tag_name
+			};
+		})
+		?.sort?.((left, right) => {
+			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
+		})
+		?.shift?.();
+
+		return releaseInfo;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
+	 * @name		createRelease
+	 *
+	 * @param		{object} releaseData - The data required for creating a release on GitLab
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Given the required data, creates a release on GitLab.
+	 *
+	 */
+	async createRelease(releaseData) {
+		const repository = releaseData['REPO'];
+		await this.client.Releases.create(`${repository.user}/${repository.project}`, {
+			'name': releaseData?.['RELEASE_NAME'],
+			'tag_name': releaseData?.['RELEASE_TAG'],
+			'description': releaseData?.['RELEASE_NOTES'],
+			'released_at': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release') ? '9999-12-31T23:59:59.9999Z' : null
+		});
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	GitLabWrapper
+	 * @name		getCommitLink
+	 *
+	 * @param		{object} repository - the GitLab repository to query for the release
+	 * @param		{object} commitLog - the commit information
+	 *
+	 * @return		{object} The URL to access the commit on GitLab.
+	 *
+	 * @summary  	Given a GitLab repository, and a commit, returns the URL to access the commit directly.
+	 *
+	 */
+	getCommitLink(repository, commitLog) {
+		return `https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash})`;
 	}
 	// #endregion
 

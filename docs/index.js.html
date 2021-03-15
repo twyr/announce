@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -85,7 +95,7 @@
 					<pre class="prettyprint source linenums"><code>/**
  * @name		index.js
  * @file		Main entry point of the Twy'r Announce CLI tool
- * @version		0.6.0
+ * @version		0.7.0
  *
  * @author		Vish Desai &lt;shadyvd@hotmail.com>
  * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2021

@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -95,6 +105,7 @@
  * Module dependencies, required for ALL Twy'r modules
  * @ignore
  */
+const safeJsonStringify = require('safe-json-stringify');
 
 /**
  * Module dependencies, required for this module
@@ -155,32 +166,40 @@ class ReleaseCommandClass {
 		const git = this._initializeGit(mergedOptions, logger);
 
 		// Step 4: Stash or Commit the current branch, if required
-		const shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
+		let shouldPopOnError = false;
 
-		// Step 5: Generate the CHANGELOG and commit it
-		await this._generateChangelog(mergedOptions, logger, git);
+		try {
+			shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
 
-		// Step 6: Tag the last commit, if required
-		await this._tagCode(mergedOptions, logger, git);
+			// Step 5: Generate the CHANGELOG and commit it
+			await this._generateChangelog(mergedOptions, logger, git);
 
-		// Step 7: Push the new commits, and tag, upstream
-		await this._pushUpstream(mergedOptions, logger, git);
+			// Step 6: Tag the last commit, if required
+			await this._tagCode(mergedOptions, logger, git);
 
-		// Step 8: Create the release notes...
-		const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
+			// Step 7: Push the new commits, and tag, upstream
+			// await this._pushUpstream(mergedOptions, logger, git);
 
-		// Step 9: Create the release on Github
-		await this?._releaseCode?.(mergedOptions, logger, releaseData);
+			// Step 8: Create the release notes...
+			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
-		// Step 10: pop the stash if needed...
-		if(shouldPopOnError) {
-			await git?.stash?.(['pop']);
+			// Step 9: Create the release on Github
+			// await this?._releaseCode?.(mergedOptions, logger, releaseData);
 
-			const execMode = options?.execMode ?? 'cli';
-			if(execMode === 'api')
-				logger?.info?.(`Popped the stash`);
-			else
-				logger?.succeed?.(`Popped the stash`);
+			// Step 10: Store the release notes at the specified location in the specified formats
+			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
+		}
+		finally {
+			// Step 11: pop the stash if needed...
+			if(shouldPopOnError) {
+				await git?.stash?.(['pop']);
+
+				const execMode = options?.execMode ?? 'cli';
+				if(execMode === 'api')
+					logger?.info?.(`Popped the stash`);
+				else
+					logger?.succeed?.(`Popped the stash`);
+			}
 		}
 	}
 	// #endregion
@@ -216,6 +235,7 @@ class ReleaseCommandClass {
 
 		mergedOptions.commit = options?.commit ?? (this?._commandOptions?.commit ?? false);
 		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.gitlabToken = options?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
 
 		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
 
@@ -227,6 +247,10 @@ class ReleaseCommandClass {
 		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
 		mergedOptions.releaseMessage = options?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
+
+		mergedOptions.outputFormat = options?.outputFormat ?? (this?._commandOptions.outputFormat ?? '');
+		mergedOptions.outputPath = options?.outputPath ?? (this?._commandOptions.outputPath ?? '.');
+		if(!path?.isAbsolute?.(mergedOptions?.outputPath)) mergedOptions.outputPath = path?.join?.(process?.cwd?.(), mergedOptions?.outputPath);
 
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
@@ -476,7 +500,18 @@ class ReleaseCommandClass {
 		const relevantGitLogs = [];
 		gitLogsInRange?.all?.forEach?.((commitLog) => {
 			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
+			if(commitLog?.message?.startsWith?.('feat(') || commitLog?.message?.startsWith?.('fix(') || commitLog?.message?.startsWith?.('docs(')) {
+				relevantGitLogs?.push?.({
+					'hash': commitLog?.hash,
+					'date': commitLog?.date,
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
+				});
+			}
+
+			// eslint-disable-next-line curly
+			if(commitLog?.message?.startsWith?.('feat:') || commitLog?.message?.startsWith?.('fix:') || commitLog?.message?.startsWith?.('docs:')) {
 				relevantGitLogs?.push?.({
 					'hash': commitLog?.hash,
 					'date': commitLog?.date,
@@ -489,7 +524,18 @@ class ReleaseCommandClass {
 			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split?.('\n');
 			commitLogBody?.forEach?.((commitBody) => {
 				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
+				if(commitBody?.startsWith?.('feat(') || commitBody?.startsWith?.('fix(') || commitBody?.startsWith?.('docs(')) {
+					relevantGitLogs.push?.({
+						'hash': commitLog?.hash,
+						'date': commitLog?.date,
+						'message': commitBody?.trim(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
+					});
+				}
+
+				// eslint-disable-next-line curly
+				if(commitBody?.startsWith?.('feat:') || commitBody?.startsWith?.('fix:') || commitBody?.startsWith?.('docs:')) {
 					relevantGitLogs.push?.({
 						'hash': commitLog?.hash,
 						'date': commitLog?.date,
@@ -512,11 +558,25 @@ class ReleaseCommandClass {
 		}
 
 		// Step 4: Get the upstream repository information - to be used to generate the URLs pointing to the commits
-		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		const upstreamForLinks = upstreamRemoteList?.shift?.();
 
-		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
+		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', upstreamForLinks]);
+
+		const hostedGitInfo = require('hosted-git-info');
+		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		let gitHostWrapper = null;
+		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
+			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
+
+		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
+			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+		}
 
 		// Step 5: Generate the changelogs - prepend to an existing file, or create a whole new one
 		const changeLogText = [`#### CHANGE LOG`];
@@ -530,7 +590,8 @@ class ReleaseCommandClass {
 				changeLogText?.push?.(`\n\n##### ${commitDate}`);
 			}
 
-			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](https://${repository?.domain}/${repository?.user}/${repository?.project}/commit/${commitLog?.hash}))`);
+			const commitLink = gitHostWrapper.getCommitLink(repository, commitLog);
+			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
 		});
 
 		const path = require('path');
@@ -556,6 +617,8 @@ class ReleaseCommandClass {
 			if(changelogResult?.[0]?.['hasChanged'])
 				continue;
 
+			if(!changeLogText.length)
+				continue;
 
 			const prependFile = require('prepend-file');
 
@@ -591,6 +654,7 @@ class ReleaseCommandClass {
 			'--no-verify': true
 		});
 
+		// Finally, return...
 		if(execMode === 'api')
 			logger?.info?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
 		else
@@ -710,18 +774,23 @@ class ReleaseCommandClass {
 			return;
 		}
 
-		await git?.push?.(options?.upstream, branchStatus?.current, {
-			'--atomic': true,
-			'--progress': true,
-			'--signed': 'if-asked'
-		});
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
 
-		await git?.pushTags?.(options?.upstream, {
-			'--atomic': true,
-			'--force': true,
-			'--progress': true,
-			'--signed': 'if-asked'
-		});
+			await git?.push?.(thisUpstreamRemote, branchStatus?.current, {
+				'--atomic': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+
+			await git?.pushTags?.(thisUpstreamRemote, {
+				'--atomic': true,
+				'--force': true,
+				'--progress': true,
+				'--signed': 'if-asked'
+			});
+		}
 
 		if(execMode === 'api')
 			logger?.info?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}`);
@@ -770,221 +839,15 @@ class ReleaseCommandClass {
 			return null;
 		}
 
-		// Step 1: Get upstream repository info to use for getting required details...
-		const hostedGitInfo = require('hosted-git-info');
-		const gitRemotes = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+		// Get release notes for each of the configured upstreams...
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		const releaseData = {};
+		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const upstreamReleaseNotes = await this._generateReleaseNotesPerRemote(options, logger, git, thisUpstreamRemote);
 
-		const repository = hostedGitInfo?.fromUrl?.(gitRemotes);
-		repository.project = repository?.project?.replace?.('.git\n', '');
-
-		// Step 2: Instantiate the Github Client for this Repo, and create a repo object
-		const octonode = require('octonode');
-
-		const client = octonode?.client?.(options?.githubToken);
-		const ghRepo = client?.repo?.(`${repository?.user}/${repository?.project}`);
-
-		// Step 3: Get the last release for the repository
-		const ghReleases = await ghRepo?.releasesAsync?.();
-		const lastRelease = ghReleases?.[0]?.map?.((release) => {
-			return {
-				'name': release?.name,
-				'published': release?.published_at,
-				'tag': release?.tag_name
-			};
-		})
-		?.sort?.((left, right) => {
-			return (new Date(right?.published))?.valueOf() - (new Date(left?.published))?.valueOf();
-		})
-		?.shift?.();
-
-		// Step 4: Get the last released commit, and the most recent tag / specified tag commit
-		let lastReleasedCommit = null;
-		if(lastRelease) {
-			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
-			lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
+			releaseData[thisUpstreamRemote] = upstreamReleaseNotes;
 		}
-
-		let lastTag = await git?.tag?.(['--sort=-creatordate']);
-		// If a specific tag name is not given, use the commit associated with the last tag
-		if(options?.tag === '')
-			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
-		// Otherwise, use the commit associated with the specified tag
-		else
-			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
-
-		let lastCommit = null;
-		if(lastTag) {
-			lastCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
-			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		// Step 5: Get the Git Log events from the commit of the last release to the commit of the last tag
-		let gitLogsInRange = null;
-		if(lastReleasedCommit &amp;&amp; lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'from': lastReleasedCommit,
-				'to': lastCommit
-			});
-
-		if(!lastReleasedCommit &amp;&amp; lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'to': lastCommit
-			});
-
-		if(!lastReleasedCommit &amp;&amp; !lastCommit)
-			gitLogsInRange = {
-				'all': []
-			};
-
-		// Step 6: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
-		const dateFormat = require('date-fns/format');
-		const relevantGitLogs = [];
-		gitLogsInRange?.all?.forEach?.((commitLog) => {
-			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
-
-			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
-				relevantGitLogs?.push?.({
-					'hash': commitLog?.hash,
-					'date': commitDate,
-					'message': commitLog?.message,
-					'author_name': commitLog?.author_name,
-					'author_email': commitLog?.author_email
-				});
-			}
-
-			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace?.(/\\n/g, '\n')?.split?.('\n');
-			commitLogBody?.forEach?.((commitBody) => {
-				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
-					relevantGitLogs?.push?.({
-						'hash': commitLog?.hash,
-						'date': commitDate,
-						'message': commitBody?.trim?.(),
-						'author_name': commitLog?.author_name,
-						'author_email': commitLog?.author_email
-					});
-				}
-			});
-		});
-
-		// Step 7: Fetch Author information for each of the relevant Git Log events
-		const contributorSet = {};
-		let authorProfiles = [];
-
-		relevantGitLogs?.forEach?.((commitLog) => {
-			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
-				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
-				authorProfiles?.push?.(ghRepo?.commitAsync?.(commitLog?.hash));
-			}
-		});
-
-		authorProfiles = await Promise?.allSettled?.(authorProfiles);
-		authorProfiles = authorProfiles.map((authorProfile) => {
-			authorProfile = authorProfile?.value?.[0];
-
-			return {
-				'name': authorProfile?.commit?.author?.name,
-				'email': authorProfile?.commit?.author?.email,
-				'profile': authorProfile?.author?.html_url,
-				'avatar': authorProfile?.author?.avatar_url
-			};
-		});
-
-		// Step 8: Bucket the Git Log events based on the Conventional Changelog fields
-		const featureSet = [];
-		const bugfixSet = [];
-		const documentationSet = [];
-
-		relevantGitLogs?.forEach?.((commitLog) => {
-			const commitObject = {
-				'hash': commitLog?.hash,
-				'component': '',
-				'message': commitLog?.message,
-				'author_name': commitLog?.['author_name'],
-				'author_email': commitLog?.['author_email'],
-				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
-				'date': commitLog?.date
-			};
-
-			let set = null;
-			if(commitLog?.message?.startsWith?.('feat')) {
-				commitObject.message = commitObject?.message?.replace?.('feat', '');
-				set = featureSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('fix')) {
-				commitObject.message = commitObject?.message?.replace?.('fix', '');
-				set = bugfixSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('docs')) {
-				commitObject.message = commitObject?.message?.replace?.('docs', '');
-				set = documentationSet;
-			}
-
-			if(commitObject?.message?.startsWith?.('(')) {
-				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
-				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
-
-				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
-			}
-			else {
-				commitObject.message = commitObject?.message?.substr?.(1);
-			}
-
-			set?.push?.(commitObject);
-		});
-
-		// Step 9: Compute if this is a pre-release, or a proper release
-		const path = require('path');
-		const semver = require('semver');
-
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const { version } = require(projectPackageJson);
-
-		if(!version) {
-			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-		}
-		if(!semver.valid(version)) {
-			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-		}
-
-		const parsedVersion = semver?.parse?.(version);
-		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
-
-		// Step 10: Generate the release notes
-		const releaseData = {
-			'REPO': repository,
-			'RELEASE_NAME': options?.releaseName,
-			'RELEASE_TYPE': releaseType,
-			'RELEASE_TAG': lastTag,
-			'NUM_FEATURES': featureSet?.length,
-			'NUM_FIXES': bugfixSet?.length,
-			'NUM_DOCS': documentationSet?.length,
-			'NUM_AUTHORS': authorProfiles?.length,
-			'FEATURES': featureSet,
-			'FIXES': bugfixSet,
-			'DOCS': documentationSet,
-			'AUTHORS': authorProfiles
-		};
-
-		let releaseMessagePath = options?.releaseMessage ?? '';
-		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
-		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
-
-		const promises = require('bluebird');
-		const ejs = promises?.promisifyAll?.(require('ejs'));
-
-		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
-			'async': true,
-			'cache': false,
-			'debug': false,
-			'rmWhitespace': false,
-			'strict': false
-		});
 
 		// Finally, return...
 		if(execMode === 'api')
@@ -1034,20 +897,25 @@ class ReleaseCommandClass {
 			return;
 		}
 
-		const promises = require('bluebird');
-		const octonode = require('octonode');
+		// Iterate over each release upstream, and call the git host wrapper...
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const upstreamReleaseData = releaseData[thisUpstreamRemote];
 
-		const client = octonode?.client?.(options?.githubToken);
-		const clientPost = promises?.promisify?.(client?.post?.bind?.(client));
+			let gitHostWrapper = null;
+			if(upstreamReleaseData?.REPO?.type === 'github') {
+				const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+				gitHostWrapper = new GitHubWrapper(options?.githubToken);
+			}
 
-		const repository = releaseData['REPO'];
-		await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
-			'accept': 'application/vnd.github.v3+json',
-			'tag_name': releaseData?.['RELEASE_TAG'],
-			'name': releaseData?.['RELEASE_NAME'],
-			'body': releaseData?.['RELEASE_NOTES'],
-			'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
-		});
+			if(upstreamReleaseData?.REPO?.type === 'gitlab') {
+				const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+				gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+			}
+
+			await gitHostWrapper.createRelease(upstreamReleaseData);
+		}
 
 		if(execMode === 'api')
 			logger?.info?.(`Created the release`);
@@ -1057,6 +925,377 @@ class ReleaseCommandClass {
 
 		debug(`created the release`);
 		return;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_storeReleaseNotes
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseData - Data needed to push the release, returned by _generateReleaseNotes
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Stores the release notes in the specified formats, at the specified location.
+	 *
+	 */
+	async _storeReleaseNotes(options, logger, releaseData) {
+		const execMode = options ?.execMode;
+
+		debug(`storing the generated release notes...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Storing the generated release notes...`);
+			else
+				if(logger) logger.text = `Storing the generated release notes...`;
+		}
+
+		if(options?.dontRelease) {
+			if(execMode === 'api')
+				logger?.info?.(`--dont-release is true. Skipping storing generated release notes operation`);
+			else
+				logger?.succeed?.(`--dont-release is true. Skipping storing generated release notes operation`);
+
+			debug(`--dont-release is true - skipping storing generated release notes operation`);
+			return;
+		}
+
+		// Step 1: If path is not specified, skip
+		if(options?.outputPath.trim() === '') {
+			if(execMode === 'api')
+				logger?.info?.(`No requirement to store the release notes. Skipping operation`);
+			else
+				logger?.succeed?.(`No requirement to store the release notes. Skipping operation`);
+
+			debug(`skipping operation to store generated release notes`);
+			return;
+		}
+
+		// Step 2: Convert generated release notes in the specified formats
+		const outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length &amp;&amp; (format !== 'none'); });
+		if(!outputFormats.length) {
+			if(execMode === 'api')
+				logger?.error?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
+			else
+				logger?.fail?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
+
+			debug(`no valid output formats specified for storing generated release notes - skipping operation`);
+			return;
+		}
+
+		for(let idx = 0; idx &lt; outputFormats.length; idx++) {
+			const thisOutputFormat = outputFormats[idx];
+			switch (thisOutputFormat) {
+				case 'json':
+					await this?._storeJsonReleaseNotes(options, logger, releaseData);
+					break;
+
+				case 'pdf':
+					await this?._storePdfReleaseNotes(options, logger, releaseData);
+					break;
+
+				default:
+					if(execMode === 'api')
+						logger?.error?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
+					else
+						logger?.fail?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
+
+					debug(`invalid output format specified for storing generated release notes - ${thisOutputFormat}`);
+					break;
+			}
+		}
+
+		// Finally, return..
+		if(execMode === 'api')
+			logger?.info?.(`Stored the release notes @ ${options?.outputPath}`);
+		else
+			logger?.succeed?.(`Stored the release notes @ ${options?.outputPath}`);
+
+		debug(`stored the release notes`);
+		return;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_generateReleaseNotesPerRemote
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{string} remote - The remote for which the release notes should be generated
+	 *
+	 * @return		{string} The generated release notes for this release.
+	 *
+	 * @summary		Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.
+	 *
+	 */
+	async _generateReleaseNotesPerRemote(options, logger, git, remote) {
+		// Step 1: Get upstream repository info to use for getting required details...
+		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', remote]);
+
+		const hostedGitInfo = require('hosted-git-info');
+		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+		repository.project = repository?.project?.replace?.('.git\n', '');
+
+		// Step 2: Get the last release for the repository
+		let gitHostWrapper = null;
+		if(repository?.type === 'github') {
+			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+		}
+
+		if(repository?.type === 'gitlab') {
+			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+		}
+
+		const lastRelease = await gitHostWrapper.fetchReleaseInformation(repository);
+
+		// Step 3: Get the last released commit, and the most recent tag / specified tag commit
+		let lastReleasedCommit = null;
+		if(lastRelease) {
+			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
+			lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
+		}
+
+		let lastTag = await git?.tag?.(['--sort=-creatordate']);
+		// If a specific tag name is not given, use the commit associated with the last tag
+		if(options?.tag === '')
+			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
+		// Otherwise, use the commit associated with the specified tag
+		else
+			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
+
+		let lastCommit = null;
+		if(lastTag) {
+			lastCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
+			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
+		}
+
+		// Step 4: Get the Git Log events from the commit of the last release to the commit of the last tag
+		let gitLogsInRange = null;
+		if(lastReleasedCommit &amp;&amp; lastCommit)
+			gitLogsInRange = await git?.log?.({
+				'from': lastReleasedCommit,
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit &amp;&amp; lastCommit)
+			gitLogsInRange = await git?.log?.({
+				'to': lastCommit
+			});
+
+		if(!lastReleasedCommit &amp;&amp; !lastCommit)
+			gitLogsInRange = {
+				'all': []
+			};
+
+		// Step 5: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
+		const dateFormat = require('date-fns/format');
+
+		const relevantGitLogs = [];
+		gitLogsInRange?.all?.forEach?.((commitLog) => {
+			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
+
+			// eslint-disable-next-line curly
+			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
+				relevantGitLogs?.push?.({
+					'hash': commitLog?.hash,
+					'date': commitDate,
+					'message': commitLog?.message,
+					'author_name': commitLog?.author_name,
+					'author_email': commitLog?.author_email
+				});
+			}
+
+			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace?.(/\\n/g, '\n')?.split?.('\n');
+			commitLogBody?.forEach?.((commitBody) => {
+				// eslint-disable-next-line curly
+				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
+					relevantGitLogs?.push?.({
+						'hash': commitLog?.hash,
+						'date': commitDate,
+						'message': commitBody?.trim?.(),
+						'author_name': commitLog?.author_name,
+						'author_email': commitLog?.author_email
+					});
+				}
+			});
+		});
+
+		// Step 6: Fetch Author information for each of the relevant Git Log events
+		const contributorSet = {};
+		let authorProfiles = [];
+
+		relevantGitLogs?.forEach?.((commitLog) => {
+			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
+				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
+				authorProfiles?.push?.(gitHostWrapper?.fetchCommitAuthorInformation?.(repository, commitLog));
+			}
+		});
+
+		authorProfiles = await Promise?.allSettled?.(authorProfiles);
+		authorProfiles = authorProfiles.map((authorProfile) => {
+			return authorProfile?.value;
+		});
+
+		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
+		const featureSet = [];
+		const bugfixSet = [];
+		const documentationSet = [];
+
+		const humanizeString = require('humanize-string');
+		relevantGitLogs?.forEach?.((commitLog) => {
+			const commitObject = {
+				'hash': commitLog?.hash,
+				'component': '',
+				'message': commitLog?.message,
+				'author_name': commitLog?.['author_name'],
+				'author_email': commitLog?.['author_email'],
+				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
+				'date': commitLog?.date
+			};
+
+			let set = null;
+			if(commitLog?.message?.startsWith?.('feat')) {
+				commitObject.message = commitObject?.message?.replace?.('feat', '');
+				set = featureSet;
+			}
+
+			if(commitLog?.message?.startsWith?.('fix')) {
+				commitObject.message = commitObject?.message?.replace?.('fix', '');
+				set = bugfixSet;
+			}
+
+			if(commitLog?.message?.startsWith?.('docs')) {
+				commitObject.message = commitObject?.message?.replace?.('docs', '');
+				set = documentationSet;
+			}
+
+			if(!commitObject?.message?.startsWith?.('(') &amp;&amp; !commitObject?.message?.startsWith?.(':'))
+				return;
+
+			if(commitObject?.message?.startsWith?.('(')) {
+				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
+				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
+
+				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
+			}
+
+			// eslint-disable-next-line curly
+			if(commitObject?.message?.startsWith?.(':')) {
+				commitObject.message = commitObject?.message?.substr?.(1);
+			}
+
+			commitObject.message = humanizeString?.(commitObject?.message);
+			set?.push?.(commitObject);
+		});
+
+		// Step 8: Compute if this is a pre-release, or a proper release
+		const path = require('path');
+		const semver = require('semver');
+
+		const projectPackageJson = path.join(process.cwd(), 'package.json');
+		const { version } = require(projectPackageJson);
+
+		if(!version) {
+			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+		}
+		if(!semver.valid(version)) {
+			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+		}
+
+		const parsedVersion = semver?.parse?.(version);
+		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
+
+		// Step 9: Generate the release notes
+		const releaseData = {
+			'REPO': repository,
+			'RELEASE_NAME': options?.releaseName,
+			'RELEASE_TYPE': releaseType,
+			'RELEASE_TAG': lastTag,
+			'NUM_FEATURES': featureSet?.length,
+			'NUM_FIXES': bugfixSet?.length,
+			'NUM_DOCS': documentationSet?.length,
+			'NUM_AUTHORS': authorProfiles?.length,
+			'FEATURES': featureSet,
+			'FIXES': bugfixSet,
+			'DOCS': documentationSet,
+			'AUTHORS': authorProfiles
+		};
+
+		let releaseMessagePath = options?.releaseMessage ?? '';
+		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
+		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
+
+		const promises = require('bluebird');
+		const ejs = promises?.promisifyAll?.(require('ejs'));
+
+		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
+			'async': true,
+			'cache': false,
+			'debug': false,
+			'rmWhitespace': false,
+			'strict': false
+		});
+
+		// Step 10: Clean up a bit...
+		delete releaseData['REPO']['protocols'];
+		delete releaseData['REPO']['treepath'];
+		delete releaseData['REPO']['auth'];
+		delete releaseData['REPO']['committish'];
+		delete releaseData['REPO']['default'];
+		delete releaseData['REPO']['opts'];
+
+		// Finally, return...
+		return releaseData;
+	}
+
+	async _storeJsonReleaseNotes(options, logger, releaseData) {
+		// eslint-disable-next-line node/no-missing-require
+		const fs = require('fs/promises');
+		const mkdirp = require('mkdirp');
+		const path = require('path');
+
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+
+			const upstreamReleaseData = JSON.parse(safeJsonStringify(releaseData[thisUpstreamRemote]));
+			delete upstreamReleaseData['RELEASE_NOTES'];
+
+			await mkdirp(options?.outputPath);
+			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(upstreamReleaseData, null, '\t'));
+		}
+	}
+
+	async _storePdfReleaseNotes(options, logger, releaseData) {
+		// eslint-disable-next-line node/no-missing-require
+		const fs = require('fs/promises');
+		const mkdirp = require('mkdirp');
+		const path = require('path');
+
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+
+			const { mdToPdf } = require('md-to-pdf');
+			const upstreamReleaseData = releaseData['RELEASE_NOTES'];
+			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
+
+			await mkdirp(options?.outputPath);
+			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(pdf, null, '\t'));
+		}
 	}
 	// #endregion
 
@@ -1077,7 +1316,8 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	commanderProcess
 		.command('release')
 		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
-		.option('-gt, --github-token &lt;token>', 'Token to use for creating the release on Github', process.env.GITHUB_TOKEN)
+		.option('-ght, --github-token &lt;token>', 'Token to use for creating the release on GitHub', process.env.GITHUB_TOKEN)
+		.option('-glt, --gitlab-token &lt;token>', 'Token to use for creating the release on GitLab', process.env.GITLAB_TOKEN)
 
 		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
 
@@ -1090,7 +1330,10 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('-rn, --release-name &lt;name>', 'Name to use for this release', `V${pkg.version} Release`)
 		.option('-rm, --release-message &lt;path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
 
-		.option('-u, --upstream &lt;remote>', 'Git remote to use for creating the release', configuration?.release?.upstream ?? 'upstream')
+		.option('-of, --output-format &lt;json|pdf|all>', 'Format(s) to output the generated release notes', configuration?.release?.outputFormat ?? 'none')
+		.option('-op, --output-path &lt;release notes path>', 'Path to store the generated release notes at', configuration?.release?.outputPath ?? '.')
+
+		.option('-u, --upstream &lt;remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));
 
 	return;

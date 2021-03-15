@@ -33,12 +33,20 @@
 				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
 					<ul class='methods'>
 						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
 						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
 					</ul>
 				</li>
 				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
@@ -66,12 +74,14 @@
 					<ul class='methods'>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -130,9 +140,112 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="fetchReleaseInformation"><span class="type-signature">(async) </span>fetchReleaseInformation<span class="signature">(repository, releaseName)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<h4 class="name" id="createRelease"><span class="type-signature">(async) </span>createRelease<span class="signature">(releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Given a GitLab repository, and the required release name, returns information about the release.</p>
+					<p>Given the required data, creates a release on GitLab.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="git_host_utilities_gitlab.js.html">git_host_utilities/gitlab.js</a>, <a href="git_host_utilities_gitlab.js.html#line132">line 132</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>releaseData</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>The data required for creating a release on GitLab</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Nothing.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">null</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="fetchCommitAuthorInformation"><span class="type-signature">(async) </span>fetchCommitAuthorInformation<span class="signature">(repository, commitLog)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Given a GitLab repository, returns information about the commit author pointed to by the commitLog object.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="git_host_utilities_gitlab.js.html">git_host_utilities/gitlab.js</a>, <a href="git_host_utilities_gitlab.js.html#line58">line 58</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>repository</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>the GitLab repository to query for the release</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>commitLog</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>the git commit object for which the author information needs to be fetched</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The required information about the commit author from GitLab.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="fetchCommitInformation"><span class="type-signature">(async) </span>fetchCommitInformation<span class="signature">(repository, commitLog)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Given a GitLab repository, returns information about the commit pointed to by the commitLog object.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
@@ -140,6 +253,62 @@
 							<ul class="dummy">
 								<li>
 									<a href="git_host_utilities_gitlab.js.html">git_host_utilities/gitlab.js</a>, <a href="git_host_utilities_gitlab.js.html#line38">line 38</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>repository</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>the GitLab repository to query for the release</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>commitLog</code></td>
+								<td class="type">
+									<span class="param-type">string</span>
+								</td>
+								<td class="description last">
+									<p>the git commit object for which commit information needs to be fetched</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The required information about the commit from GitLab.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="fetchReleaseInformation"><span class="type-signature">(async) </span>fetchReleaseInformation<span class="signature">(repository, releaseName)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Given a GitLab repository, returns information about the release - either the latest, or the one matching the specified release name.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="git_host_utilities_gitlab.js.html">git_host_utilities/gitlab.js</a>, <a href="git_host_utilities_gitlab.js.html#line85">line 85</a>
 								</li>
 							</ul>
 						</dd>
@@ -177,6 +346,62 @@
 					<h5>Returns:</h5>
 					<div class="param-desc">
 						<p>The required information about the release from GitLab.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="getCommitLink"><span class="type-signature"></span>getCommitLink<span class="signature">(repository, commitLog)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Given a GitLab repository, and a commit, returns the URL to access the commit directly.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="git_host_utilities_gitlab.js.html">git_host_utilities/gitlab.js</a>, <a href="git_host_utilities_gitlab.js.html#line156">line 156</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>repository</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>the GitLab repository to query for the release</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>commitLog</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>the commit information</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>The URL to access the commit on GitLab.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
