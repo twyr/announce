@@ -3,6 +3,8 @@
 
 ##### 19-Mar-2021
 
+fix(release): removed check before pushing upstream ([02457f735da93ab583123c907919ff372ed4bc9c](https://github.com/twyr/announce/commit/02457f735da93ab583123c907919ff372ed4bc9c))
+
 fix(release): pdf file extension change ([aea248c395acd5b4d198835ee09f7be0b423759c](https://github.com/twyr/announce/commit/aea248c395acd5b4d198835ee09f7be0b423759c))
 
 fix(release): null check in release notes template ([b9fa3d2b9c13445bb45ca58014b48443b83a935d](https://github.com/twyr/announce/commit/b9fa3d2b9c13445bb45ca58014b48443b83a935d))
