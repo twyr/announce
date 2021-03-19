@@ -3,6 +3,8 @@
 
 ##### 19-Mar-2021
 
+docs(all): for version 0.7.2 ([02aaa3faa462851667d208f6751033d7b5a77e4b](https://github.com/twyr/announce/commit/02aaa3faa462851667d208f6751033d7b5a77e4b))
+
 fix(release): removed check before pushing upstream ([02457f735da93ab583123c907919ff372ed4bc9c](https://github.com/twyr/announce/commit/02457f735da93ab583123c907919ff372ed4bc9c))
 
 fix(release): pdf file extension change ([aea248c395acd5b4d198835ee09f7be0b423759c](https://github.com/twyr/announce/commit/aea248c395acd5b4d198835ee09f7be0b423759c))
