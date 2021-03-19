@@ -5,7 +5,7 @@
 	"homepage": "https://github.com/twyr/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.7.1",
+	"version": "0.7.2",
 	"keywords": [
 		"automation",
 		"announcement",
@@ -138,7 +138,9 @@
 	"scripts": {
 		"build": "npx grunt",
 		"clean": "mkdir -p ./docs && rm -rf ./docs && mkdir -p ./buildresults && rm -rf ./buildresults && mkdir -p ./logs && touch ./logs/init.log && rm -f ./logs/*.log && mkdir -p ./.nyc_output && rm -rf ./.nyc_output && mkdir -p ./depcruise && rm -rf ./depcruise && mkdir -p ./stats && rm -rf ./stats",
-		"docs": "npx jsdoc --verbose --configure ./.jsdocrc.json",
+		"docs": "npx jsdoc --verbose --configure ./.jsdocrc.json && npm run docs:deps && npm run docs:arkit",
+		"docs:deps": "mkdir -p depcruise && npx depcruise --config ./.dependency-cruiser.js --output-type json -f ./depcruise/deps.json . && npx depcruise --config ./.dependency-cruiser.js --output-type archi . | dot -T svg > ./depcruise/architecture.svg && npx depcruise --config ./.dependency-cruiser.js --output-type err-html -f ./depcruise/error.html .",
+		"docs:arkit": "mkdir -p arkit && npx arkit --config ./.arkit.json",
 		"lint": "npm run lint:js",
 		"lint:js": "npx eslint .",
 		"stats": "mkdir -p stats && npm run stats:cc-text && npm run stats:cc-json && npm run stats:sloc-table && npm run stats:sloc-json",
@@ -146,10 +148,8 @@
 		"stats:cc-json": "npx eslintcc --average --greater-than e --max-rank f --format json --no-inline-config . > ./stats/complexity.json",
 		"stats:sloc-table": "npx sloc --details --format cli-table --exclude '.circleci|.github|.vscode|buildresults|coverage|depcruise|deploy|docs|jsdoc_default|log|node_modules|stats|ecosystem.config.js|gruntfile.js|test/setup_mocks.js|test-results.xml' --keys source,comment,todo,empty,total . | tee ./stats/sloc.txt",
 		"stats:sloc-json": "npx sloc --details --format json --exclude '.circleci|.github|.vscode|buildresults|coverage|depcruise|deploy|docs|jsdoc_default|log|node_modules|stats|ecosystem.config.js|gruntfile.js|test/setup_mocks.js|test-results.xml' . > ./stats/sloc.json",
-		"test": "npm run test:run && npm run test:coverage && npm run test:deps && npm run test:arkit",
+		"test": "npm run test:run && npm run test:coverage",
 		"test:coverage": "NODE_ENV=test npx nyc --reporter=cobertura --reporter=lcovonly --reporter=text --reporter=text-summary mocha",
-		"test:deps": "mkdir -p depcruise && npx depcruise --config ./.dependency-cruiser.js --output-type json -f ./depcruise/deps.json . && npx depcruise --config ./.dependency-cruiser.js --output-type archi . | dot -T svg > ./depcruise/architecture.svg && npx depcruise --config ./.dependency-cruiser.js --output-type err-html -f ./depcruise/error.html .",
-		"test:arkit": "mkdir -p arkit && npx arkit --config ./.arkit.json",
 		"test:run": "NODE_ENV=test npx mocha --reporter=spec",
 		"prepare": "husky install"
 	},
