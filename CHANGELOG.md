@@ -3,6 +3,8 @@
 
 ##### 19-Mar-2021
 
+fix(release): null check in release notes template ([b9fa3d2b9c13445bb45ca58014b48443b83a935d](https://github.com/twyr/announce/commit/b9fa3d2b9c13445bb45ca58014b48443b83a935d))
+
 fix(release): missed not stringifying the pdf buffer ([673c1768d8a40d47738b3a551ed1883af76d87b4](https://github.com/twyr/announce/commit/673c1768d8a40d47738b3a551ed1883af76d87b4))
 
 feat(release): release notes storage ([606174ab88cde43f7e9523209fa68bb9f38206b2](https://github.com/twyr/announce/commit/606174ab88cde43f7e9523209fa68bb9f38206b2))#### CHANGE LOG
