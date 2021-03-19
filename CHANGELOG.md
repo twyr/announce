@@ -1,6 +1,11 @@
 #### CHANGE LOG
 
 
+##### 19-Mar-2021
+
+feat(release): release notes storage ([606174ab88cde43f7e9523209fa68bb9f38206b2](https://github.com/twyr/announce/commit/606174ab88cde43f7e9523209fa68bb9f38206b2))#### CHANGE LOG
+
+
 ##### 15-Mar-2021
 
 docs(changelog): changes from the last tag ([d5c637e9624af4c5a2dce8034bd31bfa42812189](https://github.com/twyr/announce/commit/d5c637e9624af4c5a2dce8034bd31bfa42812189))#### CHANGE LOG
