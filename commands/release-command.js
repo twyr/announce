@@ -1179,15 +1179,15 @@ class ReleaseCommandClass {
 
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const thisUpstreamRemote = upstreamRemoteList?.[idx];
 
-			const upstreamReleaseData = JSON.parse(safeJsonStringify(releaseData[thisUpstreamRemote]));
+			const upstreamReleaseData = JSON?.parse?.(safeJsonStringify?.(releaseData?.[thisUpstreamRemote]));
 			delete upstreamReleaseData['RELEASE_NOTES'];
 
 			await mkdirp(options?.outputPath);
 
 			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${upstreamReleaseData['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
-			await fs.writeFile(filePath, safeJsonStringify(upstreamReleaseData, null, '\t'));
+			await fs?.writeFile?.(filePath, safeJsonStringify?.(upstreamReleaseData, null, '\t'));
 		}
 	}
 
@@ -1202,7 +1202,7 @@ class ReleaseCommandClass {
 			const thisUpstreamRemote = upstreamRemoteList[idx];
 
 			const { mdToPdf } = require('md-to-pdf');
-			const upstreamReleaseData = releaseData['RELEASE_NOTES'];
+			const upstreamReleaseData = releaseData?.[thisUpstreamRemote]?.['RELEASE_NOTES'];
 			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
 
 			await mkdirp(options?.outputPath);
