@@ -11,6 +11,7 @@
  * Module dependencies, required for ALL Twy'r modules
  * @ignore
  */
+const safeJsonStringify = require('safe-json-stringify');
 
 /**
  * Module dependencies, required for this module
@@ -89,10 +90,13 @@ class ReleaseCommandClass {
 			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
 			// Step 9: Create the release on Github
-			await this?._releaseCode?.(mergedOptions, logger, releaseData);
+			// await this?._releaseCode?.(mergedOptions, logger, releaseData);
+
+			// Step 10: Store the release notes at the specified location in the specified formats
+			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
 		}
 		finally {
-			// Step 10: pop the stash if needed...
+			// Step 11: pop the stash if needed...
 			if(shouldPopOnError) {
 				await git?.stash?.(['pop']);
 
@@ -149,6 +153,10 @@ class ReleaseCommandClass {
 		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
 		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
 		mergedOptions.releaseMessage = options?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
+
+		mergedOptions.outputFormat = options?.outputFormat ?? (this?._commandOptions.outputFormat ?? '');
+		mergedOptions.outputPath = options?.outputPath ?? (this?._commandOptions.outputPath ?? '.');
+		if(!path?.isAbsolute?.(mergedOptions?.outputPath)) mergedOptions.outputPath = path?.join?.(process?.cwd?.(), mergedOptions?.outputPath);
 
 		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
@@ -552,6 +560,7 @@ class ReleaseCommandClass {
 			'--no-verify': true
 		});
 
+		// Finally, return...
 		if(execMode === 'api')
 			logger?.info?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
 		else
@@ -829,6 +838,99 @@ class ReleaseCommandClass {
 	 * @function
 	 * @instance
 	 * @memberof	ReleaseCommandClass
+	 * @name		_storeReleaseNotes
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseData - Data needed to push the release, returned by _generateReleaseNotes
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Stores the release notes in the specified formats, at the specified location.
+	 *
+	 */
+	async _storeReleaseNotes(options, logger, releaseData) {
+		const execMode = options ?.execMode;
+
+		debug(`storing the generated release notes...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Storing the generated release notes...`);
+			else
+				if(logger) logger.text = `Storing the generated release notes...`;
+		}
+
+		if(options?.dontRelease) {
+			if(execMode === 'api')
+				logger?.info?.(`--dont-release is true. Skipping storing generated release notes operation`);
+			else
+				logger?.succeed?.(`--dont-release is true. Skipping storing generated release notes operation`);
+
+			debug(`--dont-release is true - skipping storing generated release notes operation`);
+			return;
+		}
+
+		// Step 1: If path is not specified, skip
+		if(options?.outputPath.trim() === '') {
+			if(execMode === 'api')
+				logger?.info?.(`No requirement to store the release notes. Skipping operation`);
+			else
+				logger?.succeed?.(`No requirement to store the release notes. Skipping operation`);
+
+			debug(`skipping operation to store generated release notes`);
+			return;
+		}
+
+		// Step 2: Convert generated release notes in the specified formats
+		const outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length && (format !== 'none'); });
+		if(!outputFormats.length) {
+			if(execMode === 'api')
+				logger?.error?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
+			else
+				logger?.fail?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
+
+			debug(`no valid output formats specified for storing generated release notes - skipping operation`);
+			return;
+		}
+
+		for(let idx = 0; idx < outputFormats.length; idx++) {
+			const thisOutputFormat = outputFormats[idx];
+			switch (thisOutputFormat) {
+				case 'json':
+					await this?._storeJsonReleaseNotes(options, logger, releaseData);
+					break;
+
+				case 'pdf':
+					await this?._storePdfReleaseNotes(options, logger, releaseData);
+					break;
+
+				default:
+					if(execMode === 'api')
+						logger?.error?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
+					else
+						logger?.fail?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
+
+					debug(`invalid output format specified for storing generated release notes - ${thisOutputFormat}`);
+					break;
+			}
+		}
+
+		// Finally, return..
+		if(execMode === 'api')
+			logger?.info?.(`Stored the release notes @ ${options?.outputPath}`);
+		else
+			logger?.succeed?.(`Stored the release notes @ ${options?.outputPath}`);
+
+		debug(`stored the release notes`);
+		return;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
 	 * @name		_generateReleaseNotesPerRemote
 	 *
 	 * @param		{object} options - merged options object returned by the _mergeOptions method
@@ -1064,6 +1166,43 @@ class ReleaseCommandClass {
 		// Finally, return...
 		return releaseData;
 	}
+
+	async _storeJsonReleaseNotes(options, logger, releaseData) {
+		// eslint-disable-next-line node/no-missing-require
+		const fs = require('fs/promises');
+		const mkdirp = require('mkdirp');
+		const path = require('path');
+
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+
+			const upstreamReleaseData = JSON.parse(safeJsonStringify(releaseData[thisUpstreamRemote]));
+			delete upstreamReleaseData['RELEASE_NOTES'];
+
+			await mkdirp(options?.outputPath);
+			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(upstreamReleaseData, null, '\t'));
+		}
+	}
+
+	async _storePdfReleaseNotes(options, logger, releaseData) {
+		// eslint-disable-next-line node/no-missing-require
+		const fs = require('fs/promises');
+		const mkdirp = require('mkdirp');
+		const path = require('path');
+
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const thisUpstreamRemote = upstreamRemoteList[idx];
+
+			const { mdToPdf } = require('md-to-pdf');
+			const upstreamReleaseData = releaseData['RELEASE_NOTES'];
+			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
+
+			await mkdirp(options?.outputPath);
+			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(pdf, null, '\t'));
+		}
+	}
 	// #endregion
 
 	// #region Private Fields
@@ -1096,6 +1235,9 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dont-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.dontRelease ?? false)
 		.option('-rn, --release-name <name>', 'Name to use for this release', `V${pkg.version} Release`)
 		.option('-rm, --release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
+
+		.option('-of, --output-format <json|pdf|all>', 'Format(s) to output the generated release notes', configuration?.release?.outputFormat ?? 'none')
+		.option('-op, --output-path <release notes path>', 'Path to store the generated release notes at', configuration?.release?.outputPath ?? '.')
 
 		.option('-u, --upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream ?? 'upstream')
 		.action(commandObj.execute.bind(commandObj));

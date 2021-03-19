@@ -18,6 +18,9 @@
 		'releaseName': 'V${version} Release',
 		'releaseMessage': '',
 
+		'outputFormat': 'all',
+		'outputPath': 'buildresults/release-notes',
+
 		'upstream': 'twyr'
 	},
 
