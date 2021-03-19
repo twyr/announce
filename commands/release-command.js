@@ -670,15 +670,15 @@ class ReleaseCommandClass {
 		}
 
 		const branchStatus = await git?.status?.();
-		if(!branchStatus?.ahead) {
-			if(execMode === 'api')
-				logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
-			else
-				logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
+		// if(!branchStatus?.ahead) {
+		// 	if(execMode === 'api')
+		// 		logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
+		// 	else
+		// 		logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
 
-			debug(`skipping push upstream operation - no commits/tags to push`);
-			return;
-		}
+		// 	debug(`skipping push upstream operation - no commits/tags to push`);
+		// 	return;
+		// }
 
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
@@ -1055,6 +1055,9 @@ class ReleaseCommandClass {
 		authorProfiles = await Promise?.allSettled?.(authorProfiles);
 		authorProfiles = authorProfiles.map((authorProfile) => {
 			return authorProfile?.value;
+		})
+		.filter((authorProfile) => {
+			return !!authorProfile?.email?.trim?.()?.length;
 		});
 
 		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
