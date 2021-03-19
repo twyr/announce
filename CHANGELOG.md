@@ -1,6 +1,11 @@
 #### CHANGE LOG
 
 
+##### 15-Mar-2021
+
+docs(changelog): changes from the last tag ([d5c637e9624af4c5a2dce8034bd31bfa42812189](https://github.com/twyr/announce/commit/d5c637e9624af4c5a2dce8034bd31bfa42812189))#### CHANGE LOG
+
+
 ##### 13-Mar-2021
 
 fix(release): notes generation ([bd9c910e0b726500bfe7e5f7f0e3443b20088392](https://github.com/twyr/announce/commit/bd9c910e0b726500bfe7e5f7f0e3443b20088392))
