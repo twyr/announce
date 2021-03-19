@@ -1203,7 +1203,7 @@ class ReleaseCommandClass {
 
 			const { mdToPdf } = require('md-to-pdf');
 			const upstreamReleaseData = releaseData['RELEASE_NOTES'];
-			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
+			const pdf = await mdToPdf(Buffer.from(upstreamReleaseData));
 
 			await mkdirp(options?.outputPath);
 
