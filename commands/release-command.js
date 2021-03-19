@@ -1185,7 +1185,9 @@ class ReleaseCommandClass {
 			delete upstreamReleaseData['RELEASE_NOTES'];
 
 			await mkdirp(options?.outputPath);
-			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(upstreamReleaseData, null, '\t'));
+
+			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${upstreamReleaseData['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
+			await fs.writeFile(filePath, safeJsonStringify(upstreamReleaseData, null, '\t'));
 		}
 	}
 
@@ -1204,7 +1206,9 @@ class ReleaseCommandClass {
 			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
 
 			await mkdirp(options?.outputPath);
-			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(pdf, null, '\t'));
+
+			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${upstreamReleaseData['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
+			await fs.writeFile(filePath, safeJsonStringify(pdf, null, '\t'));
 		}
 	}
 	// #endregion
