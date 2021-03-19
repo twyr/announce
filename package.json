@@ -103,7 +103,6 @@
 		"chai-json-equal": "0.0.1",
 		"chai-json-schema": "1.5.1",
 		"commitizen": "4.2.3",
-		"cz-conventional-changelog": "3.3.0",
 		"cz-customizable": "6.3.0",
 		"dependency-cruiser": "9.23.3",
 		"docdash": "1.2.0",
