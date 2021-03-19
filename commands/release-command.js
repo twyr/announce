@@ -1208,7 +1208,7 @@ class ReleaseCommandClass {
 			await mkdirp(options?.outputPath);
 
 			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${releaseData?.[thisUpstreamRemote]?.['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
-			await fs.writeFile(filePath, safeJsonStringify(pdf.content, null, '\t'));
+			await fs.writeFile(filePath, pdf.content);
 		}
 	}
 	// #endregion
