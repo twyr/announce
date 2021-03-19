@@ -178,13 +178,13 @@ class ReleaseCommandClass {
 			await this._tagCode(mergedOptions, logger, git);
 
 			// Step 7: Push the new commits, and tag, upstream
-			// await this._pushUpstream(mergedOptions, logger, git);
+			await this._pushUpstream(mergedOptions, logger, git);
 
 			// Step 8: Create the release notes...
 			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
 			// Step 9: Create the release on Github
-			// await this?._releaseCode?.(mergedOptions, logger, releaseData);
+			await this?._releaseCode?.(mergedOptions, logger, releaseData);
 
 			// Step 10: Store the release notes at the specified location in the specified formats
 			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
@@ -764,15 +764,15 @@ class ReleaseCommandClass {
 		}
 
 		const branchStatus = await git?.status?.();
-		if(!branchStatus?.ahead) {
-			if(execMode === 'api')
-				logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
-			else
-				logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
+		// if(!branchStatus?.ahead) {
+		// 	if(execMode === 'api')
+		// 		logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
+		// 	else
+		// 		logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
 
-			debug(`skipping push upstream operation - no commits/tags to push`);
-			return;
-		}
+		// 	debug(`skipping push upstream operation - no commits/tags to push`);
+		// 	return;
+		// }
 
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
@@ -977,7 +977,7 @@ class ReleaseCommandClass {
 		}
 
 		// Step 2: Convert generated release notes in the specified formats
-		const outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length &amp;&amp; (format !== 'none'); });
+		let outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length &amp;&amp; (format !== 'none'); });
 		if(!outputFormats.length) {
 			if(execMode === 'api')
 				logger?.error?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
@@ -987,6 +987,10 @@ class ReleaseCommandClass {
 			debug(`no valid output formats specified for storing generated release notes - skipping operation`);
 			return;
 		}
+
+		if(outputFormats.includes('all'))
+			outputFormats = ['json', 'pdf'];
+
 
 		for(let idx = 0; idx &lt; outputFormats.length; idx++) {
 			const thisOutputFormat = outputFormats[idx];
@@ -1145,6 +1149,9 @@ class ReleaseCommandClass {
 		authorProfiles = await Promise?.allSettled?.(authorProfiles);
 		authorProfiles = authorProfiles.map((authorProfile) => {
 			return authorProfile?.value;
+		})
+		.filter((authorProfile) => {
+			return !!authorProfile?.email?.trim?.()?.length;
 		});
 
 		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
@@ -1269,13 +1276,15 @@ class ReleaseCommandClass {
 
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		for(let idx = 0; idx &lt; upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
+			const thisUpstreamRemote = upstreamRemoteList?.[idx];
 
-			const upstreamReleaseData = JSON.parse(safeJsonStringify(releaseData[thisUpstreamRemote]));
+			const upstreamReleaseData = JSON?.parse?.(safeJsonStringify?.(releaseData?.[thisUpstreamRemote]));
 			delete upstreamReleaseData['RELEASE_NOTES'];
 
 			await mkdirp(options?.outputPath);
-			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(upstreamReleaseData, null, '\t'));
+
+			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${upstreamReleaseData['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
+			await fs?.writeFile?.(filePath, safeJsonStringify?.(upstreamReleaseData, null, '\t'));
 		}
 	}
 
@@ -1290,11 +1299,13 @@ class ReleaseCommandClass {
 			const thisUpstreamRemote = upstreamRemoteList[idx];
 
 			const { mdToPdf } = require('md-to-pdf');
-			const upstreamReleaseData = releaseData['RELEASE_NOTES'];
+			const upstreamReleaseData = releaseData?.[thisUpstreamRemote]?.['RELEASE_NOTES'];
 			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
 
 			await mkdirp(options?.outputPath);
-			await fs.writeFile(path?.join?.(options?.outputPath, thisUpstreamRemote, `-release-notes-${upstreamReleaseData['RELEASE_NAME']}.json`), safeJsonStringify(pdf, null, '\t'));
+
+			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${releaseData?.[thisUpstreamRemote]?.['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.pdf`);
+			await fs.writeFile(filePath, pdf.content);
 		}
 	}
 	// #endregion
