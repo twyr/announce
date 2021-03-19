@@ -60,6 +60,7 @@ This <%- RELEASE_TYPE -%> adds documentation for:
 The [<%- REPO.user -%>/<%- REPO.project -%>](https://<%- REPO.domain -%>/<%- REPO.user -%>/<%- REPO.project -%>) team would like to thank the following people for contributing to this release:
 
 <% for(let idx = 0; idx < NUM_AUTHORS; idx++) { -%>
+<% if(AUTHORS[idx]) { -%>
 <table>
   <tr>
     <td align="center">
@@ -70,5 +71,6 @@ The [<%- REPO.user -%>/<%- REPO.project -%>](https://<%- REPO.domain -%>/<%- REP
     </td>
   </tr>
 </table>
+<% } -%>
 <% } -%>
 <% } -%>
