@@ -1207,7 +1207,7 @@ class ReleaseCommandClass {
 
 			await mkdirp(options?.outputPath);
 
-			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${releaseData?.[thisUpstreamRemote]?.['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
+			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${releaseData?.[thisUpstreamRemote]?.['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.pdf`);
 			await fs.writeFile(filePath, pdf.content);
 		}
 	}
