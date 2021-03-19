@@ -28,6 +28,7 @@ The release command executes the following steps:
 1. Generate the Release Notes using commit messages in the git log - starting from the last release
 1. Embed generated release notes into the release file using EJS tags
 1. Create a GitHub/GitLab Release with the tag, and set the release notes using the generated notes
+1. Store generated release notes in JSON and/or PDF formats at --output-path
 1. Un-stash dirty code if stashed in the first step
 
 ##### CLI Options
