@@ -90,7 +90,7 @@ class ReleaseCommandClass {
 			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
 			// Step 9: Create the release on Github
-			// await this?._releaseCode?.(mergedOptions, logger, releaseData);
+			await this?._releaseCode?.(mergedOptions, logger, releaseData);
 
 			// Step 10: Store the release notes at the specified location in the specified formats
 			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
