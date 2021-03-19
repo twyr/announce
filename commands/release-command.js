@@ -883,7 +883,7 @@ class ReleaseCommandClass {
 		}
 
 		// Step 2: Convert generated release notes in the specified formats
-		const outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length && (format !== 'none'); });
+		let outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length && (format !== 'none'); });
 		if(!outputFormats.length) {
 			if(execMode === 'api')
 				logger?.error?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
@@ -893,6 +893,10 @@ class ReleaseCommandClass {
 			debug(`no valid output formats specified for storing generated release notes - skipping operation`);
 			return;
 		}
+
+		if(outputFormats.includes('all'))
+			outputFormats = ['json', 'pdf'];
+
 
 		for(let idx = 0; idx < outputFormats.length; idx++) {
 			const thisOutputFormat = outputFormats[idx];
