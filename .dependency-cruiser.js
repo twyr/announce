@@ -101,7 +101,7 @@ module.exports = {
 		   for a complete list
 		*/
 		doNotFollow: {
-			path: 'node_modules',
+			path: 'node_modules|jsdoc_default',
 			// dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-bundled', 'npm-no-pkg']
 		},
 
@@ -111,8 +111,7 @@ module.exports = {
 		      leave out if you want to exclude neither (recommended!)
 		*/
 		exclude: {
-			path: '.dependency-cruiser.js|.commitlintrc.js|gruntfile.js|test',
-			dynamic: true
+			path: '.dependency-cruiser.js|.commitlintrc.js|.cz-config.js|gruntfile.js|test'
 		},
 
 		/* pattern specifying which files to include (regular expression)
@@ -124,7 +123,7 @@ module.exports = {
 		// moduleSystems: ['amd', 'cjs', 'es6', 'tsd'],
 
 		/* prefix for links in html and svg output (e.g. https://github.com/you/yourrepo/blob/develop/) */
-		// prefix: '',
+		prefix: 'https://github.com/twyr/announce/blob/main/',
 
 		/* false (the default): ignore dependencies that only exist before typescript-to-javascript compilation
 		   true: also detect dependencies that only exist before typescript-to-javascript compilation
