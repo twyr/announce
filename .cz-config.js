@@ -37,8 +37,8 @@ module.exports = {
 			'name': 'revert:   Revert to a commit'
 		},
 		{
-			'value': 'WIP',
-			'name': 'WIP:      Work in progress'
+			'value': 'wip',
+			'name': 'wip:      Work in progress'
 		}
 	],
 
