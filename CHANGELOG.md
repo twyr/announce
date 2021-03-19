@@ -3,6 +3,8 @@
 
 ##### 19-Mar-2021
 
+fix(release): pdf file extension change ([aea248c395acd5b4d198835ee09f7be0b423759c](https://github.com/twyr/announce/commit/aea248c395acd5b4d198835ee09f7be0b423759c))
+
 fix(release): null check in release notes template ([b9fa3d2b9c13445bb45ca58014b48443b83a935d](https://github.com/twyr/announce/commit/b9fa3d2b9c13445bb45ca58014b48443b83a935d))
 
 fix(release): missed not stringifying the pdf buffer ([673c1768d8a40d47738b3a551ed1883af76d87b4](https://github.com/twyr/announce/commit/673c1768d8a40d47738b3a551ed1883af76d87b4))
