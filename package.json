@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "28.1.1",
+		"@gitbeaker/node": "28.2.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.0",
 		"commander": "7.1.0",
@@ -141,6 +141,7 @@
 		"docs": "npx jsdoc --verbose --configure ./.jsdocrc.json && npm run docs:deps && npm run docs:arkit",
 		"docs:deps": "mkdir -p depcruise && npx depcruise --config ./.dependency-cruiser.js --output-type json -f ./depcruise/deps.json . && npx depcruise --config ./.dependency-cruiser.js --output-type archi . | dot -T svg > ./depcruise/architecture.svg && npx depcruise --config ./.dependency-cruiser.js --output-type err-html -f ./depcruise/error.html .",
 		"docs:arkit": "mkdir -p arkit && npx arkit --config ./.arkit.json",
+		"force-build": "npx grunt --force",
 		"lint": "npm run lint:js",
 		"lint:js": "npx eslint .",
 		"stats": "mkdir -p stats && npm run stats:cc-text && npm run stats:cc-json && npm run stats:sloc-table && npm run stats:sloc-json",
