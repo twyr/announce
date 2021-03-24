@@ -87,7 +87,7 @@
 		"prepend-file": "2.0.0",
 		"replace-in-file": "6.2.0",
 		"safe-json-stringify": "1.2.0",
-		"semver": "7.3.4",
+		"semver": "7.3.5",
 		"simple-git": "2.37.0"
 	},
 	"devDependencies": {
