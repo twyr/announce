@@ -568,7 +568,7 @@ class ReleaseCommandClass {
 		let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
 		trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 
-		const consolidatedMessage = `docs(CHANGELOG): generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
+		const consolidatedMessage = `generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
 
 		await git?.add?.('.');
 		await git?.commit?.(consolidatedMessage, null, {
@@ -686,16 +686,6 @@ class ReleaseCommandClass {
 		}
 
 		const branchStatus = await git?.status?.();
-		// if(!branchStatus?.ahead) {
-		// 	if(execMode === 'api')
-		// 		logger?.info?.(`Skipping push upstream operation - no commits/tags to push`);
-		// 	else
-		// 		logger?.succeed?.(`Skipping push upstream operation - no commits/tags to push`);
-
-		// 	debug(`skipping push upstream operation - no commits/tags to push`);
-		// 	return;
-		// }
-
 		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
 		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
 			const thisUpstreamRemote = upstreamRemoteList[idx];
