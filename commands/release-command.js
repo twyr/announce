@@ -484,7 +484,7 @@ class ReleaseCommandClass {
 			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
 		}
 
-		// Step 5: Generate the changelogs - prepend to an existing file, or create a whole new one
+		// Step 5: Convert the relevant Git Logs into a textual array, and add links to the hosted commit hash for insertion into the file
 		const changeLogText = [`#### CHANGE LOG`];
 		const processedDates = [];
 
@@ -500,11 +500,13 @@ class ReleaseCommandClass {
 			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
 		});
 
+		// Step 6: Modify the CHANGELOG
 		const path = require('path');
 		const replaceInFile = require('replace-in-file');
 		while(changeLogText.length) {
 			const thisChangeSet = [];
 
+			// Step 6.1: Get all Git Logs for a particular date
 			let thisChangeLog = changeLogText?.pop?.();
 			while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
 				thisChangeSet?.unshift?.(thisChangeLog);
@@ -513,28 +515,42 @@ class ReleaseCommandClass {
 
 			thisChangeSet?.unshift?.(thisChangeLog);
 
+			// Step 6.2: Add to existing entries for that date, if any already present in the file
 			const replaceOptions = {
-				'files': path.join(process.cwd(), 'CHANGELOG.md'),
+				'files': path?.join?.(process?.cwd?.(), 'CHANGELOG.md'),
 				'from': thisChangeLog,
 				'to': thisChangeSet?.join?.('\n')
 			};
 
-			const changelogResult = await replaceInFile?.(replaceOptions);
+			let changelogResult = await replaceInFile?.(replaceOptions);
+
+			// If the file has changed, continue to start processing the next date entries
 			if(changelogResult?.[0]?.['hasChanged'])
 				continue;
 
+			// File hasn't changed, and there are no more relevant Git Logs. Basically, break
 			if(!changeLogText.length)
 				continue;
 
-			const prependFile = require('prepend-file');
-
+			// Step 6.3: File hasn't changed, but there are relevant Git Logs? That date is new
+			// So simply add everything remaining to the top of the CHANGELOG
 			while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
+			replaceOptions['from'] = changeLogText?.[0];
+			replaceOptions['to'] = `${changeLogText?.join?.('\n')}\n`;
+
+			changelogResult = await replaceInFile?.(replaceOptions);
+			if(changelogResult?.[0]?.['hasChanged'])
+				break;
+
+			// Step 6.4: The last resort... simply prepend everything
+			// This should happen only if the CHANGELOG.md file is absolutely empty
+			const prependFile = require('prepend-file');
 			await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), `${changeLogText?.join?.('\n')}\n`);
 
 			break;
 		}
 
-		// Step 6: Commit the CHANGELOG
+		// Step 7: Commit the CHANGELOG
 		const branchStatus = await git?.status?.();
 		if(!branchStatus?.files?.length) {
 			if(execMode === 'api')
