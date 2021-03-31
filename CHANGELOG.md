@@ -3,6 +3,8 @@
 
 ##### 31-Mar-2021
 
+feat(publish): login to npm if required ([e270c182a8a272d695800f68470357d9ed40d666](https://github.com/twyr/announce/commit/e270c182a8a272d695800f68470357d9ed40d666))
+
 fix(release): changelog generation ([72c18a40c9bfaa90174824271cca46a464472049](https://github.com/twyr/announce/commit/72c18a40c9bfaa90174824271cca46a464472049))
 
 
