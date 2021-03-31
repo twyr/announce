@@ -1,7 +1,20 @@
 #### CHANGE LOG
 
 
+##### 31-Mar-2021
+
+fix(release): changelog generation ([72c18a40c9bfaa90174824271cca46a464472049](https://github.com/twyr/announce/commit/72c18a40c9bfaa90174824271cca46a464472049))
+
+
+##### 22-Mar-2021
+
+docs(index): updated description to include missing references to GitLab ([d1626e5b4d067d0aeb8f40e73a5e63497c0a228a](https://github.com/twyr/announce/commit/d1626e5b4d067d0aeb8f40e73a5e63497c0a228a))
+
+
+
 ##### 19-Mar-2021
+
+docs(release): added release note storage to command description ([4e00b2c4cf05618026f160a8398e2b24f7cfd936](https://github.com/twyr/announce/commit/4e00b2c4cf05618026f160a8398e2b24f7cfd936))
 
 docs(all): for version 0.7.2 ([02aaa3faa462851667d208f6751033d7b5a77e4b](https://github.com/twyr/announce/commit/02aaa3faa462851667d208f6751033d7b5a77e4b))
 
