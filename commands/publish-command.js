@@ -303,7 +303,27 @@ class PublishCommandClass {
 		if(options?.dryRun) publishOptions?.push?.('--dry-run');
 
 		const execa = require('execa');
-		const publishProcess = execa?.('npm', publishOptions, {'all': true });
+		if(options.npmToken === '') {
+			let loggedInUser = '';
+			try {
+				const { 'stdout': whoAmI } = await execa?.('npm', ['whoami'], { 'all': true });
+				loggedInUser = whoAmI;
+			}
+			catch(err) {
+				loggedInUser = '';
+			}
+
+			if(loggedInUser.trim() === '') {
+				const loginProcess = execa?.('npm', ['login'], { 'all': true });
+				loginProcess?.stdout?.pipe?.(process.stdout);
+				loginProcess?.stderr?.pipe?.(process.stderr);
+				process?.stdin?.pipe?.(loginProcess?.stdin);
+
+				await loginProcess;
+			}
+		}
+
+		const publishProcess = execa?.('npm', publishOptions, { 'all': true });
 		publishProcess?.stdout?.pipe?.(process.stdout);
 		publishProcess?.stderr?.pipe?.(process.stderr);
 
