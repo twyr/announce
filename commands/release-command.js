@@ -529,7 +529,7 @@ class ReleaseCommandClass {
 			const prependFile = require('prepend-file');
 
 			while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
-			await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), changeLogText?.join?.('\n'));
+			await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), `${changeLogText?.join?.('\n')}\n`);
 
 			break;
 		}
