@@ -1,6 +1,12 @@
 #### CHANGE LOG
 
 
+##### 01-Apr-2021
+
+docs(all): updated for V0.9.0 ([9851de4c0a375b7fd58190666498bc07d96159eb](https://github.com/twyr/announce/commit/9851de4c0a375b7fd58190666498bc07d96159eb))
+
+
+
 ##### 31-Mar-2021
 
 feat(publish): login to npm if required ([e270c182a8a272d695800f68470357d9ed40d666](https://github.com/twyr/announce/commit/e270c182a8a272d695800f68470357d9ed40d666))
