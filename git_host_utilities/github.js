@@ -169,8 +169,12 @@ class GitHubWrapper {
 			if(!err.body.errors) throw err;
 			if(!Array.isArray(err.body.errors)) throw err;
 
-			console.error(JSON.stringify(err.body.errors));
-			throw err;
+			const errorMessage = [];
+			err.body.errors.forEach((thisError) => {
+				errorMessage.push(`${thisError.resource} field ${thisError.field} ${thisError.code}`);
+			});
+
+			throw new Error(errorMessage.join('\n'));
 		}
 	}
 
