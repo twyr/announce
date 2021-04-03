@@ -1,6 +1,12 @@
 #### CHANGE LOG
 
 
+##### 03-Apr-2021
+
+fix(release): log errors ([623b77d403492f01b3861a5fe79795a53d9c0a7e](https://github.com/twyr/announce/commit/623b77d403492f01b3861a5fe79795a53d9c0a7e))
+
+
+
 ##### 01-Apr-2021
 
 docs(all): updated for V0.9.0 ([9851de4c0a375b7fd58190666498bc07d96159eb](https://github.com/twyr/announce/commit/9851de4c0a375b7fd58190666498bc07d96159eb))
