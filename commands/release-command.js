@@ -334,7 +334,7 @@ class ReleaseCommandClass {
 			logger?.succeed?.(`Branch "${branchStatus.current}" ${gitOperation} process done.`);
 
 		debug(`${gitOperation} status: ${JSON.stringify((stashOrCommitStatus ?? {}), null, '\t')}`);
-		return true;
+		return (gitOperation === 'stash');
 	}
 
 
