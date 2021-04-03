@@ -3,6 +3,8 @@
 
 ##### 03-Apr-2021
 
+fix(release): return value from stash / commit operation ([9b5eb2bd6f4171760f364c8bcd371e2963864aa7](https://github.com/twyr/announce/commit/9b5eb2bd6f4171760f364c8bcd371e2963864aa7))
+
 fix(release): log errors ([623b77d403492f01b3861a5fe79795a53d9c0a7e](https://github.com/twyr/announce/commit/623b77d403492f01b3861a5fe79795a53d9c0a7e))
 
 
