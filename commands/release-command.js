@@ -64,6 +64,7 @@ class ReleaseCommandClass {
 	async execute(options) {
 		// Step 1: Setup sane defaults for the options
 		const mergedOptions = this._mergeOptions(options);
+		const execMode = mergedOptions?.execMode ?? 'cli';
 
 		// Step 2: Set up the logger according to the options passed in
 		const logger = this._setupLogger(mergedOptions);
@@ -95,12 +96,17 @@ class ReleaseCommandClass {
 			// Step 10: Store the release notes at the specified location in the specified formats
 			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
 		}
+		catch(err) {
+			if(execMode === 'api')
+				logger?.error?.(`${err.message}\n${err.stack}`);
+			else
+				logger?.fail?.(`${err.message}\n${err.stack}`);
+		}
 		finally {
 			// Step 11: pop the stash if needed...
 			if(shouldPopOnError) {
 				await git?.stash?.(['pop']);
 
-				const execMode = options?.execMode ?? 'cli';
 				if(execMode === 'api')
 					logger?.info?.(`Popped the stash`);
 				else
@@ -572,8 +578,10 @@ class ReleaseCommandClass {
 
 		await git?.add?.('.');
 		await git?.commit?.(consolidatedMessage, null, {
+			'--all': true,
 			'--allow-empty': true,
-			'--no-verify': true
+			'--no-verify': true,
+			'--signoff': true
 		});
 
 		// Finally, return...
