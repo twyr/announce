@@ -169,7 +169,7 @@ class GitHubWrapper {
 			if(!err.body.errors) throw err;
 			if(!Array.isArray(err.body.errors)) throw err;
 
-			console.err(JSON.stringify(err.body.errors));
+			console.error(JSON.stringify(err.body.errors));
 			throw err;
 		}
 	}
