@@ -1,6 +1,12 @@
 #### CHANGE LOG
 
 
+##### 10-Apr-2021
+
+fix(prepare): .gitignore processing ([7803a474ca936d94d5a98f62109ce3c3b78584f1](https://github.com/twyr/announce/commit/7803a474ca936d94d5a98f62109ce3c3b78584f1))
+
+
+
 ##### 03-Apr-2021
 
 fix(github-host): format HTTP error Signed-off-by: Vish Desai <shadyvd@hotmail.com> ([8aad3f6bf307f614cffd3d898ee71313ba4bd26d](https://github.com/twyr/announce/commit/8aad3f6bf307f614cffd3d898ee71313ba4bd26d))
