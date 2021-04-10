@@ -7,6 +7,17 @@
         {
             "type": "pwa-node",
             "request": "launch",
+            "name": "Announce Prepare",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/bin/announce.js",
+            "cwd": "${workspaceFolder}",
+            "args": ["prepare", "--debug"]
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
             "name": "Announce Release",
             "skipFiles": [
                 "<node_internals>/**"
