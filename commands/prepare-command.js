@@ -342,7 +342,7 @@ class PrepareCommandClass {
 				if(gitIgnoreLine.startsWith('**/'))
 					return gitIgnoreLine;
 
-				return `${gitIgnoreLine}\n**/${gitIgnoreLine}`;
+				return `${gitIgnoreLine}\n${path.join('**', gitIgnoreLine)}`;
 			})
 			.filter((gitIgnoreLine) => {
 				return gitIgnoreLine.length;
