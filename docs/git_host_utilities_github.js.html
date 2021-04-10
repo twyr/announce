@@ -245,16 +245,31 @@ class GitHubWrapper {
 	 */
 	async createRelease(releaseData) {
 		const promises = require('bluebird');
-		const clientPost = promises?.promisify?.(this?.client?.post?.bind?.(this?.client));
 
 		const repository = releaseData['REPO'];
-		await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
-			'accept': 'application/vnd.github.v3+json',
-			'tag_name': releaseData?.['RELEASE_TAG'],
-			'name': releaseData?.['RELEASE_NAME'],
-			'body': releaseData?.['RELEASE_NOTES'],
-			'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
-		});
+		const clientPost = promises?.promisify?.(this?.client?.post?.bind?.(this?.client));
+
+		try {
+			await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
+				'accept': 'application/vnd.github.v3+json',
+				'tag_name': releaseData?.['RELEASE_TAG'],
+				'name': releaseData?.['RELEASE_NAME'],
+				'body': releaseData?.['RELEASE_NOTES'],
+				'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
+			});
+		}
+		catch(err) {
+			if(!err.body) throw err;
+			if(!err.body.errors) throw err;
+			if(!Array.isArray(err.body.errors)) throw err;
+
+			const errorMessage = [];
+			err.body.errors.forEach((thisError) => {
+				errorMessage.push(`${thisError.resource} field ${thisError.field} ${thisError.code}`);
+			});
+
+			throw new Error(errorMessage.join('\n'));
+		}
 	}
 
 	/**
