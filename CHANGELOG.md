@@ -3,6 +3,10 @@
 
 ##### 10-Apr-2021
 
+docs(all): upgrade to match the code for this release ([95225c70d3be5a0a5fea2ea0609a0ba80d914d67](https://github.com/twyr/announce/commit/95225c70d3be5a0a5fea2ea0609a0ba80d914d67))
+
+fix(prepare): .gitignore processing ([c51eb911984b520a0a14e280892a3e4de3b05b5a](https://github.com/twyr/announce/commit/c51eb911984b520a0a14e280892a3e4de3b05b5a))
+
 fix(prepare): .gitignore processing ([7803a474ca936d94d5a98f62109ce3c3b78584f1](https://github.com/twyr/announce/commit/7803a474ca936d94d5a98f62109ce3c3b78584f1))
 
 
