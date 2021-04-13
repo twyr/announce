@@ -93,20 +93,20 @@ class PrepareCommandClass {
 	 *
 	 */
 	_mergeOptions(options) {
-		const mergedOptions = options ?? {};
+		const mergedOptions = Object?.assign?.({}, options?.opts?.(), options?.parent?.opts?.());
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
-		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
-		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
-		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
+		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
+		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
+		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
 
 		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
 
-		mergedOptions.series = options?.series ?? (this?._commandOptions?.series ?? 'current');
-		mergedOptions.versionLadder = options?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
+		mergedOptions.series = mergedOptions?.series ?? (this?._commandOptions?.series ?? 'current');
+		mergedOptions.versionLadder = mergedOptions?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
 		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
 
-		mergedOptions.ignoreFolders = options?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
+		mergedOptions.ignoreFolders = mergedOptions?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
 		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
 
 		return mergedOptions;

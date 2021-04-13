@@ -96,25 +96,25 @@ class PublishCommandClass {
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		const pkg = require(projectPackageJson);
 
-		const mergedOptions = options ?? {};
+		const mergedOptions = Object?.assign?.({}, options?.opts?.(), this?._commandOptions?.opts?.());
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
-		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
-		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
-		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
+		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
+		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
+		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
 
 		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
 
-		mergedOptions.access = options?.access ?? (this?._commandOptions?.access ?? 'public');
-		mergedOptions.distTag = options?.distTag ?? (this?._commandOptions?.distTag ?? 'latest');
-		mergedOptions.dryRun = options?.dryRun ?? (this?._commandOptions?.dryRun ?? false);
+		mergedOptions.access = mergedOptions?.access ?? (this?._commandOptions?.access ?? 'public');
+		mergedOptions.distTag = mergedOptions?.distTag ?? (this?._commandOptions?.distTag ?? 'latest');
+		mergedOptions.dryRun = mergedOptions?.dryRun ?? (this?._commandOptions?.dryRun ?? false);
 
-		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
-		mergedOptions.gitlabToken = options?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
-		mergedOptions.npmToken = options?.npmToken ?? (this?._commandOptions?.npmToken ?? process.env.NPM_TOKEN);
+		mergedOptions.githubToken = mergedOptions?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.gitlabToken = mergedOptions?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
+		mergedOptions.npmToken = mergedOptions?.npmToken ?? (this?._commandOptions?.npmToken ?? process.env.NPM_TOKEN);
 
-		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
-		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
+		mergedOptions.releaseName = mergedOptions?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
+		mergedOptions.upstream = mergedOptions?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
 		return mergedOptions;
 	}

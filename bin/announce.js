@@ -56,6 +56,7 @@
 	const { program } = require('commander');
 
 	program
+		.storeOptionsAsProperties(true)
 		.version(pkg.version, '-v, --version', 'output the current version')
 		.option('-d, --debug', 'print additional debug information', false)
 		.option('-s, --silent', `disable announce's console output`, false)

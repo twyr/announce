@@ -136,35 +136,35 @@ class ReleaseCommandClass {
 		const projectPackageJson = path.join(process.cwd(), 'package.json');
 		const { version } = require(projectPackageJson);
 
-		const mergedOptions = {};
+		const mergedOptions = Object?.assign?.({}, options?.opts?.(), this?._commandOptions?.opts?.());
 		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
 
-		mergedOptions.debug = options?.debug ?? (options?.parent?.debug ?? false);
-		mergedOptions.silent = options?.silent ?? (options?.parent?.silent ?? false);
-		mergedOptions.quiet = options?.quiet ?? (options?.parent?.quiet ?? false);
+		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
+		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
+		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
 
 		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
 
-		mergedOptions.commit = options?.commit ?? (this?._commandOptions?.commit ?? false);
-		mergedOptions.githubToken = options?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
-		mergedOptions.gitlabToken = options?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
+		mergedOptions.commit = mergedOptions?.commit ?? (this?._commandOptions?.commit ?? false);
+		mergedOptions.githubToken = mergedOptions?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
+		mergedOptions.gitlabToken = mergedOptions?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
 
-		mergedOptions.message = options?.message ?? (this?._commandOptions?.message ?? '');
+		mergedOptions.message = mergedOptions?.message ?? (this?._commandOptions?.message ?? '');
 
-		mergedOptions.dontTag = options?.dontTag ?? (this?._commandOptions.dontTag ?? false);
-		mergedOptions.tag = options?.tag ?? (this?._commandOptions.tag ?? '');
-		mergedOptions.tagName = options?.tagName ?? (this?._commandOptions.tagName ?? `V${version}`);
-		mergedOptions.tagMessage = options?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${version}`);
+		mergedOptions.dontTag = mergedOptions?.dontTag ?? (this?._commandOptions.dontTag ?? false);
+		mergedOptions.tag = mergedOptions?.tag ?? (this?._commandOptions.tag ?? '');
+		mergedOptions.tagName = mergedOptions?.tagName ?? (this?._commandOptions.tagName ?? `V${version}`);
+		mergedOptions.tagMessage = mergedOptions?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${version}`);
 
-		mergedOptions.dontRelease = options?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
-		mergedOptions.releaseName = options?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
-		mergedOptions.releaseMessage = options?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
+		mergedOptions.dontRelease = mergedOptions?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
+		mergedOptions.releaseName = mergedOptions?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
+		mergedOptions.releaseMessage = mergedOptions?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
 
-		mergedOptions.outputFormat = options?.outputFormat ?? (this?._commandOptions.outputFormat ?? '');
-		mergedOptions.outputPath = options?.outputPath ?? (this?._commandOptions.outputPath ?? '.');
+		mergedOptions.outputFormat = mergedOptions?.outputFormat ?? (this?._commandOptions.outputFormat ?? '');
+		mergedOptions.outputPath = mergedOptions?.outputPath ?? (this?._commandOptions.outputPath ?? '.');
 		if(!path?.isAbsolute?.(mergedOptions?.outputPath)) mergedOptions.outputPath = path?.join?.(process?.cwd?.(), mergedOptions?.outputPath);
 
-		mergedOptions.upstream = options?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
+		mergedOptions.upstream = mergedOptions?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
 
 		return mergedOptions;
 	}
@@ -1188,6 +1188,22 @@ class ReleaseCommandClass {
 		return releaseData;
 	}
 
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_storeJsonReleaseNotes
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseData - Generated release notes
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Stores the release notes in JSON format at the location specified in the options
+	 *
+	 */
 	async _storeJsonReleaseNotes(options, logger, releaseData) {
 		// eslint-disable-next-line node/no-missing-require
 		const fs = require('fs/promises');
@@ -1208,6 +1224,22 @@ class ReleaseCommandClass {
 		}
 	}
 
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_storePdfReleaseNotes
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} releaseData - Generated release notes
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary		Stores the release notes in PDF format at the location specified in the options
+	 *
+	 */
 	async _storePdfReleaseNotes(options, logger, releaseData) {
 		// eslint-disable-next-line node/no-missing-require
 		const fs = require('fs/promises');
