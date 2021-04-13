@@ -1,6 +1,12 @@
 #### CHANGE LOG
 
 
+##### 13-Apr-2021
+
+docs(all): changes for the next version ([2bc0c48d3f6753f7aa5851844186ef4461556ed0](https://github.com/twyr/announce/commit/2bc0c48d3f6753f7aa5851844186ef4461556ed0))
+
+
+
 ##### 10-Apr-2021
 
 docs(all): upgrade to match the code for this release ([95225c70d3be5a0a5fea2ea0609a0ba80d914d67](https://github.com/twyr/announce/commit/95225c70d3be5a0a5fea2ea0609a0ba80d914d67))
