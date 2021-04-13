@@ -13,7 +13,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["prepare", "--debug"]
+            "args": ["prepare", "--debug", "--silent", "--series", "next"]
         },
         {
             "type": "pwa-node",
