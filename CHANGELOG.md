@@ -1,6 +1,14 @@
 #### CHANGE LOG
 
 
+##### 21-Apr-2021
+
+docs(all): updated for 0.9.6 ([074f091b1fb823151a49d90fea7efaa8e4a41d77](https://github.com/twyr/announce/commit/074f091b1fb823151a49d90fea7efaa8e4a41d77))
+
+fix(release): check for a release before trying to create it ([91e0974d38563dcda76aec97205d5552390b2741](https://github.com/twyr/announce/commit/91e0974d38563dcda76aec97205d5552390b2741))
+
+
+
 ##### 13-Apr-2021
 
 docs(all): changes for the next version ([2bc0c48d3f6753f7aa5851844186ef4461556ed0](https://github.com/twyr/announce/commit/2bc0c48d3f6753f7aa5851844186ef4461556ed0))
