@@ -72,28 +72,32 @@ class ReleaseCommandClass {
 		// Step 3: Initialize Git client for the project repository
 		const git = this._initializeGit(mergedOptions, logger);
 
-		// Step 4: Stash or Commit the current branch, if required
+		// Step 3: Check to see if the release already exists on any of the upstreams,
+		// and abort with an error message if it does
+		await this._abortIfReleaseExists(mergedOptions, logger, git);
+
+		// Step 5: Stash or Commit the current branch, if required
 		let shouldPopOnError = false;
 
 		try {
 			shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
 
-			// Step 5: Generate the CHANGELOG and commit it
+			// Step 6: Generate the CHANGELOG and commit it
 			await this._generateChangelog(mergedOptions, logger, git);
 
-			// Step 6: Tag the last commit, if required
+			// Step 7: Tag the last commit, if required
 			await this._tagCode(mergedOptions, logger, git);
 
-			// Step 7: Push the new commits, and tag, upstream
+			// Step 8: Push the new commits, and tag, upstream
 			await this._pushUpstream(mergedOptions, logger, git);
 
-			// Step 8: Create the release notes...
+			// Step 9: Create the release notes...
 			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
 
-			// Step 9: Create the release on Github
+			// Step 10: Create the release on Github
 			await this?._releaseCode?.(mergedOptions, logger, releaseData);
 
-			// Step 10: Store the release notes at the specified location in the specified formats
+			// Step 11: Store the release notes at the specified location in the specified formats
 			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
 		}
 		catch(err) {
@@ -103,7 +107,7 @@ class ReleaseCommandClass {
 				logger?.fail?.(`${err.message}\n${err.stack}`);
 		}
 		finally {
-			// Step 11: pop the stash if needed...
+			// Step 12: Pop the stash if needed...
 			if(shouldPopOnError) {
 				await git?.stash?.(['pop']);
 
@@ -202,6 +206,70 @@ class ReleaseCommandClass {
 		}
 
 		return logger;
+	}
+
+	/**
+	 * @async
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_abortIfReleaseExists
+	 *
+	 * @param		{object} options - merged options object returned by the _mergeOptions method
+	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 *
+	 * @return		{null} Nothing. Throws an error if a release already exists
+	 *
+	 * @summary  	Creates a Git client instance for the current project repository and returns it.
+	 *
+	 */
+	async _abortIfReleaseExists(options, logger, git) {
+		const execMode = options?.execMode;
+
+		debug(`checking if the release already exists...`);
+		// eslint-disable-next-line curly
+		if(!options.quiet) {
+			if(execMode === 'api')
+				logger?.debug?.(`Checking if the release already exists...`);
+			else
+			if(logger) logger.text = `Checking if the release already exists...`;
+		}
+
+		// Iterate over each release upstream, and call the git host wrapper...
+		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
+		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+			const remote = upstreamRemoteList[idx];
+			const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', remote]);
+
+			const hostedGitInfo = require('hosted-git-info');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
+
+
+			let gitHostWrapper = null;
+			if(repository?.type === 'github') {
+				const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
+				gitHostWrapper = new GitHubWrapper(options?.githubToken);
+			}
+
+			if(repository?.REPO?.type === 'gitlab') {
+				const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
+				gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+			}
+
+			const upstreamReleaseData = await gitHostWrapper.fetchReleaseInformation(repository, options?.releaseName);
+			console.log(`Existing Release: ${safeJsonStringify(upstreamReleaseData, null, '\t')}`);
+		}
+
+		if(execMode === 'api')
+			logger?.info?.(`Finished checking if the release already exists`);
+		else
+			logger?.succeed?.(`Finished checking if the release already exists`);
+
+
+		debug(`checked if the release already exists`);
+		return;
 	}
 
 	/**
