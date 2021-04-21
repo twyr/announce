@@ -72,6 +72,7 @@
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
@@ -143,6 +144,71 @@
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
+					<h4 class="name" id="_abortIfReleaseExists"><span class="type-signature">(async) </span>_abortIfReleaseExists<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Creates a Git client instance for the current project repository and returns it.</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line260">line 260</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Parameters:</h5>
+					<table class="params">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="last">Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="name"><code>options</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>merged options object returned by the _mergeOptions method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>logger</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Logger instance returned by the _setupLogger method</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>git</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Git client instance returned by the _initializeGit method</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Status of the release on each of the upstream git hosts</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="_generateChangelog"><span class="type-signature">(async) </span>_generateChangelog<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Generates a CHANGELOG from the relevant Git Log events, and commits the modified file.</p>
@@ -152,7 +218,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line341">line 341</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line417">line 417</a>
 								</li>
 							</ul>
 						</dd>
@@ -217,7 +283,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line724">line 724</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line800">line 800</a>
 								</li>
 							</ul>
 						</dd>
@@ -282,7 +348,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line947">line 947</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1023">line 1023</a>
 								</li>
 							</ul>
 						</dd>
@@ -356,7 +422,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line207">line 207</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line217">line 217</a>
 								</li>
 							</ul>
 						</dd>
@@ -412,7 +478,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line120">line 120</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line130">line 130</a>
 								</li>
 							</ul>
 						</dd>
@@ -459,7 +525,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line668">line 668</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line744">line 744</a>
 								</li>
 							</ul>
 						</dd>
@@ -524,7 +590,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line782">line 782</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line858">line 858</a>
 								</li>
 							</ul>
 						</dd>
@@ -589,7 +655,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line172">line 172</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line182">line 182</a>
 								</li>
 							</ul>
 						</dd>
@@ -636,7 +702,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line250">line 250</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line326">line 326</a>
 								</li>
 							</ul>
 						</dd>
@@ -701,7 +767,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1191">line 1191</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1267">line 1267</a>
 								</li>
 							</ul>
 						</dd>
@@ -766,7 +832,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1227">line 1227</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1303">line 1303</a>
 								</li>
 							</ul>
 						</dd>
@@ -831,7 +897,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line850">line 850</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line926">line 926</a>
 								</li>
 							</ul>
 						</dd>
@@ -896,7 +962,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line597">line 597</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line673">line 673</a>
 								</li>
 							</ul>
 						</dd>
