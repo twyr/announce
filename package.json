@@ -108,7 +108,7 @@
 		"docdash": "1.2.0",
 		"eslint": "7.25.0",
 		"eslint-plugin-html": "6.1.2",
-		"eslint-plugin-jsdoc": "32.3.3",
+		"eslint-plugin-jsdoc": "33.0.0",
 		"eslint-plugin-json": "2.1.2",
 		"eslint-plugin-mocha": "8.1.0",
 		"eslint-plugin-node": "11.1.0",
