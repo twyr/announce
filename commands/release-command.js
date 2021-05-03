@@ -578,13 +578,14 @@ class ReleaseCommandClass {
 				changeLogText?.push?.(`\n\n##### ${commitDate}`);
 			}
 
-			const commitLink = gitHostWrapper.getCommitLink(repository, commitLog);
+			const commitLink = gitHostWrapper?.getCommitLink?.(repository, commitLog);
 			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
 		});
 
 		// Step 6: Modify the CHANGELOG
 		const path = require('path');
 		const replaceInFile = require('replace-in-file');
+
 		while(changeLogText.length) {
 			const thisChangeSet = [];
 
