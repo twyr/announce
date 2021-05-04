@@ -5,7 +5,7 @@
 	"homepage": "https://github.com/twyr/announce",
 	"license": "MITNFA",
 	"readme": "README.md",
-	"version": "0.9.7",
+	"version": "0.9.8",
 	"keywords": [
 		"automation",
 		"announcement",
@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "28.3.0",
+		"@gitbeaker/node": "28.4.1",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.1",
 		"commander": "7.2.0",
@@ -109,7 +109,7 @@
 		"eslint": "7.25.0",
 		"eslint-plugin-html": "6.1.2",
 		"eslint-plugin-jsdoc": "33.0.0",
-		"eslint-plugin-json": "2.1.2",
+		"eslint-plugin-json": "3.0.0",
 		"eslint-plugin-mocha": "8.1.0",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
