@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "28.4.1",
+		"@gitbeaker/node": "29.1.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.1",
 		"commander": "7.2.0",
@@ -108,7 +108,7 @@
 		"docdash": "1.2.0",
 		"eslint": "7.26.0",
 		"eslint-plugin-html": "6.1.2",
-		"eslint-plugin-jsdoc": "34.2.0",
+		"eslint-plugin-jsdoc": "34.2.2",
 		"eslint-plugin-json": "3.0.0",
 		"eslint-plugin-mocha": "8.1.0",
 		"eslint-plugin-node": "11.1.0",
@@ -125,7 +125,7 @@
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "6.0.0",
 		"ini": "2.0.0",
-		"jsdoc": "3.6.6",
+		"jsdoc": "3.6.7",
 		"lint-staged": "11.0.0",
 		"load-grunt-tasks": "5.1.0",
 		"mocha": "8.4.0",
