@@ -110,7 +110,7 @@
 		"eslint-plugin-html": "6.1.2",
 		"eslint-plugin-jsdoc": "35.0.0",
 		"eslint-plugin-json": "3.0.0",
-		"eslint-plugin-mocha": "8.2.0",
+		"eslint-plugin-mocha": "9.0.0",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.0.14",
