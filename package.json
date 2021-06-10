@@ -88,7 +88,7 @@
 		"replace-in-file": "6.2.0",
 		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.5",
-		"simple-git": "2.39.0"
+		"simple-git": "2.39.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "12.1.4",
@@ -114,7 +114,7 @@
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.0.14",
-		"eslintcc": "0.6.8",
+		"eslintcc": "0.6.9",
 		"grunt": "1.4.1",
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
