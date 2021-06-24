@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "30.3.0",
+		"@gitbeaker/node": "30.5.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.1",
 		"commander": "7.2.0",
@@ -114,7 +114,7 @@
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.0.14",
-		"eslintcc": "0.6.9",
+		"eslintcc": "0.6.10",
 		"grunt": "1.4.1",
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
