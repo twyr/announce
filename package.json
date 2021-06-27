@@ -68,7 +68,7 @@
 		"@gitbeaker/node": "30.5.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.1",
-		"commander": "7.2.0",
+		"commander": "8.0.0",
 		"cosmiconfig": "7.0.0",
 		"date-fns": "2.22.1",
 		"debug": "4.3.1",
