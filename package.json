@@ -79,7 +79,7 @@
 		"gitignore-parser": "0.0.2",
 		"hosted-git-info": "4.0.2",
 		"humanize-string": "2.1.0",
-		"md-to-pdf": "3.3.2",
+		"md-to-pdf": "4.0.0",
 		"mkdirp": "1.0.4",
 		"octonode": "0.10.2",
 		"ora": "5.4.1",
