@@ -92,7 +92,7 @@
 	},
 	"devDependencies": {
 		"@commitlint/cli": "12.1.4",
-		"@commitlint/config-conventional": "12.1.4",
+		"@commitlint/config-conventional": "13.1.0",
 		"arkit": "1.6.4",
 		"chai": "4.3.4",
 		"chai-arrays": "2.2.0",
