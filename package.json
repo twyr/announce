@@ -91,7 +91,7 @@
 		"simple-git": "2.41.1"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "12.1.4",
+		"@commitlint/cli": "13.1.0",
 		"@commitlint/config-conventional": "12.1.4",
 		"arkit": "1.6.4",
 		"chai": "4.3.4",
