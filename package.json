@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "32.2.0",
+		"@gitbeaker/node": "33.0.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.2",
 		"commander": "8.1.0",
