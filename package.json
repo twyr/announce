@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "32.2.0",
+		"@gitbeaker/node": "33.0.0",
 		"bluebird": "3.7.2",
 		"chalk": "4.1.2",
 		"commander": "8.1.0",
@@ -88,7 +88,7 @@
 		"replace-in-file": "6.2.0",
 		"safe-json-stringify": "1.2.0",
 		"semver": "7.3.5",
-		"simple-git": "2.44.0"
+		"simple-git": "2.45.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "13.1.0",
@@ -104,7 +104,7 @@
 		"chai-json-schema": "1.5.1",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
-		"dependency-cruiser": "10.1.1",
+		"dependency-cruiser": "10.2.0",
 		"docdash": "1.2.0",
 		"eslint": "7.32.0",
 		"eslint-plugin-html": "6.1.2",
@@ -128,7 +128,7 @@
 		"jsdoc": "3.6.7",
 		"lint-staged": "11.1.2",
 		"load-grunt-tasks": "5.1.0",
-		"mocha": "9.1.0",
+		"mocha": "9.1.1",
 		"mocha-junit-reporter": "2.0.0",
 		"mocha-prepare": "0.1.0",
 		"mocha-prepare-promise": "0.0.2",
