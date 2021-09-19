@@ -70,7 +70,7 @@
 		"chalk": "4.1.2",
 		"commander": "8.2.0",
 		"cosmiconfig": "7.0.1",
-		"date-fns": "2.23.0",
+		"date-fns": "2.24.0",
 		"debug": "4.3.2",
 		"ejs": "3.1.6",
 		"es6-dynamic-template": "2.0.0",
