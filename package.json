@@ -129,7 +129,7 @@
 		"lint-staged": "11.1.2",
 		"load-grunt-tasks": "5.1.0",
 		"mocha": "9.1.2",
-		"mocha-junit-reporter": "2.0.0",
+		"mocha-junit-reporter": "2.0.2",
 		"mocha-prepare": "0.1.0",
 		"mocha-prepare-promise": "0.0.2",
 		"nyc": "15.1.0",
