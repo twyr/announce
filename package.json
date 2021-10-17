@@ -119,7 +119,7 @@
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
 		"grunt-env": "1.0.1",
-		"grunt-eslint": "23.0.0",
+		"grunt-eslint": "24.0.0",
 		"grunt-exec": "3.0.0",
 		"grunt-jsbeautifier": "0.2.13",
 		"grunt-xmlstoke": "0.7.1",
