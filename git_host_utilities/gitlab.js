@@ -14,7 +14,7 @@
  * @class		GitLabWrapper
  * @classdesc	The command class that wraps GitLab related functionality for Release and Publish.
  *
- * @param		{string} gitlabToken - The GitLab Personal Access Token to be used to access the repositories
+ * @param		{string} token - The GitLab Personal Access Token to be used to access the repositories
  *
  * @description
  * The wrapper class that provides an API interface for all GitLab related operations.
@@ -22,15 +22,9 @@
  */
 class GitLabWrapper {
 	// #region Constructor
-	constructor(gitlabToken) {
-		Object.defineProperty(this, 'pat', {
-			'value': gitlabToken
-		});
-
+	constructor(token) {
 		const GitLab = require('@gitbeaker/node')?.Gitlab;
-		Object.defineProperty(this, 'client', {
-			'value': new GitLab({ 'token': this.pat })
-		});
+		this.#client = new GitLab({ 'token': token });
 	}
 	// #endregion
 
@@ -51,7 +45,7 @@ class GitLabWrapper {
 	 *
 	 */
 	async fetchCommitInformation(repository, commitLog) {
-		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
+		const commit = await this.#client?.Commits?.show?.(`${repository?.user}/${repository?.project}`, commitLog?.hash);
 		return commit;
 	}
 
@@ -71,8 +65,8 @@ class GitLabWrapper {
 	 *
 	 */
 	async fetchCommitAuthorInformation(repository, commitLog) {
-		const commit = await this.client.Commits.show(`${repository.user}/${repository.project}`, commitLog.hash);
-		const author = await this.client.Users.search(commit?.author_email);
+		const commit = await this.#client?.Commits?.show?.(`${repository?.user}/${repository?.project}`, commitLog?.hash);
+		const author = await this.#client?.Users?.search?.(commit?.author_email);
 
 		return {
 			'name': commit?.author_name,
@@ -98,7 +92,7 @@ class GitLabWrapper {
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
-		const allReleases = await this.client.Releases.all(`${repository.user}/${repository.project}`);
+		const allReleases = await this.#client?.Releases?.all?.(`${repository?.user}/${repository?.project}`);
 
 		if(releaseName && releaseName?.trim?.()?.length) {
 			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
@@ -145,7 +139,7 @@ class GitLabWrapper {
 	 */
 	async createRelease(releaseData) {
 		const repository = releaseData['REPO'];
-		await this.client.Releases.create(`${repository.user}/${repository.project}`, {
+		await this.#client?.Releases?.create?.(`${repository?.user}/${repository?.project}`, {
 			'name': releaseData?.['RELEASE_NAME'],
 			'tag_name': releaseData?.['RELEASE_TAG'],
 			'description': releaseData?.['RELEASE_NOTES'],
@@ -176,7 +170,8 @@ class GitLabWrapper {
 	// #endregion
 
 	// #region Private Fields
+	#client = null;
 	// #endregion
 }
 
-exports.GitLabWrapper = GitLabWrapper;
+exports.GitHostWrapper = GitLabWrapper;

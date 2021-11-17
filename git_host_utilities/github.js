@@ -14,7 +14,7 @@
  * @class		GitHubWrapper
  * @classdesc	The command class that wraps GitHub related functionality for Release and Publish.
  *
- * @param		{string} githubToken - The GitHub Personal Access Token to be used to access the repositories
+ * @param		{string} token - The GitHub Personal Access Token to be used to access the repositories
  *
  * @description
  * The wrapper class that provides an API interface for all GitHub related operations.
@@ -22,14 +22,8 @@
  */
 class GitHubWrapper {
 	// #region Constructor
-	constructor(githubToken) {
-		Object.defineProperty(this, 'pat', {
-			'value': githubToken
-		});
-
-		Object.defineProperty(this, 'client', {
-			'value': require('octonode')?.client?.(this?.pat)
-		});
+	constructor(token) {
+		this.#client = require('octonode')?.client?.(token);
 	}
 	// #endregion
 
@@ -50,10 +44,10 @@ class GitHubWrapper {
 	 *
 	 */
 	async fetchCommitInformation(repository, commitLog) {
-		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
+		const ghRepo = this.#client?.repo?.(`${repository?.user}/${repository?.project}`);
 		const commit = await ghRepo?.commitAsync?.(commitLog?.hash);
 
-		return commit[0];
+		return commit?.[0];
 	}
 
 	/**
@@ -72,7 +66,7 @@ class GitHubWrapper {
 	 *
 	 */
 	async fetchCommitAuthorInformation(repository, commitLog) {
-		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
+		const ghRepo = this.#client?.repo?.(`${repository?.user}/${repository?.project}`);
 
 		let commit = await ghRepo?.commitAsync?.(commitLog?.hash);
 		commit = commit[0];
@@ -101,7 +95,7 @@ class GitHubWrapper {
 	 *
 	 */
 	async fetchReleaseInformation(repository, releaseName) {
-		const ghRepo = this?.client?.repo?.(`${repository?.user}/${repository?.project}`);
+		const ghRepo = this.#client?.repo?.(`${repository?.user}/${repository?.project}`);
 
 		let allReleases = await ghRepo?.releasesAsync?.();
 		allReleases = allReleases[0];
@@ -150,32 +144,28 @@ class GitHubWrapper {
 	 *
 	 */
 	async createRelease(releaseData) {
-		const promises = require('bluebird');
-
-		const repository = releaseData['REPO'];
-		const clientPost = promises?.promisify?.(this?.client?.post?.bind?.(this?.client));
-
-		try {
-			await clientPost?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
+		return new Promise((resolve, reject) => {
+			const repository = releaseData['REPO'];
+			this.#client?.post?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 				'accept': 'application/vnd.github.v3+json',
 				'tag_name': releaseData?.['RELEASE_TAG'],
 				'name': releaseData?.['RELEASE_NAME'],
 				'body': releaseData?.['RELEASE_NOTES'],
 				'prerelease': !!(releaseData?.['RELEASE_TYPE'] === 'pre-release')
-			});
-		}
-		catch(err) {
-			if(!err.body) throw err;
-			if(!err.body.errors) throw err;
-			if(!Array.isArray(err.body.errors)) throw err;
+			}, (err, status) => {
+				if(err) {
+					reject?.(err);
+					return;
+				}
 
-			const errorMessage = [];
-			err.body.errors.forEach((thisError) => {
-				errorMessage.push(`${thisError.resource} field ${thisError.field} ${thisError.code}`);
-			});
+				if(status !== 200) {
+					reject?.(status);
+					return;
+				}
 
-			throw new Error(errorMessage.join('\n'));
-		}
+				resolve(status);
+			});
+		});
 	}
 
 	/**
@@ -213,32 +203,27 @@ class GitHubWrapper {
 	 *
 	 */
 	async _fetchData(url) {
-		const Promise = require('bluebird');
 		return new Promise((resolve, reject) => {
-			try {
-				this?.client?.get?.(url, {}, (err, status, body) => {
-					if(err) {
-						reject?.(err);
-						return;
-					}
+			this.#client?.get?.(url, {}, (err, status, body) => {
+				if(err) {
+					reject?.(err);
+					return;
+				}
 
-					if(status !== 200) {
-						reject?.(status);
-						return;
-					}
+				if(status !== 200) {
+					reject?.(status);
+					return;
+				}
 
-					resolve?.(body);
-				});
-			}
-			catch(err) {
-				reject?.(err);
-			}
+				resolve?.(body);
+			});
 		});
 	}
 	// #endregion
 
 	// #region Private Fields
+	#client = null;
 	// #endregion
 }
 
-exports.GitHubWrapper = GitHubWrapper;
+exports.GitHostWrapper = GitHubWrapper;
