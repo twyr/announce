@@ -1,7 +1,7 @@
 /**
  * @name		index.js
- * @file		Main entry point of the Twy'r Announce CLI tool
- * @version		0.9.8
+ * @file		Main entry point of the Twy'r Announce API
+ * @version		0.9.10-dev.6
  *
  * @author		Vish Desai <shadyvd@hotmail.com>
  * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2021
@@ -37,12 +37,12 @@ const { 'fdir': FDir } = require('fdir');
 const { join } = require('path');
 
 const crawler = new FDir()
-	.withFullPaths()
-	.withErrors()
-	.glob('./**/*-command.js');
+	?.withFullPaths?.()
+	?.withErrors?.()
+	?.glob?.('./**/*-command.js');
 
-const commandDefinitionFolder = join(__dirname, './commands');
-const availableCommandDefinitionFiles = crawler.crawl(commandDefinitionFolder).sync();
+const commandDefinitionFolder = join?.(__dirname, './commands');
+const availableCommandDefinitionFiles = crawler?.crawl?.(commandDefinitionFolder)?.sync?.();
 
 // Step 2: Initialize the API and return that
 for(const commandDefinitionFile of availableCommandDefinitionFiles) {
