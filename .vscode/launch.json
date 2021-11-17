@@ -13,7 +13,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["prepare", "--debug", "--silent", "--series", "next"]
+            "args": ["prepare"]
         },
         {
             "type": "pwa-node",
@@ -24,7 +24,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["release", "-u", "twyr,gitlab"]
+            "args": ["release", "-u", "github,gitlab"]
         },
         {
             "type": "pwa-node",

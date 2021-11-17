@@ -1,40 +1,12 @@
 {
 	"parserOptions": {
-		"ecmaVersion": 2020,
-
-		"ecmaFeatures": {
-			"arrowFunctions": true,
-			"binaryLiterals": true,
-			"blockBindings": true,
-			"classes": true,
-			"defaultParams": true,
-			"destructuring": false,
-			"forOf": true,
-			"generators": true,
-			"modules": true,
-			"objectLiteralComputedProperties": true,
-			"objectLiteralDuplicateProperties": true,
-			"objectLiteralShorthandMethods": true,
-			"objectLiteralShorthandProperties": true,
-			"octalLiterals": false,
-			"regexUFlag": false,
-			"regexYFlag": false,
-			"restParams": false,
-			"spread": true,
-			"superInFunctions": true,
-			"templateStrings": true,
-			"unicodeCodePointEscapes": false,
-			"globalReturn": false,
-			"jsx": false
-		}
+		"ecmaVersion": 2022
 	},
 
 	"env": {
-		"browser": false,
 		"node": true,
 		"mocha": true,
-		"jquery": false,
-		"es6": true
+		"es2021": true
 	},
 
 	"globals": {
@@ -43,10 +15,7 @@
 	},
 
 	"plugins": [
-		"html",
 		"jsdoc",
-		"json",
-		"mocha",
 		"node",
 		"security",
 		"security-node"
