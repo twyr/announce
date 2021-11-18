@@ -1,30 +1,24 @@
+/* eslint-disable curly */
 /* eslint-disable security/detect-object-injection */
-/* eslint-disable security/detect-non-literal-fs-filename */
-/* eslint-disable security/detect-non-literal-regexp */
-/* eslint-disable security/detect-non-literal-require */
-/* eslint-disable security-node/detect-crlf */
 /* eslint-disable security-node/detect-non-literal-require-calls */
-/* eslint-disable security-node/non-literal-reg-expr */
+/* eslint-disable security/detect-non-literal-require */
 'use strict';
 
 /**
  * Module dependencies, required for ALL Twy'r modules
  * @ignore
  */
-const safeJsonStringify = require('safe-json-stringify');
 
 /**
  * Module dependencies, required for this module
  * @ignore
  */
-const debugLib = require('debug');
-const debug = debugLib('announce:release');
 
 /**
  * @class		ReleaseCommandClass
- * @classdesc	The command class that handles all the release operations.
+ * @classdesc	The command class that creates a release on a git host (Github / GitLab / BitBucket / etc.).
  *
- * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
+ * @param		{object} mode - Set the current run mode - CLI or API
  *
  * @description
  * The command class that implements the "release" step of the workflow.
@@ -33,11 +27,8 @@ const debug = debugLib('announce:release');
  */
 class ReleaseCommandClass {
 	// #region Constructor
-	constructor(configuration) {
-		Object.defineProperty(this, '_commandOptions', {
-			'writeable': true,
-			'value': configuration ?? {}
-		});
+	constructor(mode) {
+		this.#execMode = mode?.execMode;
 	}
 	// #endregion
 
@@ -49,80 +40,38 @@ class ReleaseCommandClass {
 	 * @memberof ReleaseCommandClass
 	 * @name     execute
 	 *
-	 * @param    {object} options - Parsed command-line options, or options passed in via API
+	 * @param    {object} configOptions - Options via cosmiConfig, or via API
+	 * @param    {object} cliOptions - Options via the CLI
 	 *
-	 * @return {null} Nothing.
+	 * @return   {null} Nothing.
 	 *
-	 * @summary  The main method to tag/release the codebase on Github.
+	 * @summary  The main method to tag/release the codebase on Github / GitLab / etc.
 	 *
 	 * This method does 3 things:
 	 * - Generates the changelog - features/fixes added to the code since the last tag/release
-	 * - Commits, tags, pushes to Github
+	 * - Commits, tags, pushes to Github / GitLab / etc.
 	 * - Creates a release using the tag and the generated changelog
 	 *
 	 */
-	async execute(options) {
+	async execute(configOptions, cliOptions) {
 		// Step 1: Setup sane defaults for the options
-		const mergedOptions = this._mergeOptions(options);
-		const execMode = mergedOptions?.execMode ?? 'cli';
+		const mergedOptions = this?._mergeOptions?.(configOptions, cliOptions);
+		// console.log(`Merged Options: ${JSON.stringify(mergedOptions, null, '\t')}`);
 
 		// Step 2: Set up the logger according to the options passed in
-		const logger = this._setupLogger(mergedOptions);
+		const logger = this?._setupLogger?.(mergedOptions);
+		mergedOptions.logger = logger;
 
-		// Step 3: Initialize Git client for the project repository
-		const git = this._initializeGit(mergedOptions, logger);
+		// Step 3: Setup the task list
+		const taskList = this?._setupTasks?.();
 
-		// Step 3: Check to see if the release already exists on any of the upstreams,
-		// and abort with an error message if it does
-		const upstreamRemoteReleaseStatus = await this._abortIfReleaseExists(mergedOptions, logger, git);
-		let doesRleaseExist = false;
-		Object.keys(upstreamRemoteReleaseStatus).forEach((remote) => {
-			doesRleaseExist = doesRleaseExist || upstreamRemoteReleaseStatus[remote];
+		// Step 4: Run the tasks in sequence
+		// eslint-disable-next-line security-node/detect-crlf
+		console.log(`Releasing the codebase:`);
+		await taskList?.run?.({
+			'options': mergedOptions,
+			'execError': null
 		});
-
-		if(doesRleaseExist) throw new Error(`Release ${mergedOptions.releaseName} has already been published.`);
-
-		// Step 5: Stash or Commit the current branch, if required
-		let shouldPopOnError = false;
-
-		try {
-			shouldPopOnError = await this._stashOrCommit(mergedOptions, logger, git);
-
-			// Step 6: Generate the CHANGELOG and commit it
-			await this._generateChangelog(mergedOptions, logger, git);
-
-			// Step 7: Tag the last commit, if required
-			await this._tagCode(mergedOptions, logger, git);
-
-			// Step 8: Push the new commits, and tag, upstream
-			await this._pushUpstream(mergedOptions, logger, git);
-
-			// Step 9: Create the release notes...
-			const releaseData = await this._generateReleaseNotes(mergedOptions, logger, git);
-
-			// Step 10: Create the release on Github
-			await this?._releaseCode?.(mergedOptions, logger, releaseData);
-
-			// Step 11: Store the release notes at the specified location in the specified formats
-			await this?._storeReleaseNotes?.(mergedOptions, logger, releaseData);
-		}
-		catch(err) {
-			if(execMode === 'api')
-				logger?.error?.(`${err.message}\n${err.stack}`);
-			else
-				logger?.fail?.(`${err.message}\n${err.stack}`);
-		}
-		finally {
-			// Step 12: Pop the stash if needed...
-			if(shouldPopOnError) {
-				await git?.stash?.(['pop']);
-
-				if(execMode === 'api')
-					logger?.info?.(`Popped the stash`);
-				else
-					logger?.succeed?.(`Popped the stash`);
-			}
-		}
 	}
 	// #endregion
 
@@ -133,49 +82,22 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_mergeOptions
 	 *
-	 * @param		{object} options - Parsed command-line options, or options passed in via API
+	 * @param		{object} configOptions - Options passed in from cosmiConfig / calling module
+	 * @param		{object} cliOptions - Options passed in from the CLI
 	 *
 	 * @return		{object} Merged options - input options > configured options.
 	 *
 	 * @summary  	Merges options passed in with configured ones - and puts in sane defaults if neither is available.
 	 *
 	 */
-	_mergeOptions(options) {
-		const path = require('path');
+	_mergeOptions(configOptions, cliOptions) {
+		const mergedOptions = Object?.assign?.({}, configOptions, cliOptions);
+		mergedOptions.upstream = mergedOptions?.upstream
+			?.split?.(',')
+			?.map?.((remote) => { return remote?.trim?.(); })
+			?.filter?.((remote) => { return !!remote.length; });
 
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const { version } = require(projectPackageJson);
-
-		const mergedOptions = Object?.assign?.({}, options?.opts?.(), this?._commandOptions?.opts?.());
-		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
-
-		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
-		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
-		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
-
-		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
-
-		mergedOptions.commit = mergedOptions?.commit ?? (this?._commandOptions?.commit ?? false);
-		mergedOptions.githubToken = mergedOptions?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
-		mergedOptions.gitlabToken = mergedOptions?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
-
-		mergedOptions.message = mergedOptions?.message ?? (this?._commandOptions?.message ?? '');
-
-		mergedOptions.dontTag = mergedOptions?.dontTag ?? (this?._commandOptions.dontTag ?? false);
-		mergedOptions.tag = mergedOptions?.tag ?? (this?._commandOptions.tag ?? '');
-		mergedOptions.tagName = mergedOptions?.tagName ?? (this?._commandOptions.tagName ?? `V${version}`);
-		mergedOptions.tagMessage = mergedOptions?.tagMessage ?? (this?._commandOptions.tagMessage ?? `The spaghetti recipe at the time of releasing V${version}`);
-
-		mergedOptions.dontRelease = mergedOptions?.dontRelease ?? (this?._commandOptions.dontRelease ?? false);
-		mergedOptions.releaseName = mergedOptions?.releaseName ?? (this?._commandOptions.releaseName ?? `V${version} Release`);
-		mergedOptions.releaseMessage = mergedOptions?.releaseMessage ?? (this?._commandOptions.releaseMessage ?? '');
-
-		mergedOptions.outputFormat = mergedOptions?.outputFormat ?? (this?._commandOptions.outputFormat ?? '');
-		mergedOptions.outputPath = mergedOptions?.outputPath ?? (this?._commandOptions.outputPath ?? '.');
-		if(!path?.isAbsolute?.(mergedOptions?.outputPath)) mergedOptions.outputPath = path?.join?.(process?.cwd?.(), mergedOptions?.outputPath);
-
-		mergedOptions.upstream = mergedOptions?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
-
+		mergedOptions.useTag = mergedOptions?.useTag?.trim?.();
 		return mergedOptions;
 	}
 
@@ -189,29 +111,90 @@ class ReleaseCommandClass {
 	 *
 	 * @return		{object} Logger object with info / error functions.
 	 *
-	 * @summary  	Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.
+	 * @summary  	Logger for API mode, otherwise null
 	 *
 	 */
 	_setupLogger(options) {
-		const execMode = options?.execMode ?? 'cli';
-		if(options?.debug) debugLib?.enable?.('announce:*');
+		if(this.#execMode === 'api')
+			return options?.logger;
 
-		let logger = null;
-		if((execMode === 'api') && !options?.silent) { // eslint-disable-line curly
-			logger = options?.logger;
-		}
+		return null;
+	}
 
-		if((execMode === 'cli') && !options?.silent) {
-			const Ora = require('ora');
-			logger = new Ora({
-				'discardStdin': true,
-				'text': `Preparing...`
-			});
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	ReleaseCommandClass
+	 * @name		_setupTasks
+	 *
+	 * @return		{object} Tasks as Listr.
+	 *
+	 * @summary  	Setup the list of tasks to be run
+	 *
+	 */
+	_setupTasks() {
+		const Listr = require('listr');
+		const taskList = new Listr([{
+			'title': 'Initializing Git Client...',
+			'task': this?._initializeGit?.bind?.(this)
+		}, {
+			'title': 'Stash / Commit...',
+			'task': this?._stashOrCommit?.bind?.(this)
+		}, {
+			'title': 'Generating Changelog...',
+			'task': this?._generateChangelog?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.execError) return `Error in previous step`;
+				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
+				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
 
-			logger?.start?.();
-		}
+				return false;
+			}
+		}, {
+			'title': 'Tagging the commit...',
+			'task': this?._tagCode?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(!ctxt?.options?.createTag) return `No changelog generated, so nothing to tag`;
+				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
+				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
 
-		return logger;
+				return false;
+			}
+		}, {
+			'title': 'Pushing upstream...',
+			'task': this?._pushUpstream?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
+				if(ctxt?.options?.upstream?.length < 1) return `No upstreams specified`;
+				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
+
+				return false;
+			}
+		}, {
+			'title': 'Generating Release...',
+			'task': this?._generateRelease?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.execError) return `Error in previous step`;
+				if(!ctxt?.options?.release) return `--no-release option specified.`;
+
+				return false;
+			}
+		}, {
+			'title': 'Restoring code...',
+			'task': this?._restoreCode?.bind?.(this),
+			'enabled': (ctxt) => {
+				return ctxt?.options?.shouldPop;
+			}
+		}, {
+			'title': 'Summarizing...',
+			'task': this?._summarize?.bind?.(this)
+		}], {
+			'collapse': false
+		});
+
+		return taskList;
 	}
 
 	/**
@@ -220,107 +203,24 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_initializeGit
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{object} The Git client instance for the project repository.
+	 * @return		{null} Nothing.
 	 *
-	 * @summary  	Creates a Git client instance for the current project repository and returns it.
+	 * @summary  	Creates a Git client instance for the current project repository and sets it on the context.
 	 *
 	 */
-	_initializeGit(options, logger) {
-		const execMode = options?.execMode ?? 'cli';
-
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Initializing Git for the repository @ ${process.cwd()}`);
-			else
-				if(logger) logger.text = `Initializing Git for the repository @ ${process.cwd()}`;
-		}
-
+	_initializeGit(ctxt, task) {
 		const simpleGit = require('simple-git');
 		const git = simpleGit?.({
-			'baseDir': process.cwd()
-		})
-		.outputHandler?.((_command, stdout, stderr) => {
-			// if(!mergedOptions.quiet) stdout.pipe(process.stdout);
-			stderr.pipe(process.stderr);
+			'baseDir': ctxt?.options?.currentWorkingDirectory
 		});
 
-		if(execMode === 'api')
-			logger?.info?.(`Initialized Git for the repository @ ${process.cwd()}`);
-		else
-			logger?.succeed?.(`Initialized Git for the repository @ ${process.cwd()}`);
+		ctxt?.options?.logger?.info?.(`Initialized Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}`);
+		task.title = `Initialize Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}: Done`;
 
-		debug(`initialized Git for the repository @ ${process.cwd()}`);
-		return git;
-	}
-
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	ReleaseCommandClass
-	 * @name		_abortIfReleaseExists
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
-	 *
-	 * @return		{object} Status of the release on each of the upstream git hosts
-	 *
-	 * @summary  	Creates a Git client instance for the current project repository and returns it.
-	 *
-	 */
-	async _abortIfReleaseExists(options, logger, git) {
-		const execMode = options?.execMode;
-
-		debug(`checking if the release already exists...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Checking if the release already exists...`);
-			else
-			if(logger) logger.text = `Checking if the release already exists...`;
-		}
-
-		// Iterate over each release upstream, and call the git host wrapper...
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		const upstreamRemoteReleaseStatus = {};
-
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const remote = upstreamRemoteList[idx];
-			const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', remote]);
-
-			const hostedGitInfo = require('hosted-git-info');
-			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
-			repository.project = repository?.project?.replace?.('.git\n', '');
-
-
-			let gitHostWrapper = null;
-			if(repository?.type === 'github') {
-				const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
-				gitHostWrapper = new GitHubWrapper(options?.githubToken);
-			}
-
-			if(repository?.REPO?.type === 'gitlab') {
-				const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
-				gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
-			}
-
-			const upstreamReleaseData = await gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
-			upstreamRemoteReleaseStatus[remote] = !!upstreamReleaseData?.published;
-		}
-
-		if(execMode === 'api')
-			logger?.info?.(`Finished checking if the release already exists`);
-		else
-			logger?.succeed?.(`Finished checking if the release already exists`);
-
-
-		debug(`checked if the release already exists`);
-		return upstreamRemoteReleaseStatus;
+		ctxt.options.git = git;
 	}
 
 	/**
@@ -330,89 +230,54 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_stashOrCommit
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{boolean} status of the stash/commit operation.
+	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Depending on the configuration, stashes/commits code in the current branch - if required.
 	 *
 	 */
-	async _stashOrCommit(options, logger, git) {
-		const execMode = options?.execMode ?? 'cli';
+	async _stashOrCommit(ctxt, task) {
+		try {
+			const gitOperation = ctxt?.options?.commit ? 'commit' : 'stash';
+			const branchStatus = await ctxt?.options?.git?.status?.();
 
-		const gitOperation = options?.commit ? 'commit' : 'stash';
-		const branchStatus = await git?.status?.();
-
-		debug(`checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`);
-			else
-				if(logger) logger.text = `Checking ${branchStatus.current} branch to see if a ${gitOperation} operation is required`;
-		}
-
-		if(!branchStatus?.files?.length) {
-			// eslint-disable-next-line curly
-			if(!options.quiet) {
-				if(execMode === 'api')
-					logger?.info?.(`${branchStatus.current} branch clean - ${gitOperation} operation not required`);
-				else
-					logger?.succeed?.(`"${branchStatus.current}" branch is clean - ${gitOperation} operation not required`);
+			if(!branchStatus?.files?.length) {
+				ctxt?.options?.logger?.info?.(`${branchStatus.current} branch clean - ${gitOperation} operation not required.`);
+				task.title = `${gitOperation} operation not required.`;
+				return;
 			}
 
-			debug(`${branchStatus.current} branch clean - ${gitOperation} operation not required.`);
-			return false;
+			ctxt?.options?.logger?.debug?.(`${branchStatus.current} branch dirty - proceeding with ${gitOperation} operation`);
+			task.title = `${gitOperation} in progress...`;
+
+			if(gitOperation === 'stash') {
+				await ctxt?.options?.git?.stash?.(['push']);
+				ctxt.options.shouldPop = true;
+			}
+			else {
+				const path = require('path');
+
+				let trailerMessages = await ctxt?.options?.git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+				trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
+
+				const consolidatedMessage = `${(ctxt?.options?.commitMessage ?? '')} ${(trailerMessages ?? '')}`;
+				await ctxt?.options?.git?.commit?.(consolidatedMessage, null, {
+					'--all': true,
+					'--allow-empty': true,
+					'--signoff': true
+				});
+			}
+
+			ctxt?.options?.logger?.info?.(`"${branchStatus.current}" branch ${gitOperation} done`);
+			task.title = `"${branchStatus.current}" branch ${gitOperation}: Done.`;
 		}
-
-		debug(`${branchStatus.current} branch dirty - proceeding with ${gitOperation} operation`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`${branchStatus.current} branch is dirty - proceeding with ${gitOperation} operation`);
-			else
-				if(logger) logger.text = `${branchStatus.current} branch is dirty - proceeding with ${gitOperation} operation`;
+		catch(err) {
+			task.title = 'Stash / Commit: Error';
+			ctxt.execError = err;
 		}
-
-		let stashOrCommitStatus = null;
-		if(gitOperation === 'stash') {
-			stashOrCommitStatus = await git?.stash?.(['push']);
-		}
-		else {
-			const es6DynTmpl = require('es6-dynamic-template');
-			const path = require('path');
-
-			const projectPackageJson = path.join(process.cwd(), 'package.json');
-			const pkg = require(projectPackageJson);
-
-			const commitMessage = es6DynTmpl?.(options?.message, pkg);
-			debug(`Commit message: ${commitMessage}`);
-
-			let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-			trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
-			debug(`Trailer messages: ${trailerMessages}`);
-
-			const consolidatedMessage = `${(commitMessage ?? '')} ${(trailerMessages ?? '')}`;
-			stashOrCommitStatus = await git?.commit?.(consolidatedMessage, null, {
-				'--all': true,
-				'--allow-empty': true,
-				'--signoff': true
-			});
-
-			stashOrCommitStatus = stashOrCommitStatus?.commit;
-		}
-
-		if(execMode === 'api')
-			logger?.info?.(`Branch "${branchStatus.current}" ${gitOperation} process done`);
-		else
-			logger?.succeed?.(`Branch "${branchStatus.current}" ${gitOperation} process done.`);
-
-		debug(`${gitOperation} status: ${JSON.stringify((stashOrCommitStatus ?? {}), null, '\t')}`);
-		return (gitOperation === 'stash');
 	}
-
 
 	/**
 	 * @async
@@ -421,254 +286,79 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_generateChangelog
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Generates a CHANGELOG from the relevant Git Log events, and commits the modified file.
 	 *
 	 */
-	async _generateChangelog(options, logger, git) {
-		const execMode = options?.execMode ?? 'cli';
+	async _generateChangelog(ctxt, task) {
+		ctxt?.options?.logger?.info?.(`Generating CHANGELOG containing significant Git log events from the last tag onwards`);
 
-		debug(`generating the changelog containing significant git log events from the last tag`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Generating CHANGELOG containing significant Git log events from the last tag`);
-			else
-				if(logger) logger.text = `Generating CHANGELOG containing significant Git log events from the last tag`;
-		}
+		const Listr = require('listr');
+		const taskList = new Listr([{
+			'title': 'Fetching git log events...',
+			'task': this?._fetchGitLogsForChangelog?.bind?.(this)
+		}, {
+			'title': 'Filtering git log events...',
+			'task': this?._filterGitLogs?.bind?.(this),
+			'skip': () => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(ctxt?.options?.gitLogsInRange?.all?.length)
+					return false;
 
-		if(options?.dontTag || (options.tag !== '')) {
-			if(execMode === 'api')
-				logger?.info?.(`Existing tag specified, or --dont-tag is true. Skipping CHANGELOG generation`);
-			else
-				logger?.succeed?.(`Existing tag specified, or --dont-tag is true. Skipping CHANGELOG generation`);
-
-			debug(`existing tag specified, or --dont-tag is true - skipping CHANGELOG generation`);
-			return;
-		}
-
-		// Step 1: Get the last tag, the commit for the last tag, and the last commit
-		let lastTag = await git?.tag?.(['--sort=-creatordate']);
-		lastTag = lastTag?.split?.('\n')?.shift()?.replace?.(/\\n/g, '')?.trim?.();
-
-		let lastTaggedCommit = null;
-		if(lastTag) {
-			lastTaggedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
-			lastTaggedCommit = lastTaggedCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
-		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-
-		// Step 2: Get the Git Log events from the last commit to the commit of the last tag
-		let gitLogsInRange = null;
-
-		if(lastTaggedCommit && lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'from': lastTaggedCommit,
-				'to': lastCommit
-			});
-
-		if(!lastTaggedCommit && lastCommit)
-			gitLogsInRange = await git?.log?.({
-				'to': lastCommit
-			});
-
-		if(!lastTaggedCommit && !lastCommit)
-			gitLogsInRange = {
-				'all': []
-			};
-
-		// Step 3: Filter the Git Logs - keep only the ones relevant to the CHANGELOG (features, bug fixes, and documentation)
-		const relevantGitLogs = [];
-		gitLogsInRange?.all?.forEach?.((commitLog) => {
-			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat(') || commitLog?.message?.startsWith?.('fix(') || commitLog?.message?.startsWith?.('docs(')) {
-				relevantGitLogs?.push?.({
-					'hash': commitLog?.hash,
-					'date': commitLog?.date,
-					'message': commitLog?.message,
-					'author_name': commitLog?.author_name,
-					'author_email': commitLog?.author_email
-				});
+				return `No relevant git logs.`;
 			}
+		}, {
+			'title': 'Formatting git log events...',
+			'task': this?._formatGitLogsForChangelog?.bind?.(this),
+			'skip': () => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(ctxt?.options?.gitLogsInRange?.all?.length)
+					return false;
 
-			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat:') || commitLog?.message?.startsWith?.('fix:') || commitLog?.message?.startsWith?.('docs:')) {
-				relevantGitLogs?.push?.({
-					'hash': commitLog?.hash,
-					'date': commitLog?.date,
-					'message': commitLog?.message,
-					'author_name': commitLog?.author_name,
-					'author_email': commitLog?.author_email
-				});
+				return `No relevant git logs.`;
 			}
+		}, {
+			'title': 'Creating / Modifying changelog...',
+			'task': this?._modifyChangelog?.bind?.(this),
+			'skip': () => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(ctxt?.options?.changelogText && ctxt?.options?.changelogText?.trim?.()?.length)
+					return false;
 
-			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split?.('\n');
-			commitLogBody?.forEach?.((commitBody) => {
-				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat(') || commitBody?.startsWith?.('fix(') || commitBody?.startsWith?.('docs(')) {
-					relevantGitLogs.push?.({
-						'hash': commitLog?.hash,
-						'date': commitLog?.date,
-						'message': commitBody?.trim(),
-						'author_name': commitLog?.author_name,
-						'author_email': commitLog?.author_email
-					});
-				}
+				return `No change log to add.`;
+			}
+		}, {
+			'title': 'Commiting changelog...',
+			'task': this?._commitChangelog?.bind?.(this),
+			'skip': async () => {
+				if(ctxt?.execError) return `Error in one of the previous steps`;
 
-				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat:') || commitBody?.startsWith?.('fix:') || commitBody?.startsWith?.('docs:')) {
-					relevantGitLogs.push?.({
-						'hash': commitLog?.hash,
-						'date': commitLog?.date,
-						'message': commitBody?.trim(),
-						'author_name': commitLog?.author_name,
-						'author_email': commitLog?.author_email
-					});
-				}
-			});
+				const git = ctxt?.options?.git;
+
+				const branchStatus = await git?.status?.();
+				if(branchStatus?.files?.length) return false;
+
+				ctxt.options.createTag = false;
+				return `Nothing to commit.`;
+			}
+		}, {
+			'title': 'Cleaning up...',
+			'task': this?._cleanupChangelog?.bind?.(this)
+		}, {
+			'title': 'Teardown...',
+			'task': (thisCtxt, thisTask) => {
+				thisTask.title = 'Teardown: Done';
+				task.title = ctxt?.execError ? `Changelog Generation: Error` : `Changelog Generation: Done`;
+			}
+		}], {
+			'collapse': true
 		});
 
-		if(!relevantGitLogs.length) {
-			if(execMode === 'api')
-				logger?.info?.(`No significant Git Log events between the last tag and the current commit. Skipping CHANGELOG generation`);
-			else
-				logger?.succeed?.(`No significant Git Log events between the last tag and the current commit. Skipping CHANGELOG generation`);
-
-			debug(`no significant Git Log events between the last tag and the current commit - skipping CHANGELOG generation`);
-			return;
-		}
-
-		// Step 4: Get the upstream repository information - to be used to generate the URLs pointing to the commits
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		const upstreamForLinks = upstreamRemoteList?.shift?.();
-
-		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', upstreamForLinks]);
-
-		const hostedGitInfo = require('hosted-git-info');
-		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
-		repository.project = repository?.project?.replace?.('.git\n', '');
-
-		let gitHostWrapper = null;
-		if(repository?.domain?.toLowerCase?.()?.includes?.('github')) {
-			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
-			gitHostWrapper = new GitHubWrapper(options?.githubToken);
-		}
-
-		if(repository?.domain?.toLowerCase?.()?.includes?.('gitlab')) {
-			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
-			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
-		}
-
-		// Step 5: Convert the relevant Git Logs into a textual array, and add links to the hosted commit hash for insertion into the file
-		const changeLogText = [`#### CHANGE LOG`];
-		const processedDates = [];
-
-		const dateFormat = require('date-fns/format');
-		relevantGitLogs?.forEach?.((commitLog) => {
-			const commitDate = dateFormat?.(new Date(commitLog?.date), 'dd-MMM-yyyy');
-			if(!processedDates?.includes?.(commitDate)) {
-				processedDates?.push?.(commitDate);
-				changeLogText?.push?.(`\n\n##### ${commitDate}`);
-			}
-
-			const commitLink = gitHostWrapper?.getCommitLink?.(repository, commitLog);
-			changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
-		});
-
-		// Step 6: Modify the CHANGELOG
-		const path = require('path');
-		const replaceInFile = require('replace-in-file');
-
-		while(changeLogText.length) {
-			const thisChangeSet = [];
-
-			// Step 6.1: Get all Git Logs for a particular date
-			let thisChangeLog = changeLogText?.pop?.();
-			while(changeLogText?.length && !thisChangeLog?.startsWith?.('\n\n####')) {
-				thisChangeSet?.unshift?.(thisChangeLog);
-				thisChangeLog = changeLogText?.pop?.();
-			}
-
-			thisChangeSet?.unshift?.(thisChangeLog);
-
-			// Step 6.2: Add to existing entries for that date, if any already present in the file
-			const replaceOptions = {
-				'files': path?.join?.(process?.cwd?.(), 'CHANGELOG.md'),
-				'from': thisChangeLog,
-				'to': thisChangeSet?.join?.('\n')
-			};
-
-			let changelogResult = await replaceInFile?.(replaceOptions);
-
-			// If the file has changed, continue to start processing the next date entries
-			if(changelogResult?.[0]?.['hasChanged'])
-				continue;
-
-			// File hasn't changed, and there are no more relevant Git Logs. Basically, break
-			if(!changeLogText.length)
-				continue;
-
-			// Step 6.3: File hasn't changed, but there are relevant Git Logs? That date is new
-			// So simply add everything remaining to the top of the CHANGELOG
-			while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
-			replaceOptions['from'] = changeLogText?.[0];
-			replaceOptions['to'] = `${changeLogText?.join?.('\n')}\n`;
-
-			changelogResult = await replaceInFile?.(replaceOptions);
-			if(changelogResult?.[0]?.['hasChanged'])
-				break;
-
-			// Step 6.4: The last resort... simply prepend everything
-			// This should happen only if the CHANGELOG.md file is absolutely empty
-			const prependFile = require('prepend-file');
-			await prependFile?.(path.join(process.cwd(), 'CHANGELOG.md'), `${changeLogText?.join?.('\n')}\n`);
-
-			break;
-		}
-
-		// Step 7: Commit the CHANGELOG
-		const branchStatus = await git?.status?.();
-		if(!branchStatus?.files?.length) {
-			if(execMode === 'api')
-				logger?.info?.(`No CHANGELOG events. Skipping commit operation`);
-			else
-				logger?.succeed?.(`No CHANGELOG events. Skipping commit operation`);
-
-			debug(`no CHANGELOG events - skipping commit operation`);
-			return;
-		}
-
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
-
-		let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
-		trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
-
-		const consolidatedMessage = `generated change log for release ${pkg?.version}\n${trailerMessages ?? ''}`;
-
-		await git?.add?.('.');
-		await git?.commit?.(consolidatedMessage, null, {
-			'--all': true,
-			'--allow-empty': true,
-			'--no-verify': true,
-			'--signoff': true
-		});
-
-		// Finally, return...
-		if(execMode === 'api')
-			logger?.info?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
-		else
-			logger?.succeed?.(`Generated CHANGELOG containing significant Git log events from the last tag`);
-
-		debug(`generated CHANGELOG containing significant Git log events from the last tag`);
-		return;
+		return taskList;
 	}
 
 	/**
@@ -678,68 +368,34 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_tagCode
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
 	 * @summary		Tags the codebase.
 	 *
 	 */
-	async _tagCode(options, logger, git) {
-		const execMode = options.execMode;
+	async _tagCode(ctxt, task) {
+		try {
+			ctxt?.options?.logger?.info(`Tagging commit with the CHANGELOG`);
 
-		debug(`tagging commit with the CHANGELOG...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Tagging commit with the CHANGELOG`);
-			else
-				if(logger) logger.text = `Tagging commit with the CHANGELOG`;
+			const git = ctxt?.options?.git;
+			let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
+			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
+
+			if(!lastCommit) {
+				task.title = 'Tag the commit: No commits found';
+				return;
+			}
+
+			await git?.tag?.(['-a', '-f', '-m', ctxt?.options?.tagMessage, ctxt?.options?.tagName, lastCommit]);
+			task.title = 'Tag the commit: Done';
 		}
-
-		if(options?.dontTag || (options.tag !== '')) {
-			if(execMode === 'api')
-				logger?.info?.(`Existing tag specified, or --dont-tag is true. Skipping tag operation`);
-			else
-				logger?.succeed?.(`Existing tag specified, or --dont-tag is true. Skipping tag operation`);
-
-			debug(`existing tag specified or --dont-tag is true - skipping tag operation`);
-			return;
+		catch(err) {
+			task.title = 'Tag the commit: Error';
+			ctxt.execError = err;
 		}
-
-		const es6DynTmpl = require('es6-dynamic-template');
-		const path = require('path');
-
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
-
-		const tagName = es6DynTmpl?.(options?.tagName, pkg);
-		const tagMessage = es6DynTmpl?.(options?.tagMessage, pkg);
-
-		let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
-		lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-
-		if(!lastCommit) {
-			if(execMode === 'api')
-				logger?.info?.(`No commits found in the repository. Skipping tag operation`);
-			else
-				logger?.succeed?.(`No commits found in the repository. Skipping tag operation`);
-
-			debug(`no commits found in the repository - skipping tag operation`);
-			return;
-		}
-
-		await git?.tag?.(['-a', '-f', '-m', tagMessage, tagName, lastCommit]);
-
-		if(execMode === 'api')
-			logger?.info?.(`Tag ${tagName}: ${tagMessage} created`);
-		else
-			logger?.succeed?.(`Tag ${tagName}: ${tagMessage} created`);
-
-		debug(`tag ${tagName}: ${tagMessage} created`);
-		return;
 	}
 
 	/**
@@ -749,53 +405,53 @@ class ReleaseCommandClass {
 	 * @memberof	ReleaseCommandClass
 	 * @name		_pushUpstream
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
 	 * @summary		Pushes new commits/tags to the configured upstream git remote.
 	 *
 	 */
-	async _pushUpstream(options, logger, git) {
-		const execMode = options.execMode;
+	async _pushUpstream(ctxt, task) {
+		try {
+			ctxt?.options?.logger?.info?.(`Pushing commits and tag upstream`);
 
-		debug(`pushing commits and tag upstream...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Pushing commits and tag upstream`);
-			else
-				if(logger) logger.text = `Pushing commits and tag upstream`;
+			const git = ctxt?.options?.git;
+			const upstreamRemoteList = ctxt?.options?.upstream;
+
+			task.title = 'Pushing upstream: Pulling from configured upstreams...';
+			await git?.remote?.(['update', '-p']?.concat?.(upstreamRemoteList));
+
+			const branchStatus = await git?.status?.();
+			for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
+				const thisUpstreamRemote = upstreamRemoteList[idx];
+
+				let canPush = await git?.raw?.(['rev-list', `HEAD...${thisUpstreamRemote}/${branchStatus?.current}`, '--ignore-submodules', '--count']);
+				canPush = Number(canPush.replace(`\n`, ''));
+				if(!canPush) continue;
+
+				task.title = `Pushing upstream: Pushing to ${thisUpstreamRemote}...`;
+				await git?.push?.(thisUpstreamRemote, branchStatus?.current, {
+					'--atomic': true,
+					'--progress': true,
+					'--signed': 'if-asked'
+				});
+
+				await git?.pushTags?.(thisUpstreamRemote, {
+					'--atomic': true,
+					'--force': true,
+					'--progress': true,
+					'--signed': 'if-asked'
+				});
+			}
+
+			task.title = 'Push upstream: Done';
 		}
-
-		const branchStatus = await git?.status?.();
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
-
-			await git?.push?.(thisUpstreamRemote, branchStatus?.current, {
-				'--atomic': true,
-				'--progress': true,
-				'--signed': 'if-asked'
-			});
-
-			await git?.pushTags?.(thisUpstreamRemote, {
-				'--atomic': true,
-				'--force': true,
-				'--progress': true,
-				'--signed': 'if-asked'
-			});
+		catch(err) {
+			task.title = 'Push Upstream: Error';
+			ctxt.execError = err;
 		}
-
-		if(execMode === 'api')
-			logger?.info?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}`);
-		else
-			logger?.succeed?.(`Pushed ${branchStatus.current} branch commits and tags upstream to ${options?.upstream}.`);
-
-		debug(`pushed ${branchStatus.current} branch tags upstream to ${options?.upstream}`);
-		return;
 	}
 
 	/**
@@ -803,125 +459,136 @@ class ReleaseCommandClass {
 	 * @function
 	 * @instance
 	 * @memberof	ReleaseCommandClass
-	 * @name		_generateReleaseNotes
+	 * @name		_generateRelease
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
-	 *
-	 * @return		{string} The generated release notes for this release.
-	 *
-	 * @summary		Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.
-	 *
-	 */
-	async _generateReleaseNotes(options, logger, git) {
-		const execMode = options.execMode;
-
-		debug(`generating release notes...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Generating release notes`);
-			else
-				if(logger) logger.text = `Generating release notes...`;
-		}
-
-		if(options?.dontRelease) {
-			if(execMode === 'api')
-				logger?.info?.(`--dont-release is true. Skipping release notes generation`);
-			else
-				logger?.succeed?.(`--dont-release is true. Skipping release notes generation`);
-
-			debug(`--dont-release is true - skipping release notes generation`);
-			return null;
-		}
-
-		// Get release notes for each of the configured upstreams...
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		const releaseData = {};
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
-			const upstreamReleaseNotes = await this._generateReleaseNotesPerRemote(options, logger, git, thisUpstreamRemote);
-
-			releaseData[thisUpstreamRemote] = upstreamReleaseNotes;
-		}
-
-		// Finally, return...
-		if(execMode === 'api')
-			logger?.info?.(`Generated release notes`);
-		else
-			logger?.succeed?.(`Generated release notes.`);
-
-		debug(`generated release notes.`);
-		return releaseData;
-	}
-
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	ReleaseCommandClass
-	 * @name		_releaseCode
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} releaseData - Data needed to push the release, returned by _generateReleaseNotes
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
-	 * @summary		Creates a release on Github, and marks it as pre-release if required.
+	 * @summary		Creates releases for each of the configured upstreams.
 	 *
 	 */
-	async _releaseCode(options, logger, releaseData) {
-		const execMode = options?.execMode;
+	async _generateRelease(ctxt, task) {
+		try {
+			ctxt?.options?.logger?.info?.(`Generating ${ctxt?.options?.upstream?.length > 1 ? 'Releases' : 'Release'} for ${ctxt?.options?.upstream?.join?.(', ')}`);
 
-		debug(`creating the release...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Creating the release...`);
-			else
-				if(logger) logger.text = `Creating the release...`;
+			const taskArray = [];
+			const Listr = require('listr');
+
+			ctxt?.options?.upstream?.forEach?.((upstream) => {
+				taskArray?.push?.({
+					'title': `Releasing on ${upstream}...`,
+					'task': (thisCtxt, thisTask) => {
+						return new Listr([{
+							'title': `Setting up...`,
+							'task': (subTaskCtxt, subTaskTask) => {
+								subTaskCtxt.options.currentReleaseUpstream = `${upstream}`;
+								subTaskTask.title = `Setup: Done`;
+							}
+						}, {
+							'title': `Fetching git logs for release...`,
+							'task': this?._fetchGitLogsForRelease?.bind?.(this),
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								return false;
+							}
+						}, {
+							'title': 'Filtering git log events...',
+							'task': this?._filterGitLogs?.bind?.(this),
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								if(ctxt?.options?.gitLogsInRange?.all?.length)
+									return false;
+
+								return `No relevant git logs.`;
+							}
+						}, {
+							'title': `Fetching author information for the relevant git log events...`,
+							'task': this?._fetchAuthorInformationForRelease?.bind?.(this),
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								if(ctxt?.options?.gitLogsInRange?.length)
+									return false;
+
+								return `No relevant git logs.`;
+							}
+						}, {
+							'title': `Generating Release Notes...`,
+							'task': (subTaskCtxt, subTaskTask) => {
+								subTaskTask.title = `Generate Release Notes: Done`;
+							},
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								if(ctxt?.options?.gitLogsInRange?.length)
+									return false;
+
+								if(ctxt?.options?.authorProfiles?.length)
+									return false;
+
+								return `No relevant git logs, or no information about their authors.`;
+							}
+						}, {
+							'title': `Pushing Release...`,
+							'task': (subTaskCtxt, subTaskTask) => {
+								subTaskTask.title = `Push Release: Done`;
+							},
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								return false;
+							}
+						}, {
+							'title': `Storing Release Notes...`,
+							'task': (subTaskCtxt, subTaskTask) => {
+								subTaskTask.title = `Store Release Notes: Done`;
+							},
+							'skip': (subTaskCtxt) => {
+								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								return false;
+							}
+						}, {
+							'title': `Cleaning up...`,
+							'task': (subTaskCtxt, subTaskTask) => {
+								ctxt.execError = subTaskCtxt?.releaseError;
+
+								setTimeout((currentUpstream, gitLogs, authors) => {
+									console.log(`\n\n\nUpstream: ${currentUpstream}\nGit Logs: ${JSON.stringify(gitLogs, null, '\t')}\n\nAuthors: ${JSON.stringify(authors, null, '\t')}`);
+								}, 5000, upstream, ctxt?.options?.gitLogsInRange, ctxt?.options?.authorProfiles);
+
+								ctxt.options.gitLogsInRange = null;
+								ctxt.options.authorProfiles = null;
+
+								subTaskTask.title = `Clean up: Done`;
+								thisTask.title = ctxt?.execError ? `${upstream} release: Error` : `${upstream} release: Done`;
+							}
+						}], {
+							'collapse': true
+						});
+					},
+					'skip': () => {
+						if(ctxt?.execError) return `Error in one of the previous steps`;
+						return false;
+					}
+				});
+			});
+
+			taskArray?.push?.({
+				'title': `Teardown...`,
+				'task': (thisCtxt, thisTask) => {
+					thisTask.title = `Teardown: Done`;
+					task.title = ctxt?.execError ? `Generate Release: Error` : `Generate Release: Done`;
+				}
+			});
+
+			const taskList = new Listr(taskArray);
+			return taskList;
+		}
+		catch(err) {
+			task.title = 'Generate Release: Error';
+			ctxt.execError = err;
 		}
 
-		if(options?.dontRelease) {
-			if(execMode === 'api')
-				logger?.info?.(`--dont-release is true. Skipping create release operation`);
-			else
-				logger?.succeed?.(`--dont-release is true. Skipping create release operation`);
-
-			debug(`--dont-release is true - skipping create release operation`);
-			return;
-		}
-
-		// Iterate over each release upstream, and call the git host wrapper...
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
-			const upstreamReleaseData = releaseData[thisUpstreamRemote];
-
-			let gitHostWrapper = null;
-			if(upstreamReleaseData?.REPO?.type === 'github') {
-				const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
-				gitHostWrapper = new GitHubWrapper(options?.githubToken);
-			}
-
-			if(upstreamReleaseData?.REPO?.type === 'gitlab') {
-				const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
-				gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
-			}
-
-			await gitHostWrapper.createRelease(upstreamReleaseData);
-		}
-
-		if(execMode === 'api')
-			logger?.info?.(`Created the release`);
-		else
-			logger?.succeed?.(`Created the release`);
-
-
-		debug(`created the release`);
-		return;
+		return null;
 	}
 
 	/**
@@ -929,95 +596,19 @@ class ReleaseCommandClass {
 	 * @function
 	 * @instance
 	 * @memberof	ReleaseCommandClass
-	 * @name		_storeReleaseNotes
+	 * @name		_restoreCode
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} releaseData - Data needed to push the release, returned by _generateReleaseNotes
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
-	 * @summary		Stores the release notes in the specified formats, at the specified location.
+	 * @summary  	If code was stashed earlier in the cycle, pops it out.
 	 *
 	 */
-	async _storeReleaseNotes(options, logger, releaseData) {
-		const execMode = options ?.execMode;
-
-		debug(`storing the generated release notes...`);
-		// eslint-disable-next-line curly
-		if(!options.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Storing the generated release notes...`);
-			else
-				if(logger) logger.text = `Storing the generated release notes...`;
-		}
-
-		if(options?.dontRelease) {
-			if(execMode === 'api')
-				logger?.info?.(`--dont-release is true. Skipping storing generated release notes operation`);
-			else
-				logger?.succeed?.(`--dont-release is true. Skipping storing generated release notes operation`);
-
-			debug(`--dont-release is true - skipping storing generated release notes operation`);
-			return;
-		}
-
-		// Step 1: If path is not specified, skip
-		if(options?.outputPath.trim() === '') {
-			if(execMode === 'api')
-				logger?.info?.(`No requirement to store the release notes. Skipping operation`);
-			else
-				logger?.succeed?.(`No requirement to store the release notes. Skipping operation`);
-
-			debug(`skipping operation to store generated release notes`);
-			return;
-		}
-
-		// Step 2: Convert generated release notes in the specified formats
-		let outputFormats = options?.outputFormat?.trim?.().split(',').map((format) => { return format?.trim?.(); }).filter((format) => { return format?.length && (format !== 'none'); });
-		if(!outputFormats.length) {
-			if(execMode === 'api')
-				logger?.error?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
-			else
-				logger?.fail?.(`No valid output formats specified for storing generated release notes. Skipping operation`);
-
-			debug(`no valid output formats specified for storing generated release notes - skipping operation`);
-			return;
-		}
-
-		if(outputFormats.includes('all'))
-			outputFormats = ['json', 'pdf'];
-
-
-		for(let idx = 0; idx < outputFormats.length; idx++) {
-			const thisOutputFormat = outputFormats[idx];
-			switch (thisOutputFormat) {
-				case 'json':
-					await this?._storeJsonReleaseNotes(options, logger, releaseData);
-					break;
-
-				case 'pdf':
-					await this?._storePdfReleaseNotes(options, logger, releaseData);
-					break;
-
-				default:
-					if(execMode === 'api')
-						logger?.error?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
-					else
-						logger?.fail?.(`Invalid output format specified for storing generated release notes: ${thisOutputFormat}`);
-
-					debug(`invalid output format specified for storing generated release notes - ${thisOutputFormat}`);
-					break;
-			}
-		}
-
-		// Finally, return..
-		if(execMode === 'api')
-			logger?.info?.(`Stored the release notes @ ${options?.outputPath}`);
-		else
-			logger?.succeed?.(`Stored the release notes @ ${options?.outputPath}`);
-
-		debug(`stored the release notes`);
+	async _restoreCode(ctxt, task) {
+		await ctxt?.options?.git?.stash?.(['pop']);
+		task.title = 'Restore code: Done.';
 		return;
 	}
 
@@ -1026,364 +617,485 @@ class ReleaseCommandClass {
 	 * @function
 	 * @instance
 	 * @memberof	ReleaseCommandClass
-	 * @name		_generateReleaseNotesPerRemote
+	 * @name		_summarize
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} git - Git client instance returned by the _initializeGit method
-	 * @param		{string} remote - The remote for which the release notes should be generated
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{string} The generated release notes for this release.
+	 * @return		{null} Nothing.
 	 *
-	 * @summary		Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.
+	 * @summary  	Print success if everything went through, else print error information.
 	 *
 	 */
-	async _generateReleaseNotesPerRemote(options, logger, git, remote) {
-		// Step 1: Get upstream repository info to use for getting required details...
-		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', remote]);
+	async _summarize(ctxt, task) {
+		if(this.#execMode !== 'cli') {
+			if(ctxt?.execError)
+				ctxt?.options?.logger?.error?.(ctxt?.execError);
+			else
+				ctxt?.options?.logger?.info?.(`Release: Done`);
 
-		const hostedGitInfo = require('hosted-git-info');
-		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
-		repository.project = repository?.project?.replace?.('.git\n', '');
-
-		// Step 2: Get the last release for the repository
-		let gitHostWrapper = null;
-		if(repository?.type === 'github') {
-			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
-			gitHostWrapper = new GitHubWrapper(options?.githubToken);
+			return;
 		}
 
-		if(repository?.type === 'gitlab') {
-			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
-			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
+		if(!ctxt?.execError) {
+			task.title = `Release: Done!`;
+			return;
 		}
 
-		const lastRelease = await gitHostWrapper.fetchReleaseInformation(repository);
+		task.title = `Release process had errors:`;
+		setTimeout?.(() => {
+			console?.error?.(`\n      Message:${ctxt?.execError?.message}\n      Stack:${ctxt?.execError?.stack?.replace(/\\n/g, `\n      `)}\n\n`);
+		}, 1000);
+	}
+	// #endregion
 
-		// Step 3: Get the last released commit, and the most recent tag / specified tag commit
-		let lastReleasedCommit = null;
-		if(lastRelease) {
-			lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
-			lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		let lastTag = await git?.tag?.(['--sort=-creatordate']);
-		// If a specific tag name is not given, use the commit associated with the last tag
-		if(options?.tag === '')
-			lastTag = lastTag?.split?.('\n')?.shift?.()?.replace?.(/\\n/g, '')?.trim?.();
-		// Otherwise, use the commit associated with the specified tag
-		else
-			lastTag = lastTag?.split?.('\n')?.filter?.((tagName) => { return tagName?.replace?.(/\\n/g, '')?.trim?.() === options?.tag; })?.shift()?.replace?.(/\\n/g, '')?.trim();
-
-		let lastCommit = null;
-		if(lastTag) {
-			lastCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
-			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
-		}
-
-		// Step 4: Get the Git Log events from the commit of the last release to the commit of the last tag
+	// #region Git Log processing methods
+	async _fetchGitLogs(git, from, to) {
 		let gitLogsInRange = null;
-		if(lastReleasedCommit && lastCommit)
+
+		if(from && to)
 			gitLogsInRange = await git?.log?.({
-				'from': lastReleasedCommit,
-				'to': lastCommit
+				'from': from,
+				'to': to
 			});
 
-		if(!lastReleasedCommit && lastCommit)
+		if(!from && to)
 			gitLogsInRange = await git?.log?.({
-				'to': lastCommit
+				'to': to
 			});
 
-		if(!lastReleasedCommit && !lastCommit)
+		if(from && !to)
+			gitLogsInRange = await git?.log?.({
+				'from': from
+			});
+
+		if(!from && !to)
 			gitLogsInRange = {
 				'all': []
 			};
 
-		// Step 5: Filter the Git Logs - keep only the ones relevant to the release notes (features, bug fixes, and documentation)
-		const dateFormat = require('date-fns/format');
+		return gitLogsInRange;
+	}
 
-		const relevantGitLogs = [];
-		gitLogsInRange?.all?.forEach?.((commitLog) => {
-			const commitDate = dateFormat(new Date(commitLog?.date), 'dd-MMM-yyyy');
+	async _filterGitLogs(ctxt, task) {
+		try {
+			const gitLogsInRange = ctxt?.options?.gitLogsInRange;
+			const relevantGitLogs = [];
 
-			// eslint-disable-next-line curly
-			if(commitLog?.message?.startsWith?.('feat') || commitLog?.message?.startsWith?.('fix') || commitLog?.message?.startsWith?.('docs')) {
-				relevantGitLogs?.push?.({
-					'hash': commitLog?.hash,
-					'date': commitDate,
-					'message': commitLog?.message,
-					'author_name': commitLog?.author_name,
-					'author_email': commitLog?.author_email
-				});
-			}
-
-			const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace?.(/\\n/g, '\n')?.split?.('\n');
-			commitLogBody?.forEach?.((commitBody) => {
-				// eslint-disable-next-line curly
-				if(commitBody?.startsWith?.('feat') || commitBody?.startsWith?.('fix') || commitBody?.startsWith?.('docs')) {
+			gitLogsInRange?.all?.forEach?.((commitLog) => {
+				if(commitLog?.message?.startsWith?.('feat(') ||
+					commitLog?.message?.startsWith?.('feat:') ||
+					commitLog?.message?.startsWith?.('fix(') ||
+					commitLog?.message?.startsWith?.('fix:') ||
+					commitLog?.message?.startsWith?.('docs(') ||
+					commitLog?.message?.startsWith?.('docs:')
+				) {
 					relevantGitLogs?.push?.({
 						'hash': commitLog?.hash,
-						'date': commitDate,
-						'message': commitBody?.trim?.(),
+						'date': commitLog?.date,
+						'message': commitLog?.message,
 						'author_name': commitLog?.author_name,
 						'author_email': commitLog?.author_email
 					});
 				}
+
+				const commitLogBody = commitLog?.body?.replace?.(/\\r\\n/g, '\n')?.replace(/\\n/g, '\n')?.split?.('\n');
+				commitLogBody?.forEach?.((commitBody) => {
+					if(commitBody?.startsWith?.('feat(') ||
+						commitBody?.startsWith?.('feat:') ||
+						commitBody?.startsWith?.('fix(') ||
+						commitBody?.startsWith?.('fix:') ||
+						commitBody?.startsWith?.('docs(') ||
+						commitBody?.startsWith?.('docs:')
+					) {
+						relevantGitLogs.push?.({
+							'hash': commitLog?.hash,
+							'date': commitLog?.date,
+							'message': commitBody?.trim(),
+							'author_name': commitLog?.author_name,
+							'author_email': commitLog?.author_email
+						});
+					}
+				});
 			});
-		});
 
-		// Step 6: Fetch Author information for each of the relevant Git Log events
-		const contributorSet = {};
-		let authorProfiles = [];
+			ctxt.options.gitLogsInRange = relevantGitLogs;
+			task.title = 'Filter git log events: Done';
+		}
+		catch(err) {
+			ctxt.options.gitLogsInRange = [];
+			task.title = 'Filter git log events: Error';
 
-		relevantGitLogs?.forEach?.((commitLog) => {
-			if(!Object.keys(contributorSet)?.includes?.(commitLog?.['author_email'])) {
-				contributorSet[commitLog['author_email']] = commitLog?.['author_name'];
-				authorProfiles?.push?.(gitHostWrapper?.fetchCommitAuthorInformation?.(repository, commitLog));
+			ctxt.execError = err;
+		}
+	}
+	// #endregion
+
+	// #region Changelog generation methods
+	async _fetchGitLogsForChangelog(ctxt, task) {
+		try {
+			const git = ctxt?.options?.git;
+
+			// Step 1: Get the last tag, the commit for the last tag, and the last commit
+			let lastTag = await git?.tag?.(['--sort=-creatordate']);
+			lastTag = lastTag?.split?.('\n')?.shift()?.replace?.(/\\n/g, '')?.trim?.();
+
+			let lastTaggedCommit = null;
+			if(lastTag) {
+				lastTaggedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
+				lastTaggedCommit = lastTaggedCommit?.replace?.(/\\n/g, '')?.trim?.();
 			}
-		});
 
-		authorProfiles = await Promise?.allSettled?.(authorProfiles);
-		authorProfiles = authorProfiles.map((authorProfile) => {
-			return authorProfile?.value;
-		})
-		.filter((authorProfile) => {
-			return !!authorProfile?.email?.trim?.()?.length;
-		});
+			let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
+			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
 
-		// Step 7: Bucket the Git Log events based on the Conventional Changelog fields
-		const featureSet = [];
-		const bugfixSet = [];
-		const documentationSet = [];
+			// Step 2: Get the Git Log events from the last commit to the commit of the last tag
+			ctxt.options.gitLogsInRange = await this?._fetchGitLogs?.(git, lastTaggedCommit, lastCommit);
+			task.title = 'Fetch git log events: Done';
+		}
+		catch(err) {
+			ctxt.options.gitLogsInRange = null;
+			task.title = 'Fetch git log events: Error';
 
-		const humanizeString = require('humanize-string');
-		relevantGitLogs?.forEach?.((commitLog) => {
-			const commitObject = {
-				'hash': commitLog?.hash,
-				'component': '',
-				'message': commitLog?.message,
-				'author_name': commitLog?.['author_name'],
-				'author_email': commitLog?.['author_email'],
-				'author_profile': authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
-				'date': commitLog?.date
+			ctxt.execError = err;
+		}
+	}
+
+	async _formatGitLogsForChangelog(ctxt, task) {
+		try {
+			const git = ctxt?.options?.git;
+			const relevantGitLogs = ctxt?.options?.gitLogsInRange;
+
+			// Step 1: Get the upstream to use...
+			const upstreamRemoteList = ctxt?.options?.upstream;
+			const upstreamForLinks = upstreamRemoteList?.shift?.();
+
+			// Step 2: Get the upstream type...
+			const hostedGitInfo = require('hosted-git-info');
+			const gitRemote = await git?.remote?.(['get-url', '--push', upstreamForLinks]);
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
+
+			// Step 3: Instantiate the relevant Git Host Wrapper
+			const GitHostWrapper = require(`./../git_host_utilities/${repository.type}`).GitHostWrapper;
+			const gitHostWrapper = new GitHostWrapper(ctxt?.options?.githubToken);
+
+			// Step 4: Convert the relevant Git Logs into a textual array, and add links to the hosted commit hash for insertion into the file
+			const changeLogText = [`#### CHANGE LOG`];
+			const processedDates = [];
+
+			const dateFormat = require('date-fns/format');
+			relevantGitLogs?.forEach?.((commitLog) => {
+				const commitDate = dateFormat?.(new Date(commitLog?.date), 'dd-MMM-yyyy');
+				if(!processedDates?.includes?.(commitDate)) {
+					processedDates?.push?.(commitDate);
+					changeLogText?.push?.(`\n\n##### ${commitDate}`);
+				}
+
+				const commitLink = gitHostWrapper?.getCommitLink?.(repository, commitLog);
+				changeLogText?.push?.(`\n${commitLog?.message} ([${commitLog?.hash}](${commitLink})`);
+			});
+
+			ctxt.options.changelogText = changeLogText;
+			task.title = 'Format git log events: Done';
+		}
+		catch(err) {
+			ctxt.options.changelogText = null;
+			task.title = 'Format git log events: Error';
+
+			ctxt.execError = err;
+		}
+	}
+
+	async _modifyChangelog(ctxt, task) {
+		const path = require('path');
+		const prependFile = require('prepend-file');
+		const replaceInFile = require('replace-in-file');
+
+		try {
+			const changeLogText = ctxt?.options?.changelogText;
+			while(changeLogText?.length) {
+				const thisChangeSet = [];
+
+				// Step 1: Get all Git Logs for a particular date
+				let thisChangeLog = changeLogText?.pop?.();
+				while(changeLogText?.length && !thisChangeLog?.startsWith?.(`\n\n####`)) {
+					thisChangeSet?.unshift?.(thisChangeLog);
+					thisChangeLog = changeLogText?.pop?.();
+				}
+
+				thisChangeSet?.unshift?.(thisChangeLog);
+
+				// Step 2: Add to existing entries for that date, if any already present in the file
+				const replaceOptions = {
+					'files': path?.join?.(ctxt?.options?.currentWorkingDirectory, 'CHANGELOG.md'),
+					'from': thisChangeLog,
+					'to': thisChangeSet?.join?.(`\n`)
+				};
+
+				// If the file has changed, continue to start processing the next date entries
+				let changelogResult = await replaceInFile?.(replaceOptions);
+				if(changelogResult?.[0]?.['hasChanged'])
+					continue;
+
+				// File hasn't changed, and there are no more relevant Git Logs. Break
+				if(!changeLogText?.length)
+					continue;
+
+				// Step 3: File hasn't changed, but there are relevant Git Logs? That date is new
+				// So simply add everything remaining to the top of the CHANGELOG
+				while(thisChangeSet?.length) changeLogText?.push?.(thisChangeSet?.shift?.());
+				replaceOptions['from'] = changeLogText?.[0];
+				replaceOptions['to'] = `${changeLogText?.join?.('\n')}\n`;
+
+				changelogResult = await replaceInFile?.(replaceOptions);
+				if(changelogResult?.[0]?.['hasChanged'])
+					break;
+
+				// Step 4: The last resort... simply prepend everything
+				// This should happen only if the CHANGELOG.md file is absolutely empty
+				await prependFile?.(path.join(ctxt?.options?.currentWorkingDirectory, 'CHANGELOG.md'), `${changeLogText?.join?.('\n')}\n`);
+				break;
+			}
+
+			task.title = 'Create / Modify changelog: Done';
+		}
+		catch(err) {
+			task.title = 'Create / Modify changelog: Error';
+			ctxt.execError = err;
+		}
+	}
+
+	async _commitChangelog(ctxt, task) {
+		try {
+			const path = require('path');
+			const projectPackageJson = path.join(ctxt?.options?.currentWorkingDirectory, 'package.json');
+			const pkg = require(projectPackageJson);
+
+			const git = ctxt?.options?.git;
+			let trailerMessages = await git?.raw?.('interpret-trailers', path.join(__dirname, '../.gitkeep'));
+			trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
+
+			const consolidatedMessage = `Changelog for release ${pkg?.version}\n${trailerMessages ?? ''}`;
+
+			await git?.add?.('.');
+			await git?.commit?.(consolidatedMessage, null, {
+				'--all': true,
+				'--allow-empty': true,
+				'--no-verify': true,
+				'--signoff': true
+			});
+
+			task.title = 'Commit changelog: Done';
+		}
+		catch(err) {
+			task.title = 'Commit changelog: Error';
+			ctxt.execError = err;
+		}
+	}
+
+	_cleanupChangelog(ctxt, task) {
+		ctxt.options.changelogText = null;
+		ctxt.options.gitLogsInRange = null;
+		task.title = 'Clean up: Done';
+
+		return;
+	}
+	// #endregion
+
+	// #region Release Generation Methods
+	async _fetchGitLogsForRelease(ctxt, task) {
+		try {
+			const git = ctxt?.options?.git;
+
+			// Step 1: Get the repo info for the currentReleaseUpstream
+			const gitRemote = await git?.remote?.(['get-url', '--push', ctxt?.options?.currentReleaseUpstream]);
+
+			const hostedGitInfo = require('hosted-git-info');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
+
+			// Step 2: Instantiate the relevant Git Host Wrapper
+			const GitHostWrapper = require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
+			const gitHostWrapper = new GitHostWrapper(ctxt?.options?.[`${repository?.type}Token`]);
+			const lastRelease = await gitHostWrapper?.fetchReleaseInformation?.(repository);
+
+			// Step 3: Get the commit associated with that last release, if there is one
+			let lastReleasedCommit = null;
+			if(lastRelease) {
+				lastReleasedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastRelease?.tag}`]);
+				lastReleasedCommit = lastReleasedCommit?.replace?.(/\\n/g, '')?.trim?.();
+			}
+
+			// Step 4: Get the commit associated with either the last tag, or the tag specified in the options
+			let lastTag = ctxt?.options?.useTag ?? '';
+			if(!lastTag?.length) {
+				lastTag = await git?.tag?.(['--sort=-creatordate']);
+				lastTag = lastTag?.split?.(`\n`)?.shift?.()?.trim?.();
+			}
+
+			let lastTaggedCommit = null;
+			if(lastTag?.length) {
+				lastTaggedCommit = await git?.raw?.(['rev-list', '-n', '1', `tags/${lastTag}`]);
+				lastTaggedCommit = lastTaggedCommit?.replace?.(/\\n/g, '')?.trim?.();
+			}
+
+			ctxt.options.gitLogsInRange = await this?._fetchGitLogs(git, lastReleasedCommit, lastTaggedCommit);
+			task.title = 'Fetch git logs for release: Done';
+		}
+		catch(err) {
+			task.title = 'Fetch git logs for release: Error';
+
+			ctxt.options.gitLogsInRange = {
+				'all': []
 			};
 
-			let set = null;
-			if(commitLog?.message?.startsWith?.('feat')) {
-				commitObject.message = commitObject?.message?.replace?.('feat', '');
-				set = featureSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('fix')) {
-				commitObject.message = commitObject?.message?.replace?.('fix', '');
-				set = bugfixSet;
-			}
-
-			if(commitLog?.message?.startsWith?.('docs')) {
-				commitObject.message = commitObject?.message?.replace?.('docs', '');
-				set = documentationSet;
-			}
-
-			if(!commitObject?.message?.startsWith?.('(') && !commitObject?.message?.startsWith?.(':'))
-				return;
-
-			if(commitObject?.message?.startsWith?.('(')) {
-				const componentClose = commitObject?.message?.indexOf?.(':') - 2;
-				commitObject.component = commitObject?.message?.substr?.(1, componentClose);
-
-				commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
-			}
-
-			// eslint-disable-next-line curly
-			if(commitObject?.message?.startsWith?.(':')) {
-				commitObject.message = commitObject?.message?.substr?.(1);
-			}
-
-			commitObject.message = humanizeString?.(commitObject?.message);
-			set?.push?.(commitObject);
-		});
-
-		// Step 8: Compute if this is a pre-release, or a proper release
-		const path = require('path');
-		const semver = require('semver');
-
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const { version } = require(projectPackageJson);
-
-		if(!version) {
-			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-			throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
-		}
-		if(!semver.valid(version)) {
-			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
-		}
-
-		const parsedVersion = semver?.parse?.(version);
-		const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
-
-		// Step 9: Generate the release notes
-		const releaseData = {
-			'REPO': repository,
-			'RELEASE_NAME': options?.releaseName,
-			'RELEASE_TYPE': releaseType,
-			'RELEASE_TAG': lastTag,
-			'NUM_FEATURES': featureSet?.length,
-			'NUM_FIXES': bugfixSet?.length,
-			'NUM_DOCS': documentationSet?.length,
-			'NUM_AUTHORS': authorProfiles?.length,
-			'FEATURES': featureSet,
-			'FIXES': bugfixSet,
-			'DOCS': documentationSet,
-			'AUTHORS': authorProfiles
-		};
-
-		let releaseMessagePath = options?.releaseMessage ?? '';
-		if(releaseMessagePath === '') releaseMessagePath = './../templates/release-notes.ejs';
-		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(__dirname, releaseMessagePath);
-
-		const promises = require('bluebird');
-		const ejs = promises?.promisifyAll?.(require('ejs'));
-
-		releaseData['RELEASE_NOTES'] = await ejs?.renderFileAsync?.(releaseMessagePath, releaseData, {
-			'async': true,
-			'cache': false,
-			'debug': false,
-			'rmWhitespace': false,
-			'strict': false
-		});
-
-		// Step 10: Clean up a bit...
-		delete releaseData['REPO']['protocols'];
-		delete releaseData['REPO']['treepath'];
-		delete releaseData['REPO']['auth'];
-		delete releaseData['REPO']['committish'];
-		delete releaseData['REPO']['default'];
-		delete releaseData['REPO']['opts'];
-
-		// Finally, return...
-		return releaseData;
-	}
-
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	ReleaseCommandClass
-	 * @name		_storeJsonReleaseNotes
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} releaseData - Generated release notes
-	 *
-	 * @return		{null} Nothing.
-	 *
-	 * @summary		Stores the release notes in JSON format at the location specified in the options
-	 *
-	 */
-	async _storeJsonReleaseNotes(options, logger, releaseData) {
-		// eslint-disable-next-line node/no-missing-require
-		const fs = require('fs/promises');
-		const mkdirp = require('mkdirp');
-		const path = require('path');
-
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList?.[idx];
-
-			const upstreamReleaseData = JSON?.parse?.(safeJsonStringify?.(releaseData?.[thisUpstreamRemote]));
-			delete upstreamReleaseData['RELEASE_NOTES'];
-
-			await mkdirp(options?.outputPath);
-
-			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${upstreamReleaseData['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.json`);
-			await fs?.writeFile?.(filePath, safeJsonStringify?.(upstreamReleaseData, null, '\t'));
+			ctxt.releaseError = err;
 		}
 	}
 
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	ReleaseCommandClass
-	 * @name		_storePdfReleaseNotes
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} releaseData - Generated release notes
-	 *
-	 * @return		{null} Nothing.
-	 *
-	 * @summary		Stores the release notes in PDF format at the location specified in the options
-	 *
-	 */
-	async _storePdfReleaseNotes(options, logger, releaseData) {
-		// eslint-disable-next-line node/no-missing-require
-		const fs = require('fs/promises');
-		const mkdirp = require('mkdirp');
-		const path = require('path');
+	async _fetchAuthorInformationForRelease(ctxt, task) {
+		try {
+			const git = ctxt?.options?.git;
 
-		const upstreamRemoteList = options?.upstream?.split?.(',')?.map?.((remote) => { return remote?.trim?.(); })?.filter?.((remote) => { return !!remote.length; });
-		for(let idx = 0; idx < upstreamRemoteList.length; idx++) {
-			const thisUpstreamRemote = upstreamRemoteList[idx];
+			// Step 1: Get the repo info for the currentReleaseUpstream
+			const gitRemote = await git?.remote?.(['get-url', '--push', ctxt?.options?.currentReleaseUpstream]);
 
-			const { mdToPdf } = require('md-to-pdf');
-			const upstreamReleaseData = releaseData?.[thisUpstreamRemote]?.['RELEASE_NOTES'];
-			const pdf = await mdToPdf({ 'content': upstreamReleaseData });
+			const hostedGitInfo = require('hosted-git-info');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
 
-			await mkdirp(options?.outputPath);
+			// Step 2: Instantiate the relevant Git Host Wrapper
+			const GitHostWrapper = require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
+			const gitHostWrapper = new GitHostWrapper(ctxt?.options?.[`${repository?.type}Token`]);
 
-			const filePath = path?.join?.(options?.outputPath, `${thisUpstreamRemote}-release-notes-${releaseData?.[thisUpstreamRemote]?.['RELEASE_NAME'].toLowerCase().replace(/ /g, '-')}.pdf`);
-			await fs.writeFile(filePath, pdf.content);
+			const contributorSet = [];
+			let authorProfiles = [];
+
+			ctxt?.options?.relevantGitLogs?.forEach?.((commitLog) => {
+				if(!contributorSet?.includes?.(commitLog?.['author_email'])) {
+					contributorSet?.push?.(commitLog['author_email']);
+					authorProfiles?.push?.(gitHostWrapper?.fetchCommitAuthorInformation?.(repository, commitLog));
+				}
+			});
+
+			authorProfiles = await Promise?.allSettled?.(authorProfiles);
+			authorProfiles = authorProfiles.map((authorProfile) => {
+				return authorProfile?.value;
+			})
+			.filter((authorProfile) => {
+				return !!authorProfile?.email?.trim?.()?.length;
+			});
+
+			ctxt.options.authorProfiles = authorProfiles;
+			task.title = 'Fetch author information for the relevant git log events: Done';
 		}
+		catch(err) {
+			task.title = 'Fetch author information for the relevant git log events: Error';
+
+			ctxt.options.authorProfiles = [];
+			ctxt.releaseError = err;
+		}
+	}
+	// #endregion
+
+	// #region Private Methods
+	async _sleep(ms) {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		});
 	}
 	// #endregion
 
 	// #region Private Fields
+	#execMode = null;
 	// #endregion
 }
 
 // Add the command to the cli
-let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	if(!commandObj) commandObj = new ReleaseCommandClass(configuration?.release);
+	const Commander = require('commander');
+	const release = new Commander.Command('release');
 
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
-	const projectPackageJson = path.join(process.cwd(), 'package.json');
+	const projectPackageJson = path.join((configuration?.release?.currentWorkingDirectory?.trim?.() ?? process.cwd()), 'package.json');
 	const pkg = require(projectPackageJson);
 
-	commanderProcess
-		.command('release')
-		.option('-c, --commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
-		.option('-ght, --github-token <token>', 'Token to use for creating the release on GitHub', process.env.GITHUB_TOKEN)
-		.option('-glt, --gitlab-token <token>', 'Token to use for creating the release on GitLab', process.env.GITLAB_TOKEN)
+	// Get the dynamic template filler - use it for configuration substitution
+	const fillTemplate = require('es6-dynamic-template');
 
-		.option('-m, --message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.message ?? '')
+	if(configuration?.release?.currentWorkingDirectory) {
+		configuration.release.currentWorkingDirectory = fillTemplate?.(configuration?.release?.currentWorkingDirectory, pkg);
+	}
 
-		.option('--dont-tag', 'Don\'t tag now. Use the last tag when cutting this release', configuration?.release?.dontTag ?? false)
-		.option('--tag <name>', 'Use the (existing) tag specified when cutting this release', configuration?.release?.tag?.trim() ?? '')
-		.option('-tn, --tag-name <name>', 'Tag Name to use for this release', `V${pkg.version}`)
-		.option('-tm, --tag-message <message>', 'Message to use when creating the tag.', `The spaghetti recipe at the time of releasing V${pkg.version}`)
+	if(configuration?.release?.commitMessage) {
+		configuration.release.commitMessage = fillTemplate?.(configuration?.release?.commitMessage, pkg);
+	}
 
-		.option('--dont-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.dontRelease ?? false)
-		.option('-rn, --release-name <name>', 'Name to use for this release', `V${pkg.version} Release`)
-		.option('-rm, --release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage ?? '')
+	if(configuration?.release?.useTag) {
+		configuration.release.useTag = fillTemplate?.(configuration?.release?.useTag, pkg);
+	}
 
-		.option('-of, --output-format <json|pdf|all>', 'Format(s) to output the generated release notes', configuration?.release?.outputFormat ?? 'none')
-		.option('-op, --output-path <release notes path>', 'Path to store the generated release notes at', configuration?.release?.outputPath ?? '.')
+	if(configuration?.release?.tagName) {
+		configuration.release.tagName = fillTemplate?.(configuration?.release?.tagName, pkg);
+	}
 
-		.option('-u, --upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream ?? 'upstream')
-		.action(commandObj.execute.bind(commandObj));
+	if(configuration?.release?.tagMessage) {
+		configuration.release.tagMessage = fillTemplate?.(configuration?.release?.tagMessage, pkg);
+	}
 
+	if(configuration?.release?.releaseName) {
+		configuration.release.releaseName = fillTemplate?.(configuration?.release?.releaseName, pkg);
+	}
+
+	if(configuration?.release?.releaseMessage) {
+		configuration.release.releaseMessage = fillTemplate?.(configuration?.release?.releaseMessage, pkg);
+	}
+
+	if(configuration?.release?.outputPath) {
+		configuration.release.outputPath = fillTemplate?.(configuration?.release?.outputPath, pkg);
+	}
+
+	// Setup the command
+	release?.alias?.('rel');
+	release
+		?.option?.('--current-working-directory <folder>', 'Path to the current working directory', configuration?.release?.currentWorkingDirectory?.trim?.() ?? process?.cwd?.())
+
+		?.option?.('--commit', 'Commit code if branch is dirty', configuration?.release?.commit ?? false)
+		?.option?.('--commit-message', 'Commit message if branch is dirty. Ignored if --commit is not passed in', configuration?.release?.commitMessage ?? '')
+
+		?.option?.('--no-tag', 'Don\'t tag now. Use last tag when cutting this release', configuration?.release?.tag ?? false)
+		?.option?.('--use-tag <name>', 'Use the (existing) tag specified when cutting this release', configuration?.release?.useTag?.trim?.() ?? '')
+		?.option?.('--tag-name <name>', 'Tag Name to use for this release', configuration?.release?.tagName?.trim?.() ?? `V${pkg.version}`)
+		?.option?.('--tag-message <message>', 'Message to use when creating the tag.', configuration?.release?.tagMessage?.trim?.() ?? `The spaghetti recipe at the time of releasing V${pkg.version}`)
+
+		?.option?.('--no-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.release ?? false)
+		?.option?.('--release-name <name>', 'Name to use for this release', configuration?.release?.releaseName?.trim?.() ?? `V${pkg.version} Release`)
+		?.option?.('--release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage?.trim?.() ?? '')
+
+		?.option?.('--output-format <json|pdf|all>', 'Format(s) to output the generated release notes', configuration?.release?.outputFormat?.trim?.() ?? 'none')
+		?.option?.('--output-path <release notes path>', 'Path to store the generated release notes at', configuration?.release?.outputPath?.trim?.() ?? '.')
+
+		?.option?.('--upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream?.trim?.() ?? 'upstream')
+
+		?.option?.('--github-token <token>', 'Token to use for creating the release on GitHub', configuration?.release?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN)
+		?.option?.('--gitlab-token <token>', 'Token to use for creating the release on GitLab', configuration?.release?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN)
+	;
+
+	const commandObj = new ReleaseCommandClass({ 'execMode': 'cli' });
+	release?.action?.(commandObj?.execute?.bind?.(commandObj, configuration?.release));
+
+	// Add it to the mix
+	commanderProcess?.addCommand?.(release);
 	return;
 };
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	if(!commandObj) commandObj = new ReleaseCommandClass({ 'execMode': 'api' });
+	const commandObj = new ReleaseCommandClass({ 'execMode': 'api' });
 	return {
 		'name': 'release',
-		'method': commandObj.execute.bind(commandObj)
+		'method': commandObj?.execute?.bind?.(commandObj)
 	};
 };
