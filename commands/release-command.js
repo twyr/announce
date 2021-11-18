@@ -91,12 +91,39 @@ class ReleaseCommandClass {
 	 *
 	 */
 	_mergeOptions(configOptions, cliOptions) {
+		const path = require('path');
 		const mergedOptions = Object?.assign?.({}, configOptions, cliOptions);
+
+		// Process upstreams
 		mergedOptions.upstream = mergedOptions?.upstream
 			?.split?.(',')
 			?.map?.((remote) => { return remote?.trim?.(); })
 			?.filter?.((remote) => { return !!remote.length; });
 
+		// Process release notes storage output formats
+		mergedOptions.outputFormat = mergedOptions?.outputFormat
+			?.split?.(',')
+			?.map?.((format) => { return format?.trim?.(); })
+			?.filter?.((format) => { return !!format.length; });
+
+		if(mergedOptions?.outputFormat?.includes?.('all'))
+			mergedOptions.outputFormat = ['json', 'pdf'];
+
+		// Process release notes storage path
+		let outputPath = mergedOptions?.outputPath?.trim?.() ?? '';
+		if(outputPath === '') outputPath = './buildresults/release-notes';
+		if(!path.isAbsolute(outputPath)) outputPath = path.join(mergedOptions?.currentWorkingDirectory, outputPath);
+
+		mergedOptions.outputPath = outputPath;
+
+		// Process release notes ejs template path
+		let releaseMessagePath = mergedOptions?.releaseMessage ?? '';
+		if(releaseMessagePath === '') releaseMessagePath = './templates/release-notes.ejs';
+		if(!path.isAbsolute(releaseMessagePath)) releaseMessagePath = path.join(mergedOptions?.currentWorkingDirectory, releaseMessagePath);
+
+		mergedOptions.releaseMessage = releaseMessagePath;
+
+		// Process old tag name
 		mergedOptions.useTag = mergedOptions?.useTag?.trim?.();
 		return mergedOptions;
 	}
@@ -514,10 +541,8 @@ class ReleaseCommandClass {
 								return `No relevant git logs.`;
 							}
 						}, {
-							'title': `Generating Release Notes...`,
-							'task': (subTaskCtxt, subTaskTask) => {
-								subTaskTask.title = `Generate Release Notes: Done`;
-							},
+							'title': `Generating release notes...`,
+							'task': this?._generateReleaseNotes?.bind(this),
 							'skip': (subTaskCtxt) => {
 								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
 								if(ctxt?.options?.gitLogsInRange?.length)
@@ -529,21 +554,21 @@ class ReleaseCommandClass {
 								return `No relevant git logs, or no information about their authors.`;
 							}
 						}, {
-							'title': `Pushing Release...`,
-							'task': (subTaskCtxt, subTaskTask) => {
-								subTaskTask.title = `Push Release: Done`;
-							},
+							'title': `Pushing release...`,
+							'task': this?._createRelease?.bind?.(this),
 							'skip': (subTaskCtxt) => {
 								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
+
 								return false;
 							}
 						}, {
-							'title': `Storing Release Notes...`,
-							'task': (subTaskCtxt, subTaskTask) => {
-								subTaskTask.title = `Store Release Notes: Done`;
-							},
+							'title': `Storing release notes...`,
+							'task': this?._storeReleaseNotes?.bind?.(this),
 							'skip': (subTaskCtxt) => {
 								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+								if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
+
 								return false;
 							}
 						}, {
@@ -551,12 +576,9 @@ class ReleaseCommandClass {
 							'task': (subTaskCtxt, subTaskTask) => {
 								ctxt.execError = subTaskCtxt?.releaseError;
 
-								setTimeout((currentUpstream, gitLogs, authors) => {
-									console.log(`\n\n\nUpstream: ${currentUpstream}\nGit Logs: ${JSON.stringify(gitLogs, null, '\t')}\n\nAuthors: ${JSON.stringify(authors, null, '\t')}`);
-								}, 5000, upstream, ctxt?.options?.gitLogsInRange, ctxt?.options?.authorProfiles);
-
 								ctxt.options.gitLogsInRange = null;
 								ctxt.options.authorProfiles = null;
+								ctxt.options.releaseData = null;
 
 								subTaskTask.title = `Clean up: Done`;
 								thisTask.title = ctxt?.execError ? `${upstream} release: Error` : `${upstream} release: Done`;
@@ -972,7 +994,7 @@ class ReleaseCommandClass {
 			const contributorSet = [];
 			let authorProfiles = [];
 
-			ctxt?.options?.relevantGitLogs?.forEach?.((commitLog) => {
+			ctxt?.options?.gitLogsInRange?.forEach?.((commitLog) => {
 				if(!contributorSet?.includes?.(commitLog?.['author_email'])) {
 					contributorSet?.push?.(commitLog['author_email']);
 					authorProfiles?.push?.(gitHostWrapper?.fetchCommitAuthorInformation?.(repository, commitLog));
@@ -996,6 +1018,203 @@ class ReleaseCommandClass {
 			ctxt.options.authorProfiles = [];
 			ctxt.releaseError = err;
 		}
+	}
+
+	async _generateReleaseNotes(ctxt, task) {
+		try {
+			// Step 1: Bucket the Git Log events based on the Conventional Changelog fields
+			const featureSet = [];
+			const bugfixSet = [];
+			const documentationSet = [];
+
+			const humanizeString = require('humanize-string');
+			ctxt?.options?.gitLogsInRange?.forEach?.((commitLog) => {
+				const commitObject = {
+					'hash': commitLog?.hash,
+					'component': '',
+					'message': commitLog?.message,
+					'author_name': commitLog?.['author_name'],
+					'author_email': commitLog?.['author_email'],
+					'author_profile': ctxt?.options?.authorProfiles?.filter?.((author) => { return author?.email === commitLog?.author_email; })?.[0]?.['profile'],
+					'date': commitLog?.date
+				};
+
+				let set = null;
+				if(commitLog?.message?.startsWith?.('feat')) {
+					commitObject.message = commitObject?.message?.replace?.('feat', '');
+					set = featureSet;
+				}
+
+				if(commitLog?.message?.startsWith?.('fix')) {
+					commitObject.message = commitObject?.message?.replace?.('fix', '');
+					set = bugfixSet;
+				}
+
+				if(commitLog?.message?.startsWith?.('docs')) {
+					commitObject.message = commitObject?.message?.replace?.('docs', '');
+					set = documentationSet;
+				}
+
+				if(!commitObject?.message?.startsWith?.('(') && !commitObject?.message?.startsWith?.(':'))
+					return;
+
+				if(commitObject?.message?.startsWith?.('(')) {
+					const componentClose = commitObject?.message?.indexOf?.(':') - 2;
+					commitObject.component = commitObject?.message?.substr?.(1, componentClose);
+
+					commitObject.message = commitObject?.message?.substr?.(componentClose + 3);
+				}
+
+				// eslint-disable-next-line curly
+				if(commitObject?.message?.startsWith?.(':')) {
+					commitObject.message = commitObject?.message?.substr?.(1);
+				}
+
+				commitObject.message = humanizeString?.(commitObject?.message);
+				set?.push?.(commitObject);
+			});
+
+			// Step 2: Compute if this is a pre-release, or a proper release
+			const path = require('path');
+			const semver = require('semver');
+
+			const projectPackageJson = path.join(ctxt?.options?.currentWorkingDirectory, 'package.json');
+			const { version } = require(projectPackageJson);
+
+			if(!version) {
+				throw new Error(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+			}
+
+			if(!semver.valid(version)) {
+				throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+			}
+
+			const parsedVersion = semver?.parse?.(version);
+			const releaseType = parsedVersion?.prerelease?.length ? 'pre-release' : 'release';
+
+			// Step 3: Generate the release notes
+			const gitRemote = await ctxt?.options?.git?.remote?.(['get-url', '--push', ctxt?.options?.currentReleaseUpstream]);
+
+			const hostedGitInfo = require('hosted-git-info');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
+
+			let lastTag = ctxt?.options?.useTag ?? '';
+			if(!lastTag?.length) {
+				lastTag = await ctxt?.options?.git?.tag?.(['--sort=-creatordate']);
+				lastTag = lastTag?.split?.(`\n`)?.shift?.()?.trim?.();
+			}
+
+			const releaseData = {
+				'REPO': repository,
+				'RELEASE_NAME': ctxt?.options?.releaseName,
+				'RELEASE_TYPE': releaseType,
+				'RELEASE_TAG': lastTag,
+				'NUM_FEATURES': featureSet?.length,
+				'NUM_FIXES': bugfixSet?.length,
+				'NUM_DOCS': documentationSet?.length,
+				'NUM_AUTHORS': ctxt?.options?.authorProfiles?.length,
+				'FEATURES': featureSet,
+				'FIXES': bugfixSet,
+				'DOCS': documentationSet,
+				'AUTHORS': ctxt?.options?.authorProfiles
+			};
+
+			const ejs = require('ejs');
+			const releaseMessagePath = ctxt?.options?.releaseMessage ?? '';
+			releaseData['RELEASE_NOTES'] = await ejs?.renderFile?.(releaseMessagePath, releaseData, {
+				'async': true,
+				'cache': false,
+				'debug': false,
+				'rmWhitespace': false,
+				'strict': false
+			});
+
+			ctxt.options.releaseData = releaseData;
+			task.title = 'Generate release notes: Done';
+		}
+		catch(err) {
+			task.title = 'Generate release notes: Error';
+
+			ctxt.options.releaseData = null;
+			ctxt.releaseError = err;
+		}
+	}
+
+	async _createRelease(ctxt, task) {
+		try {
+			// Step 1: Get the repo info for the currentReleaseUpstream
+			const gitRemote = await ctxt?.options?.git?.remote?.(['get-url', '--push', ctxt?.options?.currentReleaseUpstream]);
+
+			const hostedGitInfo = require('hosted-git-info');
+			const repository = hostedGitInfo?.fromUrl?.(gitRemote);
+			repository.project = repository?.project?.replace?.('.git\n', '');
+
+			// Step 2: Instantiate the relevant Git Host Wrapper
+			const GitHostWrapper = require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
+			const gitHostWrapper = new GitHostWrapper(ctxt?.options?.[`${repository?.type}Token`]);
+
+			await gitHostWrapper?.createRelease?.(ctxt?.options?.releaseData);
+			task.title = 'Push release: Done';
+		}
+		catch(err) {
+			task.title = 'Push release: Error';
+			ctxt.releaseError = err;
+		}
+	}
+
+	async _storeReleaseNotes(ctxt, task) {
+		try {
+			const mkdirp = require('mkdirp');
+			await mkdirp(ctxt?.options?.outputPath);
+
+			for(let idx = 0; idx < ctxt?.options?.outputFormat?.length; idx++) {
+				const thisOutputFormat = ctxt?.options?.outputFormat?.[idx];
+				switch (thisOutputFormat) {
+					case 'json':
+						await this?._storeJsonReleaseNotes?.(ctxt);
+						break;
+
+					case 'pdf':
+						await this?._storePdfReleaseNotes?.(ctxt);
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			task.title = 'Store release notes: Done';
+		}
+		catch(err) {
+			task.title = 'Store release notes: Error';
+			ctxt.releaseError = err;
+		}
+	}
+
+	async _storeJsonReleaseNotes(ctxt) {
+		const upstreamReleaseData = JSON?.parse?.(JSON?.stringify?.(ctxt?.options?.releaseData));
+		delete upstreamReleaseData['RELEASE_NOTES'];
+
+		const path = require('path');
+		const filePath = path?.join?.(ctxt?.options?.outputPath, `${ctxt?.options?.currentReleaseUpstream}-release-notes-${upstreamReleaseData?.['RELEASE_NAME']?.toLowerCase?.()?.replace?.(/ /g, '-')}.json`);
+
+		const fs = require('fs/promises');
+		// eslint-disable-next-line security/detect-non-literal-fs-filename
+		await fs?.writeFile?.(filePath, JSON?.stringify?.(upstreamReleaseData, null, '\t'));
+	}
+
+	async _storePdfReleaseNotes(ctxt) {
+		const { mdToPdf } = require('md-to-pdf');
+		const upstreamReleaseData = ctxt?.options?.releaseData;
+		const pdf = await mdToPdf({ 'content': upstreamReleaseData?.['RELEASE_NOTES'] });
+
+		const path = require('path');
+		const filePath = path?.join?.(ctxt?.options?.outputPath, `${ctxt?.options?.currentReleaseUpstream}-release-notes-${upstreamReleaseData?.['RELEASE_NAME']?.toLowerCase?.()?.replace?.(/ /g, '-')}.pdf`);
+
+		const fs = require('fs/promises');
+		// eslint-disable-next-line security/detect-non-literal-fs-filename
+		await fs?.writeFile?.(filePath, pdf?.content);
 	}
 	// #endregion
 
