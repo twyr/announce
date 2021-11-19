@@ -2,7 +2,7 @@
 /**
  * @name		announce.js
  * @file		Main entry point of the Twy'r Announce CLI tool
- * @version		0.9.10-dev.6
+ * @version		0.11.0
  *
  * @author		Vish Desai <shadyvd@hotmail.com>
  * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2021
