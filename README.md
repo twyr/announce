@@ -59,19 +59,16 @@ which takes responsibility only for bumping up the versions, and nothing else. O
 provide functionality (via plugins) to push not only to NPM, but also several other registries/endpoints - see [semantic-release plugins](https://github.com/semantic-release/semantic-release/blob/HEAD/docs/extending/plugins-list.md)
 for example.
 
-For the [Twy'r Project](https://github.com/twyr), neither of these categories of tools is "exactly right" - they provide either too little,
+For the usual projects, neither of these categories of tools is "exactly right" - they provide either too little,
 or too much, functionality. The Announce CLI/Module tries to fill in that "sweet spot" - providing exactly the functionality required.
 
 #### WORKFLOW
-The [Twy'r Project](https://github.com/twyr) development/release workflow consists of the following steps:
-1. Bump version as required
+The [Twy'r Announce](https://github.com/twyr/announce) tool caters to the following development/release workflow:
+1. Bump version at the beginning of the development cycle / sprint / etc.
 1. Create a changelog automatically before tagging
 1. Generate release notes and create a Github/Gitlab release using the tag created in Step #2
 1. Publish the release to NPM
 1. Repeat for the next development/release cycle
-
-Every repository in the project, including this CLI/Module, will adhere to this workflow going forward. The Announce module will be used
-extensively to maintain the versioning, changelog, and release notes - as well as acting as a helper tool to publish to NPM as required.
 
 #### USING THE CLI
 

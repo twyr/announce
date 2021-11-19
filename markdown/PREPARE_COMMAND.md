@@ -10,19 +10,19 @@ In this step, the workflow simply increments the current version of the package
 same series or the next (as defined in the "Version Ladder" - see below).
 
 ##### The Version Ladder
-The "version ladder" from release-to-release is usually defined as:
+The "version ladder" from release-to-release is usually defined as consisting of the following "stages":
 dev => alpha => beta => rc => patch / minor / major => dev(next-version)
 
-Each "stage" in the version ladder is considered a "series" - either "single-step" or
-"multi-step". If the series is "multi-step" (consists of multiple steps), each "step"
+Each "stage" in the version ladder is a "series" - either "single-step" or
+"multi-step". If the series is "multi-step", each "step"
 contains additional version information for unique identification of the "step" within
-the series.
+the stage series.
 
 The dev / alpha / beta / rc series are "multi-step", and therefore, each step
 in the series is identified with the {{series}}.{{step number}} label [dev.0, dev.1,
 alpha.0, etc.]
 
-The patch / minor / major series are considered "single step", and therefore identified
+The patch / minor / major series are "single step", and therefore identified
 with a canonical "semantic version" {{major.minor.patch}} [1.3.5, 2.0.3, etc.]
 
 dev => alpha => beta are usually "private" releases, and are (typically) not available
@@ -35,7 +35,7 @@ as well as to give downstream packages/projects the time needed to make any chan
 by the new version - before the package is actually released.
 
 The patch / minor / major releases are considered "public" releases - in other words, they are
-made available to "everyone" via the package registry and all users are encouraged to upgrade.
+made available to "all" via the NPM package registry and all users are encouraged to upgrade.
 
 Once a "public" release is done & dusted, development for the next set of changes is expected
 to immediately begin - with the next (higher) version number and a "dev" series tag.
@@ -68,17 +68,16 @@ Prepare Command Options:
 
 | Option | Description |
 | --- | --- |
-| -ss, --series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
-| -vl, --version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
-| -if, --ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
+| --current-working-directory | Path to the root of the package / package.json  |
+|   |   |
+| --series | Defines the "stage" in the "version ladder" to increment to. Default is "current", i.e., whichever stage the package is on right now |
+| --version-ladder | Defines the "version ladder" to use. Will pick it from the .announcerc file if found. Default is dev => alpha => beta => rc => patch / minor / major => dev(next-version |
+| --ignore-folders | Comma-separated list of folders to ignore when checking for fils containing the current version string. Default is folders/files ignored in .gitignore |
 
 Global Options inherited by the Prepare Command:
 
 | Option | Description |
 | --- | --- |
-| -d, --debug | Turn debug mode on/off. Default is off. If turned on, use announce:prepare as the debug key |
-| -s, --silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
-| -q, --quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
 | -h, --help | Displays this information. |
 
 ##### Configuration (.announcerc file)
@@ -86,13 +85,11 @@ Global Options inherited by the Prepare Command:
 ```
 {
     'prepare': {
+		'currentWorkingDirectory': 'location of package.json',
+
         'series': 'series to use when incrementing', // Options are current, next, patch, minor, major [default: current]
         'versionLadder': 'version ladder to use for defining the series', // String defining the version ladder [default: 'dev, alpha, beta, rc, patch, minor, major']
-        'ignoreFolders': 'list of folders to ignore', // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
-
-        'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
-        'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-        'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
+        'ignoreFolders': 'list of folders to ignore' // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
     }
 }
 ```
@@ -104,13 +101,11 @@ The prepare command can be integrated into another module, and invoked as:
 ```
 const announce = require('@twyr/announce);
 announce.prepare({
+	'currentWorkingDirectory': 'location of package.json',
+
     'series': 'series to use when incrementing', // Options are current, next, patch, minor, major [default: current]
     'versionLadder': 'version ladder to use for defining the series', // String defining the version ladder [default: 'dev, alpha, beta, rc, patch, minor, major']
     'ignoreFolders': 'list of folders to ignore', // Comma-separated list of folders to ignore when checking for files containing the current version string [default: .gitignore folders/files]
-
-    'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
-    'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false],
 
     'logger': object // Logger instance
 });

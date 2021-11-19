@@ -36,34 +36,33 @@ The release command executes the following steps:
 Release Command Options:
 
 | Option | Description |
+| --current-working-directory | Path to the root of the package / package.json  |
+|   |   |
 | --- | --- |
-| -c, --commit | Commit code if the branch is dirty |
-| -ght, --github-token | Token to use when accessing the release on the GitHub repository |
-| -glt, --gitlab-token | Token to use when accessing the release on the GitLab repository |
+| --commit | Commit code if the branch is dirty |
+| --commit-message | Message to use while committing code. Ignored if commit = false |
 |   |   |
-| -m, --message | Message to use while committing code. Ignored if commit = false |
+| --no-tag | Don't tag now. Use the last created tag when cutting this release |
+| --use-tag | Use the (existing) tag specified when cutting this release |
+| --tag-name | Tag Name to use for this release |
+| --tag-message | Message to use when creating the tag |
 |   |   |
-| --dont-tag | Don't tag now. Use the last created tag when cutting this release |
-| --tag | Use the (existing) tag specified when cutting this release |
-| -tn, --tag-name | Tag Name to use for this release |
-| -tm, --tag-message | Message to use when creating the tag |
+| --no-release | Don't release now. Simply tag and exit |
+| --release-name | Release Name to use for this release |
+| --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
 |   |   |
-| --dont-release | Don't release now. Simply tag and exit |
-| -rn, --release-name | Release Name to use for this release |
-| -rm, --release-message | Path to markdown file containing release notes - CHANGELOG will be embedded into this file at the specified location |
+| --output-format | Format(s) to output the generated release notes |
+| --output-path | 'Path to store the generated release notes at |
 |   |   |
-| -of, --output-format | Format(s) to output the generated release notes' |
-| -op, --output-path | 'Path to store the generated release notes at' |
+| --upstream | Comma separated list of Git remote(s) to push the release to |
 |   |   |
-| -u, --upstream | Comma separated list of Git remote(s) to push the release to |
+| --github-token | Token to use when accessing the release on the GitHub repository |
+| --gitlab-token | Token to use when accessing the release on the GitLab repository |
 
 Global Options inherited by the Release Command:
 
 | Option | Description |
 | --- | --- |
-| -d, --debug | Turn debug mode on/off. Default is off. If turned on, use announce:release as the debug key |
-| -s, --silent | Turns off all logs from the execution. If turned on, overrides the "quiet" option. Default is false. |
-| -q, --quiet | Reduces logging to a bare minimum. Overridden by the "silent" option, if that is enabled. Default is false. |
 | -h, --help | Displays this information. |
 
 ##### Configuration (.announcerc file)
@@ -71,29 +70,27 @@ Global Options inherited by the Release Command:
 ```
 {
     'release': {
+		'currentWorkingDirectory': 'location of package.json',
+
         'commit': true/false, // Default is to stash and un-stash [default: false]
-        'githubToken': 'GITHUB_TOKEN', // default: $GITHUB_TOKEN environment variable
-        'gitlabToken': 'GITLAB_TOKEN', // default: $GITLAB_TOKEN environment variable
+        'commitMessage': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
 
-        'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-
-        'dontTag': true/false, // Use the last created tag when cutting this release [default: false]
-        'tag': 'tag name', // Use the (existing) tag specified when cutting this release  [default: '']
+        'noTag': true/false, // Use the last created tag when cutting this release [default: false]
+        'useTag': 'tag name', // Use the (existing) tag specified when cutting this release  [default: '']
         'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
         'tagMessage': 'tag message', // Message to use while tagging [default: '']
 
-        'dontRelease': true/false, // Don't release now. Simply tag and exit
+        'noRelease': true/false, // Don't release now. Simply tag and exit
         'releaseName': 'release name', // [default: V${package version} Release]
         'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
 
-        'outputFormat': 'format(s) to output generated release notes', // Output the generated release notes in JSON, PDF, or Both formats [default: none]
+        'outputFormat': 'format(s) to output generated release notes', // Output the generated release notes in JSON, PDF, or Both formats [default: all]
         'outputPath': 'path to store the generated release notes at', // Store the generated release notes [default: .]
 
         'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 
-        'debug': true/false, // Enable debug logging as announce:prepare if enabled [default: false]
-        'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-        'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false]
+        'githubToken': 'GITHUB_TOKEN', // Token to use for reading the release details from GitHub [default: $GITHUB_TOKEN environment variable]
+        'gitlabToken': 'GITLAB_TOKEN' // Token to use for reading the release details from GitLab [default: $GITLAB_TOKEN environment variable]
     }
 }
 ```
@@ -105,18 +102,17 @@ The release command can be integrated into another module, and invoked as:
 ```
 const announce = require('@twyr/announce);
 announce.release({
+	'currentWorkingDirectory': 'location of package.json',
+
     'commit': true/false, // Commit code if branch is dirty [default: false]
-    'githubToken': 'XXX', // Token to use for creating the release on GitHub [default: $GITHUB_TOKEN environment variable]
-    'gitlabToken': 'XXX', // Token to use for creating the release on GitLab [default: $GITLAB_TOKEN environment variable]
+    'commitMessage': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
 
-    'message': 'commit message', // Message to use while committing code. Ignored if commit = false [default: '']
-
-    'dontTag': true/false, // Use the last created tag when cutting this release [default: false]
-    'tag': 'tag name', // Use the (existing) tag specified when cutting this release [default: '']
+    'noTag': true/false, // Use the last created tag when cutting this release [default: false]
+    'useTag': 'tag name', // Use the (existing) tag specified when cutting this release [default: '']
     'tagName': 'tag name', // Name of the tag used for this release [default: V${package version}]
     'tagMessage': 'tag message', // Message to use while tagging [default: '']
 
-    'dontRelease': true/false, // Don't release now. Simply tag and exit
+    'noRelease': true/false, // Don't release now. Simply tag and exit
     'releaseName': 'release name', // Name of the release [default: V${package version} Release]
     'releaseMessage': 'path to markdown file containing custom notes for this release', // [default: '']
 
@@ -125,9 +121,8 @@ announce.release({
 
     'upstream': 'remotes-list', // Comma seaparated list of git remote(s) to push the release to [default: 'upstream']
 
-    'debug': true/false, // Enable debug logging as announce:release if enabled [default: false]
-    'silent': true/false, // Enable silent mode - turn off logging to the logger passed into the object - overrides "quiet" option [default: false]
-    'quiet': true/false // Enable quiet mode - reduce logging to the logger passed into the object [default: false],
+    'githubToken': 'XXX', // Token to use for creating the release on GitHub [default: $GITHUB_TOKEN environment variable]
+    'gitlabToken': 'XXX', // Token to use for creating the release on GitLab [default: $GITLAB_TOKEN environment variable]
 
     'logger': object // Logger instance
 });
