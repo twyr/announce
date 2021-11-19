@@ -358,7 +358,7 @@ class ReleaseCommandClass {
 			'task': this?._formatGitLogsForChangelog?.bind?.(this),
 			'skip': () => {
 				if(ctxt?.execError) return `Error in one of the previous steps`;
-				if(ctxt?.options?.gitLogsInRange?.all?.length)
+				if(ctxt?.options?.gitLogsInRange?.length)
 					return false;
 
 				return `No relevant git logs.`;
