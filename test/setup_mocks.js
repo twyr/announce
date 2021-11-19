@@ -12,7 +12,6 @@ const SERVER_NAME = process.env.SERVER_NAME || 'Twyr/Announce';
 process.title = SERVER_NAME;
 
 global.snooze = async (ms) => {
-	const Promise = require('bluebird');
 	return new Promise((resolve) => {
 		setTimeout(resolve, ms);
 	});
