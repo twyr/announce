@@ -35,7 +35,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["publish", "-u", "twyr", "-rn", "V0.5.0 Release", "--dry-run"]
+            "args": ["publish", "--dry-run"]
         }
     ]
 }
