@@ -19,7 +19,7 @@
  * @class		PrepareCommandClass
  * @classdesc	The command class that handles all the prepare operations.
  *
- * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
+ * @param		{object} mode - Set the current run mode - CLI or API
  *
  * @description
  * The command class that implements the "prepare" step of the workflow.

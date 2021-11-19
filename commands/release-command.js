@@ -56,7 +56,6 @@ class ReleaseCommandClass {
 	async execute(configOptions, cliOptions) {
 		// Step 1: Setup sane defaults for the options
 		const mergedOptions = this?._mergeOptions?.(configOptions, cliOptions);
-		// console.log(`Merged Options: ${JSON.stringify(mergedOptions, null, '\t')}`);
 
 		// Step 2: Set up the logger according to the options passed in
 		const logger = this?._setupLogger?.(mergedOptions);
@@ -166,7 +165,13 @@ class ReleaseCommandClass {
 			'task': this?._initializeGit?.bind?.(this)
 		}, {
 			'title': 'Stash / Commit...',
-			'task': this?._stashOrCommit?.bind?.(this)
+			'task': this?._stashOrCommit?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.options?.git)
+					return false;
+
+				return `No Git client found.`;
+			}
 		}, {
 			'title': 'Generating Changelog...',
 			'task': this?._generateChangelog?.bind?.(this),
@@ -174,6 +179,7 @@ class ReleaseCommandClass {
 				if(ctxt?.execError) return `Error in previous step`;
 				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
 				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
+				if(!ctxt?.options?.git) return `No Git client found.`;
 
 				return false;
 			}
@@ -182,6 +188,7 @@ class ReleaseCommandClass {
 			'task': this?._tagCode?.bind?.(this),
 			'skip': (ctxt) => {
 				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(!ctxt?.options?.git) return `No Git client found.`;
 				if(!ctxt?.options?.createTag) return `No changelog generated, so nothing to tag`;
 				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
 				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
@@ -193,6 +200,7 @@ class ReleaseCommandClass {
 			'task': this?._pushUpstream?.bind?.(this),
 			'skip': (ctxt) => {
 				if(ctxt?.execError) return `Error in one of the previous steps`;
+				if(!ctxt?.options?.git) return `No Git client found.`;
 				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
 				if(ctxt?.options?.upstream?.length < 1) return `No upstreams specified`;
 				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
@@ -204,6 +212,7 @@ class ReleaseCommandClass {
 			'task': this?._generateRelease?.bind?.(this),
 			'skip': (ctxt) => {
 				if(ctxt?.execError) return `Error in previous step`;
+				if(!ctxt?.options?.git) return `No Git client found.`;
 				if(!ctxt?.options?.release) return `--no-release option specified.`;
 
 				return false;
@@ -213,6 +222,12 @@ class ReleaseCommandClass {
 			'task': this?._restoreCode?.bind?.(this),
 			'enabled': (ctxt) => {
 				return ctxt?.options?.shouldPop;
+			},
+			'skip': (ctxt) => {
+				if(ctxt?.options?.git)
+					return false;
+
+				return `No Git client found.`;
 			}
 		}, {
 			'title': 'Summarizing...',
@@ -500,110 +515,144 @@ class ReleaseCommandClass {
 		try {
 			ctxt?.options?.logger?.info?.(`Generating ${ctxt?.options?.upstream?.length > 1 ? 'Releases' : 'Release'} for ${ctxt?.options?.upstream?.join?.(', ')}`);
 
-			const taskArray = [];
-			const Listr = require('listr');
-
-			ctxt?.options?.upstream?.forEach?.((upstream) => {
-				taskArray?.push?.({
-					'title': `Releasing on ${upstream}...`,
-					'task': (thisCtxt, thisTask) => {
-						return new Listr([{
-							'title': `Setting up...`,
-							'task': (subTaskCtxt, subTaskTask) => {
-								subTaskCtxt.options.currentReleaseUpstream = `${upstream}`;
-								subTaskTask.title = `Setup: Done`;
-							}
-						}, {
-							'title': `Fetching git logs for release...`,
-							'task': this?._fetchGitLogsForRelease?.bind?.(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								return false;
-							}
-						}, {
-							'title': 'Filtering git log events...',
-							'task': this?._filterGitLogs?.bind?.(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								if(ctxt?.options?.gitLogsInRange?.all?.length)
-									return false;
-
-								return `No relevant git logs.`;
-							}
-						}, {
-							'title': `Fetching author information for the relevant git log events...`,
-							'task': this?._fetchAuthorInformationForRelease?.bind?.(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								if(ctxt?.options?.gitLogsInRange?.length)
-									return false;
-
-								return `No relevant git logs.`;
-							}
-						}, {
-							'title': `Generating release notes...`,
-							'task': this?._generateReleaseNotes?.bind(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								if(ctxt?.options?.gitLogsInRange?.length)
-									return false;
-
-								if(ctxt?.options?.authorProfiles?.length)
-									return false;
-
-								return `No relevant git logs, or no information about their authors.`;
-							}
-						}, {
-							'title': `Pushing release...`,
-							'task': this?._createRelease?.bind?.(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
-
-								return false;
-							}
-						}, {
-							'title': `Storing release notes...`,
-							'task': this?._storeReleaseNotes?.bind?.(this),
-							'skip': (subTaskCtxt) => {
-								if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
-								if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
-
-								return false;
-							}
-						}, {
-							'title': `Cleaning up...`,
-							'task': (subTaskCtxt, subTaskTask) => {
-								ctxt.execError = subTaskCtxt?.releaseError;
-
-								ctxt.options.gitLogsInRange = null;
-								ctxt.options.authorProfiles = null;
-								ctxt.options.releaseData = null;
-
-								subTaskTask.title = `Clean up: Done`;
-								thisTask.title = ctxt?.execError ? `${upstream} release: Error` : `${upstream} release: Done`;
-							}
-						}], {
-							'collapse': true
-						});
-					},
-					'skip': () => {
-						if(ctxt?.execError) return `Error in one of the previous steps`;
+			const releaseSteps = [{
+				'title': `Fetching git logs for release...`,
+				'task': this?._fetchGitLogsForRelease?.bind?.(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					return false;
+				}
+			}, {
+				'title': 'Filtering git log events...',
+				'task': this?._filterGitLogs?.bind?.(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					if(ctxt?.options?.gitLogsInRange?.all?.length)
 						return false;
+
+					return `No relevant git logs.`;
+				}
+			}, {
+				'title': `Fetching author information for the relevant git log events...`,
+				'task': this?._fetchAuthorInformationForRelease?.bind?.(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					if(ctxt?.options?.gitLogsInRange?.length)
+						return false;
+
+					return `No relevant git logs.`;
+				}
+			}, {
+				'title': `Generating release notes...`,
+				'task': this?._generateReleaseNotes?.bind(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					if(ctxt?.options?.gitLogsInRange?.length)
+						return false;
+
+					if(ctxt?.options?.authorProfiles?.length)
+						return false;
+
+					return `No relevant git logs, or no information about their authors.`;
+				}
+			}, {
+				'title': `Pushing release...`,
+				'task': this?._createRelease?.bind?.(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
+
+					return false;
+				}
+			}, {
+				'title': `Storing release notes...`,
+				'task': this?._storeReleaseNotes?.bind?.(this),
+				'skip': (subTaskCtxt) => {
+					if(subTaskCtxt?.releaseError) return `Error in one of the previous steps`;
+					if(!ctxt?.options?.releaseData?.['RELEASE_NOTES']) return `Release notes not generated`;
+
+					return false;
+				}
+			}];
+
+			const Listr = require('listr');
+			if(ctxt?.options?.upstream?.length > 1) {
+				const taskArray = [];
+
+				ctxt?.options?.upstream?.forEach?.((upstream) => {
+					taskArray?.push?.({
+						'title': `Releasing on ${upstream}...`,
+						'task': (thisCtxt, thisTask) => {
+							const thisReleaseSteps = [{
+								'title': `Setting up...`,
+								'task': (subTaskCtxt, subTaskTask) => {
+									subTaskCtxt.options.currentReleaseUpstream = `${upstream}`;
+									subTaskTask.title = `Setup: Done`;
+								}
+							}].concat(releaseSteps);
+
+							thisReleaseSteps?.push?.({
+								'title': `Cleaning up...`,
+								'task': (subTaskCtxt, subTaskTask) => {
+									ctxt.execError = subTaskCtxt?.releaseError;
+
+									ctxt.options.gitLogsInRange = null;
+									ctxt.options.authorProfiles = null;
+									ctxt.options.releaseData = null;
+
+									subTaskTask.title = `Clean up: Done`;
+									thisTask.title = ctxt?.execError ? `${upstream} release: Error` : `${upstream} release: Done`;
+								}
+							});
+
+							return new Listr(thisReleaseSteps, {
+								'collapse': true
+							});
+						},
+						'skip': () => {
+							if(ctxt?.execError) return `Error in one of the previous steps`;
+							return false;
+						}
+					});
+				});
+
+				taskArray?.push?.({
+					'title': `Teardown...`,
+					'task': (thisCtxt, thisTask) => {
+						thisTask.title = `Teardown: Done`;
+						task.title = ctxt?.execError ? `Generate Release: Error` : `Generate Release: Done`;
 					}
 				});
-			});
 
-			taskArray?.push?.({
-				'title': `Teardown...`,
-				'task': (thisCtxt, thisTask) => {
-					thisTask.title = `Teardown: Done`;
-					task.title = ctxt?.execError ? `Generate Release: Error` : `Generate Release: Done`;
-				}
-			});
+				const taskList = new Listr(taskArray);
+				return taskList;
+			}
+			else {
+				const thisReleaseSteps = [{
+					'title': `Setting up...`,
+					'task': (subTaskCtxt, subTaskTask) => {
+						subTaskCtxt.options.currentReleaseUpstream = `${ctxt?.options?.upstream?.[0]}`;
+						subTaskTask.title = `Setup: Done`;
+					}
+				}].concat(releaseSteps);
 
-			const taskList = new Listr(taskArray);
-			return taskList;
+				thisReleaseSteps?.push?.({
+					'title': `Cleaning up...`,
+					'task': (subTaskCtxt, subTaskTask) => {
+						ctxt.execError = subTaskCtxt?.releaseError;
+
+						ctxt.options.gitLogsInRange = null;
+						ctxt.options.authorProfiles = null;
+						ctxt.options.releaseData = null;
+
+						subTaskTask.title = `Clean up: Done`;
+					}
+				});
+
+				return new Listr(thisReleaseSteps, {
+					'collapse': true
+				});
+			}
 		}
 		catch(err) {
 			task.title = 'Generate Release: Error';
@@ -1218,7 +1267,7 @@ class ReleaseCommandClass {
 	}
 	// #endregion
 
-	// #region Private Methods
+	// #region Utility Methods
 	async _sleep(ms) {
 		return new Promise((resolve) => {
 			setTimeout(resolve, ms);
@@ -1286,7 +1335,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 		?.option?.('--no-tag', 'Don\'t tag now. Use last tag when cutting this release', configuration?.release?.tag ?? false)
 		?.option?.('--use-tag <name>', 'Use the (existing) tag specified when cutting this release', configuration?.release?.useTag?.trim?.() ?? '')
-		?.option?.('--tag-name <name>', 'Tag Name to use for this release', configuration?.release?.tagName?.trim?.() ?? `V${pkg.version}`)
+		?.option?.('--tag-name <name>', 'Tag Name to use for this release', configuration?.release?.tagName?.trim?.() ?? `V${pkg?.version}`)
 		?.option?.('--tag-message <message>', 'Message to use when creating the tag.', configuration?.release?.tagMessage?.trim?.() ?? `The spaghetti recipe at the time of releasing V${pkg.version}`)
 
 		?.option?.('--no-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.release ?? false)

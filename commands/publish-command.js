@@ -1,10 +1,9 @@
-/* eslint-disable security/detect-object-injection */
-/* eslint-disable security/detect-non-literal-fs-filename */
-/* eslint-disable security/detect-non-literal-regexp */
-/* eslint-disable security/detect-non-literal-require */
-/* eslint-disable security-node/detect-crlf */
+/* eslint-disable curly */
 /* eslint-disable security-node/detect-non-literal-require-calls */
+/* eslint-disable security/detect-non-literal-require */
 /* eslint-disable security-node/non-literal-reg-expr */
+/* eslint-disable security/detect-non-literal-regexp */
+/* eslint-disable no-loop-func */
 'use strict';
 
 /**
@@ -16,14 +15,12 @@
  * Module dependencies, required for this module
  * @ignore
  */
-const debugLib = require('debug');
-const debug = debugLib('announce:publish');
 
 /**
  * @class		PublishCommandClass
  * @classdesc	The command class that handles all the publish operations.
  *
- * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
+ * @param		{object} mode - Set the current run mode - CLI or API
  *
  * @description
  * The command class that implements the "publish" step of the workflow.
@@ -32,11 +29,8 @@ const debug = debugLib('announce:publish');
  */
 class PublishCommandClass {
 	// #region Constructor
-	constructor(configuration) {
-		Object.defineProperty(this, '_commandOptions', {
-			'writeable': true,
-			'value': configuration ?? {}
-		});
+	constructor(execMode) {
+		this.#execMode = execMode;
 	}
 	// #endregion
 
@@ -52,10 +46,10 @@ class PublishCommandClass {
 	 *
 	 * @return {null} Nothing.
 	 *
-	 * @summary  The main method to publish the GitHub release to NPM.
+	 * @summary  The main method to publish the Git Host release to NPM.
 	 *
 	 * This method does 2 things:
-	 * - Gets the URL to the compressed asset for the last/specified release from GitHub
+	 * - Gets the URL to the compressed asset for the last/specified release from the Git Host
 	 * - Publishes the asset to NPM
 	 *
 	 */
@@ -65,15 +59,18 @@ class PublishCommandClass {
 
 		// Step 2: Set up the logger according to the options passed in
 		const logger = this._setupLogger(mergedOptions);
+		mergedOptions.logger = logger;
 
-		// Step 3: Get the upstream repository information - this is the one where the to-be-published release assets are hosted.
-		const repository = await this._getUpstreamRepositoryInfo(mergedOptions, logger);
+		// Step 3: Setup the task list
+		const taskList = this?._setupTasks?.();
 
-		// Step 4: Get the details of the to-be-published release from GitHub
-		const releaseToBePublished = await this._getReleaseAssetInformation(mergedOptions, logger, repository);
-
-		// Step 5: Run the npm publish command with the specified options
-		await this._publishToNpm(mergedOptions, logger, releaseToBePublished);
+		// Step 4: Run the tasks in sequence
+		// eslint-disable-next-line security-node/detect-crlf
+		console.log(`Publishing the release to NPM:`);
+		await taskList?.run?.({
+			'options': mergedOptions,
+			'execError': null
+		});
 	}
 	// #endregion
 
@@ -92,30 +89,7 @@ class PublishCommandClass {
 	 *
 	 */
 	_mergeOptions(options) {
-		const path = require('path');
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const pkg = require(projectPackageJson);
-
-		const mergedOptions = Object?.assign?.({}, options?.opts?.(), this?._commandOptions?.opts?.());
-		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
-
-		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
-		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
-		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
-
-		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
-
-		mergedOptions.access = mergedOptions?.access ?? (this?._commandOptions?.access ?? 'public');
-		mergedOptions.distTag = mergedOptions?.distTag ?? (this?._commandOptions?.distTag ?? 'latest');
-		mergedOptions.dryRun = mergedOptions?.dryRun ?? (this?._commandOptions?.dryRun ?? false);
-
-		mergedOptions.githubToken = mergedOptions?.githubToken ?? (this?._commandOptions?.githubToken ?? process.env.GITHUB_TOKEN);
-		mergedOptions.gitlabToken = mergedOptions?.gitlabToken ?? (this?._commandOptions?.gitlabToken ?? process.env.GITLAB_TOKEN);
-		mergedOptions.npmToken = mergedOptions?.npmToken ?? (this?._commandOptions?.npmToken ?? process.env.NPM_TOKEN);
-
-		mergedOptions.releaseName = mergedOptions?.releaseName ?? (this?._commandOptions.releaseName ?? `V${pkg.version} Release`);
-		mergedOptions.upstream = mergedOptions?.upstream ?? (this?._commandOptions.upstream ?? 'upstream');
-
+		const mergedOptions = Object?.assign?.({}, options);
 		return mergedOptions;
 	}
 
@@ -133,25 +107,78 @@ class PublishCommandClass {
 	 *
 	 */
 	_setupLogger(options) {
-		const execMode = options?.execMode ?? 'cli';
-		if(options?.debug) debugLib?.enable?.('announce:*');
+		if(this.#execMode === 'api')
+			return options?.logger;
 
-		let logger = null;
-		if((execMode === 'api') && !options?.silent) { // eslint-disable-line curly
-			logger = options?.logger;
-		}
+		return null;
+	}
 
-		if((execMode === 'cli') && !options?.silent) {
-			const Ora = require('ora');
-			logger = new Ora({
-				'discardStdin': true,
-				'text': `Preparing...`
-			});
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_setupTasks
+	 *
+	 * @return		{object} Tasks as Listr.
+	 *
+	 * @summary  	Setup the list of tasks to be run
+	 *
+	 */
+	_setupTasks() {
+		const Listr = require('listr');
+		const taskList = new Listr([{
+			'title': 'Initializing Git Client...',
+			'task': this?._initializeGit?.bind?.(this)
+		}, {
+			'title': 'Fetching upstream repository info...',
+			'task': this?._getUpstreamRepositoryInfo?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.options?.git)
+					return false;
 
-			logger?.start?.();
-		}
+				return `No Git client found.`;
+			}
+		}, {
+			'title': 'Publishing to npm...',
+			'task': this?._publishToNpm?.bind?.(this),
+			'skip': (ctxt) => {
+				if(!ctxt?.options?.npmToken?.trim?.()?.length) return `Cannot publish without an NPM token.`;
+				if(!ctxt?.options?.releaseToBePublished) return `Cannot publish without a release on the Git host.`;
+				if(!ctxt?.options?.releaseToBePublished?.tarball_url) return `Cannot publish a release without a tarball.`;
 
-		return logger;
+				return false;
+			}
+		}], {
+			'collapse': false
+		});
+
+		return taskList;
+	}
+
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PublishCommandClass
+	 * @name		_initializeGit
+	 *
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
+	 *
+	 * @return		{null} Nothing.
+	 *
+	 * @summary  	Creates a Git client instance for the current project repository and sets it on the context.
+	 *
+	 */
+	_initializeGit(ctxt, task) {
+		const simpleGit = require('simple-git');
+		const git = simpleGit?.({
+			'baseDir': ctxt?.options?.currentWorkingDirectory
+		});
+
+		ctxt?.options?.logger?.info?.(`Initialized Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}`);
+		task.title = `Initialize Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}: Done`;
+
+		ctxt.options.git = git;
 	}
 
 	/**
@@ -161,101 +188,32 @@ class PublishCommandClass {
 	 * @memberof	PublishCommandClass
 	 * @name		_getUpstreamRepositoryInfo
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{object} POJO with information about the upstream repository URL, etc.
+	 * @return		{null} Nothing.
 	 *
-	 * @summary  	Instantiates a Git instance for the project, retrieves the upstream repository information, and returns a POJO with that info.
+	 * @summary  	Retrieves the upstream repository information, and sets a POJO with that info into the context.
 	 *
 	 */
-	async _getUpstreamRepositoryInfo(options, logger) {
-		const execMode = options?.execMode ?? 'cli';
-
-		const safeJsonStringify = require('safe-json-stringify');
-		const simpleGit = require('simple-git');
-
-		const git = simpleGit?.({
-			'baseDir': process.cwd()
-		})
-		.outputHandler((_command, stdout, stderr) => {
-			stderr.pipe(process.stderr);
-		});
-
-		debug(`initialized Git for the repository @ ${process.cwd()}`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`initialized Git for the repository @ ${process.cwd()}. Fetching upstream repository information.`);
-			else
-				if(logger) logger.text = `Initialized Git for the repository @ ${process.cwd()}. Fetching upstream repository information...`;
-		}
-
-		const gitRemote = await git?.raw?.(['remote', 'get-url', '--push', options?.upstream]);
+	async _getUpstreamRepositoryInfo(ctxt, task) {
+		const gitRemote = await ctxt?.options?.git?.remote?.(['get-url', '--push', ctxt?.options?.upstream]);
 
 		const hostedGitInfo = require('hosted-git-info');
 		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
 
-		if(execMode === 'api')
-			logger?.info?.(`Fetched information for the ${repository.user}/${repository.project} upstream`);
-		else
-			logger?.succeed?.(`Fetched information for the ${repository.user}/${repository.project} upstream.`);
+		const GitHostWrapper = require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
+		const gitHostWrapper = new GitHostWrapper(ctxt?.options?.[`${repository?.type}Token`]);
 
-		debug(`repository info - ${safeJsonStringify(repository, null, '\t')}`);
-		return repository;
-	}
+		const releaseToBePublished = await gitHostWrapper?.fetchReleaseInformation?.(repository, ctxt?.options?.releaseName);
+		if(!releaseToBePublished) throw new Error(`Unknown Release: ${ctxt?.options.releaseName}`);
 
-	/**
-	 * @async
-	 * @function
-	 * @instance
-	 * @memberof	PublishCommandClass
-	 * @name		_getReleaseAssetInformation
-	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} repository - POJO containing information about the project/repo on GitHub hosting the assets
-	 *
-	 * @return		{object} POJO with information about the assets to-be-published.
-	 *
-	 * @summary  	Connects to the GitHub project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.
-	 *
-	 */
-	async _getReleaseAssetInformation(options, logger, repository) {
-		const execMode = options?.execMode ?? 'cli';
+		ctxt.options.repository = repository;
+		ctxt.options.releaseToBePublished = releaseToBePublished;
 
-		debug(`retrieving ${options?.releaseName} release from ${repository.domain}`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Retrieving ${options?.releaseName} release from  ${repository.domain}`);
-			else
-				if(logger) logger.text = `Retrieving ${options?.releaseName} release from  ${repository.domain}...`;
-		}
-
-		let gitHostWrapper = null;
-		if(repository?.type === 'github') {
-			const GitHubWrapper = require('./../git_host_utilities/github').GitHubWrapper;
-			gitHostWrapper = new GitHubWrapper(options?.githubToken);
-		}
-
-		if(repository?.type === 'gitlab') {
-			const GitLabWrapper = require('./../git_host_utilities/gitlab').GitLabWrapper;
-			gitHostWrapper = new GitLabWrapper(options?.gitlabToken);
-		}
-
-		const releaseToBePublished = await gitHostWrapper?.fetchReleaseInformation?.(repository, options?.releaseName);
-		if(!releaseToBePublished) throw new Error(`Unknown Release: ${options.releaseName}`);
-		if(releaseToBePublished?.draft) throw new Error(`Cannot publish draft release: ${options.releaseName}`);
-
-		if(execMode === 'api')
-			logger?.debug?.(`Retrieved ${options?.releaseName} release from  ${repository.domain}`);
-		else
-			logger?.succeed?.(`Retrieved ${options?.releaseName} release details from  ${repository.domain}.`);
-
-		debug(`retrieved ${options?.releaseName} release from github`);
-		return releaseToBePublished;
+		ctxt?.options?.logger?.info?.(`Fetch upstream repository info: Done`);
+		task.title = `Fetch upstream repository info: Done`;
 	}
 
 	/**
@@ -265,115 +223,103 @@ class PublishCommandClass {
 	 * @memberof	PublishCommandClass
 	 * @name		_publishToNpm
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{object} releaseToBePublished - POJO with information about the assets to-be-published
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
 	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Retrieves the release assets from GitHub, and publishes them to NPM.
 	 *
 	 */
-	async _publishToNpm(options, logger, releaseToBePublished) {
-		const execMode = options?.execMode ?? 'cli';
-
-		debug(`publishing ${options?.releaseName} release to npm`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Publishing ${options?.releaseName} release to npm`);
-			else
-				if(logger) logger.text = `Publishing ${options?.releaseName} release to npm...`;
-		}
-
+	async _publishToNpm(ctxt, task) {
 		let distTag = null;
-
-		// eslint-disable-next-line curly
-		if((options?.distTag ?? 'version_default') === 'version_default') {
-			if(releaseToBePublished?.prerelease)
+		if((ctxt?.options?.distTag ?? 'version_default') === 'version_default') {
+			if(ctxt?.options?.releaseToBePublished?.prerelease)
 				distTag = 'next';
 			else
 				distTag = 'latest';
 		}
 
 		const publishOptions = ['publish'];
-		publishOptions?.push?.(releaseToBePublished?.tarball_url);
+		publishOptions?.push?.(ctxt?.options?.releaseToBePublished?.tarball_url);
 		publishOptions?.push?.(`--tag ${distTag}`);
-		publishOptions?.push?.(`--access ${options.access}`);
-		if(options?.dryRun) publishOptions?.push?.('--dry-run');
+		publishOptions?.push?.(`--access ${ctxt?.options?.access}`);
+		if(ctxt?.options?.dryRun) publishOptions?.push?.('--dry-run');
 
 		const execa = require('execa');
-		if(options.npmToken === '') {
-			let loggedInUser = '';
-			try {
-				const { 'stdout': whoAmI } = await execa?.('npm', ['whoami'], { 'all': true });
-				loggedInUser = whoAmI;
-			}
-			catch(err) {
-				loggedInUser = '';
-			}
-
-			if(loggedInUser.trim() === '') {
-				const loginProcess = execa?.('npm', ['login'], { 'all': true });
-				loginProcess?.stdout?.pipe?.(process.stdout);
-				loginProcess?.stderr?.pipe?.(process.stderr);
-				process?.stdin?.pipe?.(loginProcess?.stdin);
-
-				await loginProcess;
-			}
-		}
 
 		const publishProcess = execa?.('npm', publishOptions, { 'all': true });
-		publishProcess?.stdout?.pipe?.(process.stdout);
-		publishProcess?.stderr?.pipe?.(process.stderr);
-
+		// publishProcess?.stdout?.pipe?.(process.stdout);
+		// publishProcess?.stderr?.pipe?.(process.stderr);
 		await publishProcess;
 
-		if(execMode === 'api')
-			logger?.info?.(`Published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
-		else
-			logger?.succeed?.(`Published ${options?.releaseName} release to npm.`);
+		ctxt?.options?.logger?.info?.(`Publish to NPM: Done`);
+		task.title = `Publish to NPM: Done`;
+	}
+	// #endregion
 
-		debug(`published ${options?.releaseName} release: npm ${publishOptions.join(' ')}`);
-		return;
+	// #region Utility Methods
+	async _sleep(ms) {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		});
 	}
 	// #endregion
 
 	// #region Private Fields
+	#execMode = null;
 	// #endregion
 }
 
 // Add the command to the cli
-let commandObj = null;
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	if(!commandObj) commandObj = new PublishCommandClass(configuration?.publish);
+	const Commander = require('commander');
+	const publish = new Commander.Command('publish');
 
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
-	const projectPackageJson = path.join(process.cwd(), 'package.json');
-	const { version } = require(projectPackageJson);
+	const projectPackageJson = path.join((configuration?.publish?.currentWorkingDirectory?.trim?.() ?? process.cwd()), 'package.json');
+	const pkg = require(projectPackageJson);
 
-	commanderProcess
-		.command('publish')
-		.option('--access <level>', 'Public / Restricted', 'public')
-		.option('--dist-tag <tag>', 'Tag to use for the published release', 'version_default')
-		.option('--dry-run', 'Dry run publish', false)
+	// Get the dynamic template filler - use it for configuration substitution
+	const fillTemplate = require('es6-dynamic-template');
 
-		.option('-ght, --github-token <token>', 'Token to use for accessing the release on GitHub', process.env.GITHUB_TOKEN)
-		.option('-glt, --gitlab-token <token>', 'Token to use for accessing the release on GitLab', process.env.GITLAB_TOKEN)
-		.option('-nt, --npm-token <token>', 'Automation Token to use for publishing the release to NPM', process.env.NPM_TOKEN)
+	if(configuration?.publish?.currentWorkingDirectory) {
+		configuration.publish.currentWorkingDirectory = fillTemplate?.(configuration?.publish?.currentWorkingDirectory, pkg);
+	}
 
-		.option('-rn, --release-name <name>', 'GitHub release name for fetching the compressed assets', `V${version} Release`)
-		.option('-u, --upstream <remote>', 'Git remote to use for accessing the release', configuration?.publish?.upstream ?? 'upstream')
+	if(configuration?.publish?.releaseName) {
+		configuration.publish.releaseName = fillTemplate?.(configuration?.publish?.releaseName, pkg);
+	}
 
-		.action(commandObj.execute.bind(commandObj));
+	// Setup the command
+	publish?.alias?.('pub');
+	publish
+		?.option?.('--current-working-directory <folder>', 'Path to the current working directory', configuration?.release?.currentWorkingDirectory?.trim?.() ?? process?.cwd?.())
 
+		.option('--access <level>', 'Public / Restricted', configuration?.publish?.access?.trim?.() ?? 'public')
+		.option('--dist-tag <tag>', 'Tag to use for the published release', configuration?.publish?.distTag?.trim?.() ?? 'latest')
+		.option('--dry-run', 'Dry run publish', configuration?.publish?.dryRun ?? false)
+
+		.option('--github-token <token>', 'Token to use for accessing the release on GitHub', configuration?.publish?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN)
+		.option('--gitlab-token <token>', 'Token to use for accessing the release on GitLab', configuration?.publish?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN)
+		.option('--npm-token <token>', 'Automation Token to use for publishing the release to NPM', configuration?.publish?.npmToken?.trim?.() ?? process.env.NPM_TOKEN)
+
+		.option('--release-name <name>', 'Release name on the Git Host for fetching the compressed assets', configuration?.publish?.releaseName?.trim?.() ?? `V${pkg?.version} Release`)
+		.option('--upstream <remote>', 'Git remote to use for accessing the release', configuration?.publish?.upstream ?? 'upstream')
+	;
+
+	const commandObj = new PublishCommandClass('cli');
+	publish?.action?.(commandObj?.execute?.bind?.(commandObj));
+
+	// Add it to the mix
+	commanderProcess?.addCommand?.(publish);
 	return;
 };
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	if(!commandObj) commandObj = new PublishCommandClass({ 'execMode': 'api' });
+	const commandObj = new PublishCommandClass('api');
 	return {
 		'name': 'publish',
 		'method': commandObj.execute.bind(commandObj)
