@@ -368,7 +368,7 @@ class ReleaseCommandClass {
 			'task': this?._modifyChangelog?.bind?.(this),
 			'skip': () => {
 				if(ctxt?.execError) return `Error in one of the previous steps`;
-				if(ctxt?.options?.changelogText && ctxt?.options?.changelogText?.trim?.()?.length)
+				if(ctxt?.options?.changelogText?.length)
 					return false;
 
 				return `No change log to add.`;
