@@ -43,6 +43,8 @@ git config user.signingKey "GPG Key Id"
 ```
 
 #### EXTENDING THE CODE
+![Announce Dependencies](./markdown/architecture.svg)
+
 - [ ] TODO: Added along with the commands
 
 #### BUILDING AND TESTING

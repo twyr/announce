@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<title>bin/announce.js - Announce CLI - API Reference</title>
+		<meta name="description" content="Announce CLI - API Reference" />
+		<meta name="keywords" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
+		<meta name="keyword" content="automation announce changelog cli console git github gitlab npm package publish release release-automation release-helper release-workflow semantic-release semantic-version semver semver-release terminal twyr version" />
+		<script src="scripts/prettify/prettify.js"></script>
+		<script src="scripts/prettify/lang-css.js"></script>
+		<!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+		<link type="text/css" rel="stylesheet" href="styles/prettify.css">
+		<link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+		<script src="scripts/nav.js" defer></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	</head>
+
+	<body>
+		<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+		<label for="nav-trigger" class="navicon-button x">
+			<div class="navicon"></div>
+		</label>
+		<label for="nav-trigger" class="overlay"></label>
+		<nav class="wrap">
+			<input type="text" id="nav-search" placeholder="Search" />
+			<h2><a href="index.html">Home</a></h2>
+			<h2><a href="https://github.com/twyr/announce" target="_blank" class="menu-item" id="github_link">GitHub</a></h2>
+			<h3>Classes</h3>
+			<ul>
+				<li><a href="GitHubWrapper.html">GitHubWrapper</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="GitHubWrapper.html#_fetchData">_fetchData</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitHubWrapper.html#getCommitLink">getCommitLink</a></li>
+					</ul>
+				</li>
+				<li><a href="GitLabWrapper.html">GitLabWrapper</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="GitLabWrapper.html#createRelease">createRelease</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitAuthorInformation">fetchCommitAuthorInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchCommitInformation">fetchCommitInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#fetchReleaseInformation">fetchReleaseInformation</a></li>
+						<li data-type='method'><a href="GitLabWrapper.html#getCommitLink">getCommitLink</a></li>
+					</ul>
+				</li>
+				<li><a href="PrepareCommandClass.html">PrepareCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="PrepareCommandClass.html#_bumpVersion">_bumpVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_computeNextVersion">_computeNextVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_getCurrentVersion">_getCurrentVersion</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
+				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
+				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
+					<ul class='methods'>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
+					</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main">
+			<h1 class="page-title">bin/announce.js</h1>
+			<section>
+				<article>
+					<pre class="prettyprint source linenums"><code>#!/usr/bin/env node
+/**
+ * @name		announce.js
+ * @file		Main entry point of the Twy'r Announce CLI tool
+ * @version		0.9.10-dev.6
+ *
+ * @author		Vish Desai &lt;shadyvd@hotmail.com>
+ * @copyright	(c) {@link https://twyr.github.io/annouce|Twy'r Announce} 2016-2021
+ *
+ * @license		MITNFA
+ */
+
+'use strict';
+
+/**
+ * Module dependencies, required for ALL Twy'r modules
+ * @ignore
+ */
+
+/**
+ * Module dependencies, required for this module
+ * @ignore
+ */
+
+(async function announceSetup() {
+	// Sanity check for node versions
+	const pkg = require('./../package.json');
+	require('please-upgrade-node')(
+		Object.assign({}, pkg, {
+			'engines': {
+				// eslint-disable-next-line no-inline-comments
+				'node': '>=14.0' // First version with optional chaining and nullish coalescing
+			}
+		})
+	);
+
+	// Step 0: Load the configuration
+	const { cosmiconfigSync } = require('cosmiconfig');
+	const explorer = cosmiconfigSync?.('announce', {
+		'searchPlaces': [
+			'package.json',
+			'.announcerc',
+			'.announcerc.json',
+			'.announcerc.yaml',
+			'.announcerc.yml',
+			'.announcerc.js',
+			'announce.config.js'
+		]
+	});
+
+	const configuration = explorer?.search?.();
+
+	// Step 1: Crawl the commands folder and get the list of available commands
+	const { 'fdir': FDir } = require('fdir');
+	const { join } = require('path');
+
+	const crawler = new FDir()
+		?.withFullPaths?.()
+		?.withErrors?.()
+		?.glob?.('./**/*-command.js');
+
+	const commandDefinitionFolder = join?.(__dirname, './../commands');
+	const availableCommandDefinitionFiles = crawler?.crawl?.(commandDefinitionFolder)?.sync?.();
+
+	// Step 2: Setup the commander cli
+	const { program } = require('commander');
+
+	program?.version?.(pkg?.version, '-v, --version', 'output the current version');
+
+	// Step 3: Setup each command in commander
+	for(const commandDefinitionFile of availableCommandDefinitionFiles) {
+		// eslint-disable-next-line
+		const { commandCreator } = require(commandDefinitionFile);
+		commandCreator?.(program, configuration?.config);
+	}
+
+	// Finally: Parse arguments, execute the command, etc. - basically, do the job requested
+	// eslint-disable-next-line security-node/detect-crlf
+	try {
+		// eslint-disable-next-line security-node/detect-crlf
+		console?.log?.(`twyr/announce@${program?._version}`);
+		await program?.parseAsync?.(process?.argv);
+	}
+	catch(err) {
+		console.error(`${err.message}\n${err.stack}$`);
+	}
+}());
+</code></pre>
+				</article>
+			</section>
+		</div>
+		<br class="clear">
+		<footer>
+			Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+		</footer>
+		<script>
+			prettyPrint();
+
+		</script>
+		<script src="scripts/polyfill.js"></script>
+		<script src="scripts/linenumber.js"></script>
+		<script src="scripts/search.js" defer></script>
+	</body>
+
+</html>
