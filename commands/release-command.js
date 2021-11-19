@@ -305,11 +305,7 @@ class ReleaseCommandClass {
 				trailerMessages = trailerMessages?.replace?.(/\\n/g, '\n')?.replace(/\\t/g, '\t');
 
 				const consolidatedMessage = `${(ctxt?.options?.commitMessage ?? '')} ${(trailerMessages ?? '')}`;
-				await ctxt?.options?.git?.commit?.(consolidatedMessage, null, {
-					'--all': true,
-					'--allow-empty': true,
-					'--signoff': true
-				});
+				await ctxt?.options?.git?.commit?.(consolidatedMessage, ['--no-edit', '--no-verify', '--signoff', '--quiet']);
 			}
 
 			ctxt?.options?.logger?.info?.(`"${branchStatus.current}" branch ${gitOperation} done`);
@@ -950,7 +946,7 @@ class ReleaseCommandClass {
 			const consolidatedMessage = `Changelog for release ${pkg?.version}\n${trailerMessages ?? ''}`;
 
 			await git?.add?.('.');
-			await git?.raw?.(['commit', '-m', consolidatedMessage, '--all', '--no-edit', '--no-verify', '--signoff', '--quiet']);
+			await git?.commit?.(consolidatedMessage, ['--no-edit', '--no-verify', '--signoff', '--quiet']);
 
 			task.title = 'Commit changelog: Done';
 		}
