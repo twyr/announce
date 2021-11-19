@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -105,7 +104,7 @@
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="GitHubWrapper"><span class="type-signature"></span>new GitHubWrapper<span class="signature">(githubToken)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="GitHubWrapper"><span class="type-signature"></span>new GitHubWrapper<span class="signature">(token)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The wrapper class that provides an API interface for all GitHub related operations.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
@@ -131,7 +130,7 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td class="name"><code>githubToken</code></td>
+									<td class="name"><code>token</code></td>
 									<td class="type">
 										<span class="param-type">string</span>
 									</td>
@@ -152,7 +151,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line201">line 201</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line191">line 191</a>
 								</li>
 							</ul>
 						</dd>
@@ -199,7 +198,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line138">line 138</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line132">line 132</a>
 								</li>
 							</ul>
 						</dd>
@@ -246,7 +245,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line59">line 59</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line53">line 53</a>
 								</li>
 							</ul>
 						</dd>
@@ -302,7 +301,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line37">line 37</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line31">line 31</a>
 								</li>
 							</ul>
 						</dd>
@@ -358,7 +357,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line88">line 88</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line82">line 82</a>
 								</li>
 							</ul>
 						</dd>
@@ -414,7 +413,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line181">line 181</a>
+									<a href="git_host_utilities_github.js.html">git_host_utilities/github.js</a>, <a href="git_host_utilities_github.js.html#line171">line 171</a>
 								</li>
 							</ul>
 						</dd>

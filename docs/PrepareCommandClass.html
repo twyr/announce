@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -105,14 +104,14 @@
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="PrepareCommandClass"><span class="type-signature"></span>new PrepareCommandClass<span class="signature">(configuration)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="PrepareCommandClass"><span class="type-signature"></span>new PrepareCommandClass<span class="signature">(mode)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The command class that implements the &quot;prepare&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line21">line 21</a>
+										<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line18">line 18</a>
 									</li>
 								</ul>
 							</dd>
@@ -132,19 +131,19 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td class="name"><code>configuration</code></td>
+									<td class="name"><code>mode</code></td>
 									<td class="type">
 										<span class="param-type">object</span>
 									</td>
 									<td class="description last">
-										<p>The configuration object containing the command options from the config file (.announcerc, package.json, etc.)</p>
+										<p>Set the current run mode - CLI or API</p>
 									</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_bumpVersion"><span class="type-signature">(async) </span>_bumpVersion<span class="signature">(options, logger, currentVersion, nextVersion, targetFiles)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_bumpVersion"><span class="type-signature">(async) </span>_bumpVersion<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Replaces the old version string with the new version string.</p>
 					</p>
@@ -153,7 +152,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line383">line 383</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line340">line 340</a>
 								</li>
 							</ul>
 						</dd>
@@ -169,55 +168,28 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>currentVersion</code></td>
-								<td class="type">
-									<span class="param-type">string</span>
-								</td>
-								<td class="description last">
-									<p>String representing the current version in package.json that needs to be replaced</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>nextVersion</code></td>
-								<td class="type">
-									<span class="param-type">string</span>
-								</td>
-								<td class="description last">
-									<p>String representing the next version of the package</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>targetFiles</code></td>
-								<td class="type">
-									<span class="param-type">Array</span>
-								</td>
-								<td class="description last">
-									<p>List of files where the current version string should be replaced with the new version string</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>Nothing</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
@@ -227,7 +199,7 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_computeNextVersion"><span class="type-signature"></span>_computeNextVersion<span class="signature">(options, logger, currentVersion)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<h4 class="name" id="_computeNextVersion"><span class="type-signature"></span>_computeNextVersion<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Computes the next version to be applied based on current version, the series, and the version ladder - and returns the string representation of it.</p>
 					</p>
@@ -236,7 +208,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line209">line 209</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line199">line 199</a>
 								</li>
 							</ul>
 						</dd>
@@ -252,47 +224,38 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>currentVersion</code></td>
-								<td class="type">
-									<span class="param-type">string</span>
-								</td>
-								<td class="description last">
-									<p>Version contained in the package.json file currently</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>String representing the next version</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">string</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_getCurrentVersion"><span class="type-signature"></span>_getCurrentVersion<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<h4 class="name" id="_getCurrentVersion"><span class="type-signature"></span>_getCurrentVersion<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Returns the version contained in the package.json file.</p>
 					</p>
@@ -301,7 +264,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line150">line 150</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line160">line 160</a>
 								</li>
 							</ul>
 						</dd>
@@ -317,38 +280,38 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>Current version contained in the package.json file, if present and semantically valid</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">string</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_getTargetFileList"><span class="type-signature">(async) </span>_getTargetFileList<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<h4 class="name" id="_getTargetFileList"><span class="type-signature">(async) </span>_getTargetFileList<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Looks at all the files in the project folder/sub-folders, removes files ignored by .gitignore, then removes files in folders marked ignore in the config, and returns the remaining.</p>
 					</p>
@@ -357,7 +320,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line291">line 291</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line270">line 270</a>
 								</li>
 							</ul>
 						</dd>
@@ -373,35 +336,35 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>List of files in which the current version should be replaced with the new version</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">string</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
 					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
@@ -413,7 +376,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line82">line 82</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line78">line 78</a>
 								</li>
 							</ul>
 						</dd>
@@ -460,7 +423,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line115">line 115</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line102">line 102</a>
 								</li>
 							</ul>
 						</dd>
@@ -498,6 +461,32 @@
 							<span class="param-type">object</span>
 						</dd>
 					</dl>
+					<h4 class="name" id="_setupTasks"><span class="type-signature"></span>_setupTasks<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Setup the list of tasks to be run</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line122">line 122</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Tasks as Listr.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>The main method to prepare the codebase for the next release.</p>
@@ -512,7 +501,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line42">line 42</a>
+									<a href="commands_prepare-command.js.html">commands/prepare-command.js</a>, <a href="commands_prepare-command.js.html#line37">line 37</a>
 								</li>
 							</ul>
 						</dd>

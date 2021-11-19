@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -99,20 +98,20 @@
 						ReleaseCommandClass
 					</h2>
 					<div class="class-description usertext">
-						<p>The command class that handles all the release operations.</p>
+						<p>The command class that creates a release on a git host (Github / GitLab / BitBucket / etc.).</p>
 					</div>
 				</header>
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="ReleaseCommandClass"><span class="type-signature"></span>new ReleaseCommandClass<span class="signature">(configuration)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="ReleaseCommandClass"><span class="type-signature"></span>new ReleaseCommandClass<span class="signature">(mode)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The command class that implements the &quot;release&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line23">line 23</a>
+										<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line17">line 17</a>
 									</li>
 								</ul>
 							</dd>
@@ -132,84 +131,19 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td class="name"><code>configuration</code></td>
+									<td class="name"><code>mode</code></td>
 									<td class="type">
 										<span class="param-type">object</span>
 									</td>
 									<td class="description last">
-										<p>The configuration object containing the command options from the config file (.announcerc, package.json, etc.)</p>
+										<p>Set the current run mode - CLI or API</p>
 									</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_abortIfReleaseExists"><span class="type-signature">(async) </span>_abortIfReleaseExists<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {object}</span></h4>
-					<p class="summary usertext">
-					<p>Creates a Git client instance for the current project repository and returns it.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line260">line 260</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>options</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Status of the release on each of the upstream git hosts</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">object</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_generateChangelog"><span class="type-signature">(async) </span>_generateChangelog<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_generateChangelog"><span class="type-signature">(async) </span>_generateChangelog<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Generates a CHANGELOG from the relevant Git Log events, and commits the modified file.</p>
 					</p>
@@ -218,7 +152,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line417">line 417</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line324">line 324</a>
 								</li>
 							</ul>
 						</dd>
@@ -234,30 +168,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -274,16 +199,16 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_generateReleaseNotes"><span class="type-signature">(async) </span>_generateReleaseNotes<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<h4 class="name" id="_generateRelease"><span class="type-signature">(async) </span>_generateRelease<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.</p>
+					<p>Creates releases for each of the configured upstreams.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line801">line 801</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line499">line 499</a>
 								</li>
 							</ul>
 						</dd>
@@ -299,56 +224,47 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>The generated release notes for this release.</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">string</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_generateReleaseNotesPerRemote"><span class="type-signature">(async) </span>_generateReleaseNotesPerRemote<span class="signature">(options, logger, git, remote)</span><span class="type-signature"> &rarr; {string}</span></h4>
+					<h4 class="name" id="_initializeGit"><span class="type-signature"></span>_initializeGit<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Fetches the last release information from Github, generates notes from current tag to the last released tag, and returns the generated notes as a string.</p>
+					<p>Creates a Git client instance for the current project repository and sets it on the context.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1024">line 1024</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line242">line 242</a>
 								</li>
 							</ul>
 						</dd>
@@ -364,112 +280,38 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>remote</code></td>
-								<td class="type">
-									<span class="param-type">string</span>
-								</td>
-								<td class="description last">
-									<p>The remote for which the release notes should be generated</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>The generated release notes for this release.</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">string</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_initializeGit"><span class="type-signature"></span>_initializeGit<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {object}</span></h4>
-					<p class="summary usertext">
-					<p>Creates a Git client instance for the current project repository and returns it.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line217">line 217</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>options</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>The Git client instance for the project repository.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">object</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(configOptions, cliOptions)</span><span class="type-signature"> &rarr; {object}</span></h4>
 					<p class="summary usertext">
 					<p>Merges options passed in with configured ones - and puts in sane defaults if neither is available.</p>
 					</p>
@@ -478,7 +320,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line130">line 130</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line78">line 78</a>
 								</li>
 							</ul>
 						</dd>
@@ -494,12 +336,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>configOptions</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
+									<p>Options passed in from cosmiConfig / calling module</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>cliOptions</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Options passed in from the CLI</p>
 								</td>
 							</tr>
 						</tbody>
@@ -516,7 +367,7 @@
 							<span class="param-type">object</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_pushUpstream"><span class="type-signature">(async) </span>_pushUpstream<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_pushUpstream"><span class="type-signature">(async) </span>_pushUpstream<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Pushes new commits/tags to the configured upstream git remote.</p>
 					</p>
@@ -525,7 +376,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line745">line 745</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line443">line 443</a>
 								</li>
 							</ul>
 						</dd>
@@ -541,30 +392,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -581,16 +423,16 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_releaseCode"><span class="type-signature">(async) </span>_releaseCode<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_restoreCode"><span class="type-signature">(async) </span>_restoreCode<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Creates a release on Github, and marks it as pre-release if required.</p>
+					<p>If code was stashed earlier in the cycle, pops it out.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line859">line 859</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line665">line 665</a>
 								</li>
 							</ul>
 						</dd>
@@ -606,30 +448,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>releaseData</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Data needed to push the release, returned by _generateReleaseNotes</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -648,14 +481,14 @@
 					</dl>
 					<h4 class="name" id="_setupLogger"><span class="type-signature"></span>_setupLogger<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
 					<p class="summary usertext">
-					<p>Creates a logger in CLI mode or uses the passed in logger object in API mode - and returns it.</p>
+					<p>Logger for API mode, otherwise null</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line182">line 182</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line130">line 130</a>
 								</li>
 							</ul>
 						</dd>
@@ -693,7 +526,33 @@
 							<span class="param-type">object</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_stashOrCommit"><span class="type-signature">(async) </span>_stashOrCommit<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+					<h4 class="name" id="_setupTasks"><span class="type-signature"></span>_setupTasks<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Setup the list of tasks to be run</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line150">line 150</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Tasks as Listr.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
+					<h4 class="name" id="_stashOrCommit"><span class="type-signature">(async) </span>_stashOrCommit<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Depending on the configuration, stashes/commits code in the current branch - if required.</p>
 					</p>
@@ -702,7 +561,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line326">line 326</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line268">line 268</a>
 								</li>
 							</ul>
 						</dd>
@@ -718,95 +577,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>status of the stash/commit operation.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">boolean</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_storeJsonReleaseNotes"><span class="type-signature">(async) </span>_storeJsonReleaseNotes<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
-					<p class="summary usertext">
-					<p>Stores the release notes in JSON format at the location specified in the options</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1268">line 1268</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>options</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>releaseData</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Generated release notes</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -823,16 +608,16 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_storePdfReleaseNotes"><span class="type-signature">(async) </span>_storePdfReleaseNotes<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_summarize"><span class="type-signature">(async) </span>_summarize<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Stores the release notes in PDF format at the location specified in the options</p>
+					<p>Print success if everything went through, else print error information.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line1304">line 1304</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line686">line 686</a>
 								</li>
 							</ul>
 						</dd>
@@ -848,30 +633,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>releaseData</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Generated release notes</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -888,72 +664,7 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_storeReleaseNotes"><span class="type-signature">(async) </span>_storeReleaseNotes<span class="signature">(options, logger, releaseData)</span><span class="type-signature"> &rarr; {null}</span></h4>
-					<p class="summary usertext">
-					<p>Stores the release notes in the specified formats, at the specified location.</p>
-					</p>
-					<dl class="details">
-						<dt class="tag-source">Source:</dt>
-						<dd class="tag-source">
-							<ul class="dummy">
-								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line927">line 927</a>
-								</li>
-							</ul>
-						</dd>
-					</dl>
-					<h5>Parameters:</h5>
-					<table class="params">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="last">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="name"><code>options</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>logger</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>releaseData</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Data needed to push the release, returned by _generateReleaseNotes</p>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<h5>Returns:</h5>
-					<div class="param-desc">
-						<p>Nothing.</p>
-					</div>
-					<dl class="param-type">
-						<dt>
-							Type
-						</dt>
-						<dd>
-							<span class="param-type">null</span>
-						</dd>
-					</dl>
-					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(options, logger, git)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_tagCode"><span class="type-signature">(async) </span>_tagCode<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Tags the codebase.</p>
 					</p>
@@ -962,7 +673,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line674">line 674</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line406">line 406</a>
 								</li>
 							</ul>
 						</dd>
@@ -978,30 +689,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>git</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>Git client instance returned by the _initializeGit method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -1018,13 +720,13 @@
 							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(configOptions, cliOptions)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>The main method to tag/release the codebase on Github.</p>
+					<p>The main method to tag/release the codebase on Github / GitLab / etc.</p>
 					<p>This method does 3 things:</p>
 					<ul>
 						<li>Generates the changelog - features/fixes added to the code since the last tag/release</li>
-						<li>Commits, tags, pushes to Github</li>
+						<li>Commits, tags, pushes to Github / GitLab / etc.</li>
 						<li>Creates a release using the tag and the generated changelog</li>
 					</ul>
 					</p>
@@ -1033,7 +735,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line45">line 45</a>
+									<a href="commands_release-command.js.html">commands/release-command.js</a>, <a href="commands_release-command.js.html#line36">line 36</a>
 								</li>
 							</ul>
 						</dd>
@@ -1049,12 +751,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>configOptions</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Parsed command-line options, or options passed in via API</p>
+									<p>Options via cosmiConfig, or via API</p>
+								</td>
+							</tr>
+							<tr>
+								<td class="name"><code>cliOptions</code></td>
+								<td class="type">
+									<span class="param-type">object</span>
+								</td>
+								<td class="description last">
+									<p>Options via the CLI</p>
 								</td>
 							</tr>
 						</tbody>

@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -105,14 +104,14 @@
 				<article>
 					<div class="container-overview">
 						<h2>Constructor</h2>
-						<h4 class="name" id="PublishCommandClass"><span class="type-signature"></span>new PublishCommandClass<span class="signature">(configuration)</span><span class="type-signature"></span></h4>
+						<h4 class="name" id="PublishCommandClass"><span class="type-signature"></span>new PublishCommandClass<span class="signature">(mode)</span><span class="type-signature"></span></h4>
 						<p class="summary usertext">The command class that implements the &quot;publish&quot; step of the workflow.</p>
 						<dl class="details">
 							<dt class="tag-source">Source:</dt>
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line22">line 22</a>
+										<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line19">line 19</a>
 									</li>
 								</ul>
 							</dd>
@@ -132,28 +131,28 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td class="name"><code>configuration</code></td>
+									<td class="name"><code>mode</code></td>
 									<td class="type">
 										<span class="param-type">object</span>
 									</td>
 									<td class="description last">
-										<p>The configuration object containing the command options from the config file (.announcerc, package.json, etc.)</p>
+										<p>Set the current run mode - CLI or API</p>
 									</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 					<h3 class="subsection-title">Methods</h3>
-					<h4 class="name" id="_getReleaseAssetInformation"><span class="type-signature">(async) </span>_getReleaseAssetInformation<span class="signature">(options, logger, repository)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<h4 class="name" id="_getUpstreamRepositoryInfo"><span class="type-signature">(async) </span>_getUpstreamRepositoryInfo<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Connects to the GitHub project pointed to in the configured upstream, retrieves information about the release to-be-published, and retuns that.</p>
+					<p>Retrieves the upstream repository information, and sets a POJO with that info into the context.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line209">line 209</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line184">line 184</a>
 								</li>
 							</ul>
 						</dd>
@@ -169,56 +168,47 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>repository</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>POJO containing information about the project/repo on GitHub hosting the assets</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>POJO with information about the assets to-be-published.</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">object</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_getUpstreamRepositoryInfo"><span class="type-signature">(async) </span>_getUpstreamRepositoryInfo<span class="signature">(options, logger)</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<h4 class="name" id="_initializeGit"><span class="type-signature"></span>_initializeGit<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>Instantiates a Git instance for the project, retrieves the upstream repository information, and returns a POJO with that info.</p>
+					<p>Creates a Git client instance for the current project repository and sets it on the context.</p>
 					</p>
 					<dl class="details">
 						<dt class="tag-source">Source:</dt>
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line157">line 157</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line158">line 158</a>
 								</li>
 							</ul>
 						</dd>
@@ -234,35 +224,35 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<h5>Returns:</h5>
 					<div class="param-desc">
-						<p>POJO with information about the upstream repository URL, etc.</p>
+						<p>Nothing.</p>
 					</div>
 					<dl class="param-type">
 						<dt>
 							Type
 						</dt>
 						<dd>
-							<span class="param-type">object</span>
+							<span class="param-type">null</span>
 						</dd>
 					</dl>
 					<h4 class="name" id="_mergeOptions"><span class="type-signature"></span>_mergeOptions<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
@@ -274,7 +264,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line81">line 81</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line78">line 78</a>
 								</li>
 							</ul>
 						</dd>
@@ -312,7 +302,7 @@
 							<span class="param-type">object</span>
 						</dd>
 					</dl>
-					<h4 class="name" id="_publishToNpm"><span class="type-signature">(async) </span>_publishToNpm<span class="signature">(options, logger, releaseToBePublished)</span><span class="type-signature"> &rarr; {null}</span></h4>
+					<h4 class="name" id="_publishToNpm"><span class="type-signature">(async) </span>_publishToNpm<span class="signature">(ctxt, task)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
 					<p>Retrieves the release assets from GitHub, and publishes them to NPM.</p>
 					</p>
@@ -321,7 +311,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line261">line 261</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line219">line 219</a>
 								</li>
 							</ul>
 						</dd>
@@ -337,30 +327,21 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td class="name"><code>options</code></td>
+								<td class="name"><code>ctxt</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>merged options object returned by the _mergeOptions method</p>
+									<p>Task context containing the options object returned by the _mergeOptions method</p>
 								</td>
 							</tr>
 							<tr>
-								<td class="name"><code>logger</code></td>
+								<td class="name"><code>task</code></td>
 								<td class="type">
 									<span class="param-type">object</span>
 								</td>
 								<td class="description last">
-									<p>Logger instance returned by the _setupLogger method</p>
-								</td>
-							</tr>
-							<tr>
-								<td class="name"><code>releaseToBePublished</code></td>
-								<td class="type">
-									<span class="param-type">object</span>
-								</td>
-								<td class="description last">
-									<p>POJO with information about the assets to-be-published</p>
+									<p>Reference to the task that is running</p>
 								</td>
 							</tr>
 						</tbody>
@@ -386,7 +367,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line122">line 122</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line96">line 96</a>
 								</li>
 							</ul>
 						</dd>
@@ -424,12 +405,38 @@
 							<span class="param-type">object</span>
 						</dd>
 					</dl>
+					<h4 class="name" id="_setupTasks"><span class="type-signature"></span>_setupTasks<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+					<p class="summary usertext">
+					<p>Setup the list of tasks to be run</p>
+					</p>
+					<dl class="details">
+						<dt class="tag-source">Source:</dt>
+						<dd class="tag-source">
+							<ul class="dummy">
+								<li>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line116">line 116</a>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+					<h5>Returns:</h5>
+					<div class="param-desc">
+						<p>Tasks as Listr.</p>
+					</div>
+					<dl class="param-type">
+						<dt>
+							Type
+						</dt>
+						<dd>
+							<span class="param-type">object</span>
+						</dd>
+					</dl>
 					<h4 class="name" id="execute"><span class="type-signature">(async) </span>execute<span class="signature">(options)</span><span class="type-signature"> &rarr; {null}</span></h4>
 					<p class="summary usertext">
-					<p>The main method to publish the GitHub release to NPM.</p>
+					<p>The main method to publish the Git Host release to NPM.</p>
 					<p>This method does 2 things:</p>
 					<ul>
-						<li>Gets the URL to the compressed asset for the last/specified release from GitHub</li>
+						<li>Gets the URL to the compressed asset for the last/specified release from the Git Host</li>
 						<li>Publishes the asset to NPM</li>
 					</ul>
 					</p>
@@ -438,7 +445,7 @@
 						<dd class="tag-source">
 							<ul class="dummy">
 								<li>
-									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line44">line 44</a>
+									<a href="commands_publish-command.js.html">commands/publish-command.js</a>, <a href="commands_publish-command.js.html#line38">line 38</a>
 								</li>
 							</ul>
 						</dd>

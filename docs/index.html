@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -93,7 +92,7 @@
 		</nav>
 		<div id="main">
 			<section class="package">
-				<h3>@twyr/announce 0.9.8</h3>
+				<h3>@twyr/announce 0.9.10-dev.6</h3>
 			</section>
 			<section class="readme usertext">
 				<article>
@@ -201,19 +200,17 @@
 						which takes responsibility only for bumping up the versions, and nothing else. On the other hand, tools such as <a href="https://www.npmjs.com/package/semantic-release">semantic-release</a>
 						provide functionality (via plugins) to push not only to NPM, but also several other registries/endpoints - see <a href="https://github.com/semantic-release/semantic-release/blob/HEAD/docs/extending/plugins-list.md">semantic-release plugins</a>
 						for example.</p>
-					<p>For the <a href="https://github.com/twyr">Twy'r Project</a>, neither of these categories of tools is &quot;exactly right&quot; - they provide either too little,
+					<p>For the usual projects, neither of these categories of tools is &quot;exactly right&quot; - they provide either too little,
 						or too much, functionality. The Announce CLI/Module tries to fill in that &quot;sweet spot&quot; - providing exactly the functionality required.</p>
 					<h4>WORKFLOW</h4>
-					<p>The <a href="https://github.com/twyr">Twy'r Project</a> development/release workflow consists of the following steps:</p>
+					<p>The <a href="https://github.com/twyr/announce">Twy'r Announce</a> tool caters to the following development/release workflow:</p>
 					<ol>
-						<li>Bump version as required</li>
+						<li>Bump version at the beginning of the development cycle / sprint / etc.</li>
 						<li>Create a changelog automatically before tagging</li>
 						<li>Generate release notes and create a Github/Gitlab release using the tag created in Step #2</li>
 						<li>Publish the release to NPM</li>
 						<li>Repeat for the next development/release cycle</li>
 					</ol>
-					<p>Every repository in the project, including this CLI/Module, will adhere to this workflow going forward. The Announce module will be used
-						extensively to maintain the versioning, changelog, and release notes - as well as acting as a helper tool to publish to NPM as required.</p>
 					<h4>USING THE CLI</h4>
 					<h5>CLI Installation</h5>
 					<p>Assuming that node.js and npm have already been installed on the system, <a href="https://github.com/twyr/announce">Announce</a> can be installed
@@ -357,7 +354,7 @@
 			<section>
 				<header>
 					<h2>
-						index.js
+						bin/announce.js
 					</h2>
 				</header>
 				<article>
@@ -367,14 +364,14 @@
 							<dd class="tag-source">
 								<ul class="dummy">
 									<li>
-										<a href="index.js.html">index.js</a>, <a href="index.js.html#line1">line 1</a>
+										<a href="bin_announce.js.html">bin/announce.js</a>, <a href="bin_announce.js.html#line2">line 2</a>
 									</li>
 								</ul>
 							</dd>
 							<dt class="tag-version">Version:</dt>
 							<dd class="tag-version">
 								<ul class="dummy">
-									<li>0.9.8</li>
+									<li>0.9.10-dev.6</li>
 								</ul>
 							</dd>
 							<dt class="tag-author">Author:</dt>
@@ -398,6 +395,54 @@
 						</dl>
 						<div class="description usertext">
 							<p>Main entry point of the Twy'r Announce CLI tool</p>
+						</div>
+					</div>
+				</article>
+			</section>
+			<section>
+				<header>
+					<h2>
+						index.js
+					</h2>
+				</header>
+				<article>
+					<div class="container-overview">
+						<dl class="details">
+							<dt class="tag-source">Source:</dt>
+							<dd class="tag-source">
+								<ul class="dummy">
+									<li>
+										<a href="index.js.html">index.js</a>, <a href="index.js.html#line1">line 1</a>
+									</li>
+								</ul>
+							</dd>
+							<dt class="tag-version">Version:</dt>
+							<dd class="tag-version">
+								<ul class="dummy">
+									<li>0.9.10-dev.6</li>
+								</ul>
+							</dd>
+							<dt class="tag-author">Author:</dt>
+							<dd class="tag-author">
+								<ul>
+									<li><a href="mailto:shadyvd@hotmail.com">Vish Desai</a></li>
+								</ul>
+							</dd>
+							<dt class="tag-copyright">Copyright:</dt>
+							<dd class="tag-copyright">
+								<ul class="dummy">
+									<li>(c) <a href="https://twyr.github.io/annouce">Twy'r Announce</a> 2016-2021</li>
+								</ul>
+							</dd>
+							<dt class="tag-license">License:</dt>
+							<dd class="tag-license">
+								<ul class="dummy">
+									<li>MITNFA</li>
+								</ul>
+							</dd>
+						</dl>
+						<div class="description usertext">
+							<p>Main entry point of the Twy'r Announce API</p>
 						</div>
 					</div>
 				</article>

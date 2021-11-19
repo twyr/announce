@@ -57,34 +57,33 @@
 						<li data-type='method'><a href="PrepareCommandClass.html#_getTargetFileList">_getTargetFileList</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PrepareCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PrepareCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="PublishCommandClass.html">PublishCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="PublishCommandClass.html#_getReleaseAssetInformation">_getReleaseAssetInformation</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_getUpstreamRepositoryInfo">_getUpstreamRepositoryInfo</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_publishToNpm">_publishToNpm</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="PublishCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="PublishCommandClass.html#execute">execute</a></li>
 					</ul>
 				</li>
 				<li><a href="ReleaseCommandClass.html">ReleaseCommandClass</a>
 					<ul class='methods'>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_abortIfReleaseExists">_abortIfReleaseExists</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_generateChangelog">_generateChangelog</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotes">_generateReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_generateReleaseNotesPerRemote">_generateReleaseNotesPerRemote</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_generateRelease">_generateRelease</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_initializeGit">_initializeGit</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_mergeOptions">_mergeOptions</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_pushUpstream">_pushUpstream</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_releaseCode">_releaseCode</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_restoreCode">_restoreCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_setupLogger">_setupLogger</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_setupTasks">_setupTasks</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_stashOrCommit">_stashOrCommit</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeJsonReleaseNotes">_storeJsonReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storePdfReleaseNotes">_storePdfReleaseNotes</a></li>
-						<li data-type='method'><a href="ReleaseCommandClass.html#_storeReleaseNotes">_storeReleaseNotes</a></li>
+						<li data-type='method'><a href="ReleaseCommandClass.html#_summarize">_summarize</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#_tagCode">_tagCode</a></li>
 						<li data-type='method'><a href="ReleaseCommandClass.html#execute">execute</a></li>
 					</ul>
@@ -95,12 +94,11 @@
 			<h1 class="page-title">commands/prepare-command.js</h1>
 			<section>
 				<article>
-					<pre class="prettyprint source linenums"><code>/* eslint-disable security/detect-non-literal-fs-filename */
-/* eslint-disable security/detect-non-literal-regexp */
+					<pre class="prettyprint source linenums"><code>/* eslint-disable security-node/detect-non-literal-require-calls */
 /* eslint-disable security/detect-non-literal-require */
-/* eslint-disable security-node/detect-crlf */
-/* eslint-disable security-node/detect-non-literal-require-calls */
 /* eslint-disable security-node/non-literal-reg-expr */
+/* eslint-disable security/detect-non-literal-regexp */
+/* eslint-disable no-loop-func */
 'use strict';
 
 /**
@@ -112,14 +110,12 @@
  * Module dependencies, required for this module
  * @ignore
  */
-const debugLib = require('debug');
-const debug = debugLib('announce:prepare');
 
 /**
  * @class		PrepareCommandClass
  * @classdesc	The command class that handles all the prepare operations.
  *
- * @param		{object} configuration - The configuration object containing the command options from the config file (.announcerc, package.json, etc.)
+ * @param		{object} mode - Set the current run mode - CLI or API
  *
  * @description
  * The command class that implements the "prepare" step of the workflow.
@@ -128,10 +124,8 @@ const debug = debugLib('announce:prepare');
  */
 class PrepareCommandClass {
 	// #region Constructor
-	constructor(configuration) {
-		Object.defineProperty(this, '_commandOptions', {
-			'value': configuration ?? {}
-		});
+	constructor(execMode) {
+		this.#execMode = execMode;
 	}
 	// #endregion
 
@@ -157,21 +151,22 @@ class PrepareCommandClass {
 	async execute(options) {
 		// Step 1: Setup sane defaults for the options
 		const mergedOptions = this._mergeOptions(options);
+		// console.log(`Merged Options: ${JSON.stringify(mergedOptions, null, '\t')}`);
 
 		// Step 2: Set up the logger according to the options passed in
 		const logger = this._setupLogger(mergedOptions);
+		mergedOptions.logger = logger;
 
-		// Step 3: Get the current version from package.json
-		const currentVersion = this._getCurrentVersion(mergedOptions, logger);
+		// Step 3: Setup the task list
+		const taskList = this?._setupTasks?.();
 
-		// Step 4: Compute the next version
-		const nextVersion = this._computeNextVersion(mergedOptions, logger, currentVersion);
-
-		// Step 5: Get a hold of all the possible files where we need to change the version string.
-		const targetFiles = await this._getTargetFileList(mergedOptions, logger);
-
-		// Step 6: Replace current version strong with next version string in all the target files
-		await this._bumpVersion(mergedOptions, logger, currentVersion, nextVersion, targetFiles);
+		// Step 4: Run the tasks in sequence
+		// eslint-disable-next-line security-node/detect-crlf
+		console.log(`Bumping codebase version for the next development cycle:`);
+		await taskList?.run?.({
+			'options': mergedOptions,
+			'execError': null
+		});
 	}
 	// #endregion
 
@@ -190,21 +185,12 @@ class PrepareCommandClass {
 	 *
 	 */
 	_mergeOptions(options) {
-		const mergedOptions = Object?.assign?.({}, options?.opts?.(), options?.parent?.opts?.());
-		mergedOptions.execMode = this?._commandOptions?.execMode ?? 'cli';
+		const mergedOptions = Object?.assign?.({}, options);
 
-		mergedOptions.debug = mergedOptions?.debug ?? (this?._commandOptions?.debug ?? false);
-		mergedOptions.silent = mergedOptions?.silent ?? (this?._commandOptions?.silent ?? false);
-		mergedOptions.quiet = mergedOptions?.quiet ?? (this?._commandOptions?.quiet ?? false);
-
-		mergedOptions.quiet = mergedOptions.quiet || mergedOptions.silent;
-
-		mergedOptions.series = mergedOptions?.series ?? (this?._commandOptions?.series ?? 'current');
-		mergedOptions.versionLadder = mergedOptions?.versionLadder ?? (this?._commandOptions?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major');
-		mergedOptions.versionLadder = mergedOptions.versionLadder.split(',').map((stage) => { return stage.trim(); });
-
-		mergedOptions.ignoreFolders = mergedOptions?.ignoreFolders ?? (this?._commandOptions.ignoreFolders ?? '');
-		mergedOptions.ignoreFolders = mergedOptions.ignoreFolders.split(',').map((folder) => { return folder.trim(); });
+		mergedOptions.currentWorkingDirectory = mergedOptions?.currentWorkingDirectory ?? process?.cwd?.();
+		mergedOptions.series = mergedOptions?.series ?? 'current';
+		mergedOptions.versionLadder = mergedOptions?.versionLadder?.split?.(',')?.map?.((stage) => { return stage?.trim?.(); })?.filter?.((stage) => { return !!stage &amp;&amp; stage?.length; });
+		mergedOptions.ignoreFolders = mergedOptions?.ignoreFolders?.split?.(',')?.map?.((folder) => { return folder?.trim?.(); })?.filter?.((folder) => { return !!folder &amp;&amp; folder?.length; });
 
 		return mergedOptions;
 	}
@@ -223,25 +209,48 @@ class PrepareCommandClass {
 	 *
 	 */
 	_setupLogger(options) {
-		const execMode = options?.execMode ?? 'cli';
-		if(options?.debug) debugLib?.enable?.('announce:*');
+		if(this.#execMode === 'api')
+			return options?.logger;
 
-		let logger = null;
-		if((execMode === 'api') &amp;&amp; !options?.silent) { // eslint-disable-line curly
-			logger = options?.logger;
-		}
+		return null;
+	}
 
-		if((execMode === 'cli') &amp;&amp; !options?.silent) {
-			const Ora = require('ora');
-			logger = new Ora({
-				'discardStdin': true,
-				'text': `Preparing...`
-			});
+	/**
+	 * @function
+	 * @instance
+	 * @memberof	PrepareCommandClass
+	 * @name		_setupTasks
+	 *
+	 * @return		{object} Tasks as Listr.
+	 *
+	 * @summary  	Setup the list of tasks to be run
+	 *
+	 */
+	_setupTasks() {
+		const Listr = require('listr');
+		const taskList = new Listr([{
+			'title': 'Reading current version...',
+			'task': this?._getCurrentVersion?.bind?.(this)
+		}, {
+			'title': 'Computing next version...',
+			'task': this?._computeNextVersion?.bind?.(this)
+		}, {
+			'title': 'Scanning files to be modified...',
+			'task': this?._getTargetFileList?.bind?.(this)
+		}, {
+			'title': 'Bump version...',
+			'task': this?._bumpVersion?.bind?.(this),
+			'skip': (ctxt) => {
+				if(ctxt?.options?.targetFiles?.length)
+					return false;
 
-			logger?.start?.();
-		}
+				return 'No files found for modification';
+			}
+		}], {
+			'collapse': false
+		});
 
-		return logger;
+		return taskList;
 	}
 
 	/**
@@ -250,57 +259,37 @@ class PrepareCommandClass {
 	 * @memberof	PrepareCommandClass
 	 * @name		_getCurrentVersion
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{string} Current version contained in the package.json file, if present and semantically valid
+	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Returns the version contained in the package.json file.
 	 *
 	 */
-	_getCurrentVersion(options, logger) {
+	_getCurrentVersion(ctxt, task) {
+		ctxt?.options?.logger?.info?.(task.title);
+
 		const path = require('path');
 		const semver = require('semver');
 
-		const projectPackageJson = path.join(process.cwd(), 'package.json');
-		const execMode = options?.execMode ?? 'cli';
-
-		debug(`processing ${projectPackageJson}`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`processing ${projectPackageJson}`);
-			else
-				if(logger) logger.text = `processing ${projectPackageJson}`;
-		}
-
+		const projectPackageJson = path.join(ctxt?.options?.currentWorkingDirectory, 'package.json');
 		const { version } = require(projectPackageJson);
-		if(!version) {
-			if(execMode === 'api')
-				logger?.error?.(`${projectPackageJson} doesn't contain a version field.`);
-			else
-				logger?.fail?.(`${projectPackageJson} doesn't contain a version field.`);
 
-			debug(`package.json at ${projectPackageJson} doesn't contain a version field.`);
+		if(!version) {
+			ctxt?.options?.logger?.error?.(`${projectPackageJson} doesn't contain a version field.`);
 			throw new Error(`${projectPackageJson} doesn't contain a version field.`);
 		}
-		if(!semver.valid(version)) {
-			if(execMode === 'api')
-				logger?.error?.(`${projectPackageJson} contains a non-semantic-version format: ${version}.`);
-			else
-				logger?.fail?.(`${projectPackageJson} contains a non-semantic-version format: ${version}.`);
 
-			debug(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
+		if(!semver.valid(version)) {
+			ctxt?.options?.logger?.error?.(`${projectPackageJson} contains a non-semantic-version format: ${version}.`);
 			throw new Error(`${projectPackageJson} contains a non-semantic-version format: ${version}`);
 		}
 
-		if(execMode === 'api')
-			logger?.info?.(`${projectPackageJson} contains version ${version}`);
-		else
-			if(logger) logger.text = `Preparing... current version: ${version}`;
+		ctxt?.options?.logger?.info(`Current version is: ${version}`);
+		task.title = `Current version is: ${version}`;
 
-		debug(`${projectPackageJson} contains version ${version}`);
-		return version;
+		ctxt.options.currentVersion = version;
 	}
 
 	/**
@@ -309,33 +298,29 @@ class PrepareCommandClass {
 	 * @memberof	PrepareCommandClass
 	 * @name		_computeNextVersion
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{string} currentVersion - Version contained in the package.json file currently
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{string} String representing the next version
+	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Computes the next version to be applied based on current version, the series, and the version ladder - and returns the string representation of it.
 	 *
 	 */
-	_computeNextVersion(options, logger, currentVersion) {
-		const safeJsonStringify = require('safe-json-stringify');
+	_computeNextVersion(ctxt, task) {
+		ctxt?.options?.logger?.info(task.title);
+
 		const semver = require('semver');
+		const parsedVersion = semver?.parse?.(ctxt?.options?.currentVersion);
 
-		debug(`applying ${options.series} series to version ${currentVersion} using the ladder: ${safeJsonStringify(options.versionLadder)}`);
-
-		const execMode = options?.execMode ?? 'cli';
-		const incArgs = [currentVersion];
-		const parsedVersion = semver.parse(currentVersion);
-
-		switch (options.series) {
+		const incArgs = [ctxt?.options?.currentVersion];
+		switch (ctxt?.options?.series) {
 			case 'current':
 				if(parsedVersion?.prerelease?.length) {
-					incArgs.push('prerelease');
-					incArgs.push(parsedVersion?.prerelease[0]);
+					incArgs?.push?.('prerelease');
+					incArgs?.push?.(parsedVersion?.prerelease[0]);
 				}
 				else {
-					incArgs.push('patch');
+					incArgs?.push?.('patch');
 				}
 				break;
 
@@ -343,46 +328,39 @@ class PrepareCommandClass {
 				if(parsedVersion?.prerelease?.length) {
 					let preReleaseTag = parsedVersion?.prerelease[0];
 
-					const currentStep = options.versionLadder.indexOf(preReleaseTag);
+					const currentStep = ctxt?.options?.versionLadder?.indexOf?.(preReleaseTag);
 					if(currentStep === -1)
 						preReleaseTag = 'patch';
-					else if(currentStep === options.versionLadder.length - 1)
+					else if(currentStep === ctxt?.options?.versionLadder?.length - 1)
 						preReleaseTag = 'patch';
 					else
-						preReleaseTag = options.versionLadder[currentStep + 1];
+						preReleaseTag = ctxt?.options?.versionLadder?.[currentStep + 1];
 
-					if(preReleaseTag !== 'patch') incArgs.push('prerelease');
-					incArgs.push(preReleaseTag);
+					if(preReleaseTag !== 'patch') incArgs?.push?.('prerelease');
+					incArgs?.push?.(preReleaseTag);
 				}
 				else {
-					incArgs.push('prerelease');
-					incArgs.push(options.versionLadder[0]);
+					incArgs?.push?.('prerelease');
+					incArgs?.push?.(ctxt?.options?.versionLadder?.[0]);
 				}
 				break;
 
 			case 'patch':
 			case 'minor':
 			case 'major':
-				incArgs.push(options.series);
+				incArgs?.push?.(ctxt?.options?.series);
 				break;
 
 			default:
-				if(!semver.valid(options.series)) {
-					incArgs.length = 0;
-					throw new Error(`Unknown series: ${options.series}`);
-				}
-				break;
+				throw new Error(`Unknown series: ${ctxt?.options?.series}`);
 		}
 
-		const nextVersion = incArgs.length ? semver.inc(...incArgs) : options.series;
+		const nextVersion = incArgs?.length ? semver?.inc?.(...incArgs) : ctxt?.options?.series;
 
-		if(execMode === 'api')
-			logger?.info?.(`Preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
-		else
-			logger?.succeed?.(`Preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
+		ctxt?.options?.logger?.info(`Next version will be: ${nextVersion}`);
+		task.title = `Next version will be: ${nextVersion}`;
 
-		debug(`preparing to bump current version: ${currentVersion} to next version: ${nextVersion}`);
-		return nextVersion;
+		ctxt.options.nextVersion = nextVersion;
 	}
 
 	/**
@@ -392,89 +370,67 @@ class PrepareCommandClass {
 	 * @memberof	PrepareCommandClass
 	 * @name		_getTargetFileList
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{string} List of files in which the current version should be replaced with the new version
+	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Looks at all the files in the project folder/sub-folders, removes files ignored by .gitignore, then removes files in folders marked ignore in the config, and returns the remaining.
 	 *
 	 */
-	async _getTargetFileList(options, logger) {
-		const { 'fdir': FDir } = require('fdir');
-		const path = require('path');
-
-		const execMode = options?.execMode ?? 'cli';
-
-		debug(`crawling ${process.cwd()}`);
-		// eslint-disable-next-line curly
-		if(!options?.quiet) {
-			if(execMode === 'api')
-				logger?.debug?.(`Crawling for target files in ${process.cwd()}`);
-			else
-				if(logger) logger.text = `Crawling for target files in${process.cwd()}`;
-		}
-
-		const crawler = new FDir().withFullPaths().crawl(process.cwd());
-		let targetFiles = await crawler.withPromise();
-
+	async _getTargetFileList(ctxt, task) {
 		try {
-			// eslint-disable-next-line node/no-missing-require
-			const fileSystem = require('fs/promises');
-			const gitIgnorePath = path.join(process.cwd(), '.gitignore');
+			ctxt?.options?.logger?.info?.(task.title);
 
-			debug(`processing ${gitIgnorePath}`);
-			let gitIgnoreFile = await fileSystem.readFile(gitIgnorePath, { 'encoding': 'utf8' });
-			gitIgnoreFile += `\n\n**/.git\n${options.ignoreFolders.map((ignoredEntity) => { return ignoredEntity.trim(); }).join('\n')}\n\n`;
+			const { 'fdir': FDir } = require('fdir');
+
+			const crawler = new FDir()?.withFullPaths?.()?.crawl?.(ctxt?.options?.currentWorkingDirectory);
+			const targetFiles = await crawler?.withPromise?.();
+
+			// eslint-disable-next-line node/no-missing-require
+			const path = require('path');
+			const gitIgnorePath = path.join(ctxt?.options?.currentWorkingDirectory, '.gitignore');
+
+			const fileSystem = require('fs/promises');
+			// eslint-disable-next-line security/detect-non-literal-fs-filename
+			let gitIgnoreFile = await fileSystem?.readFile?.(gitIgnorePath, { 'encoding': 'utf8' });
+			gitIgnoreFile += `\n\n**/.git\n${ctxt?.options?.ignoreFolders?.join?.('\n')}\n\n`;
 
 			gitIgnoreFile = gitIgnoreFile
-			.split('\n')
-			.map((gitIgnoreLine) => {
-				if(gitIgnoreLine.trim().length === 0)
-					return gitIgnoreLine.trim();
+			?.split?.('\n')
+			?.map?.((gitIgnoreLine) => {
+				if(gitIgnoreLine?.trim?.()?.length === 0)
+					return gitIgnoreLine?.trim?.();
 
-				if(gitIgnoreLine.startsWith('#'))
+				if(gitIgnoreLine?.startsWith?.('#'))
 					return gitIgnoreLine;
 
-				if(gitIgnoreLine.startsWith('**/'))
+				if(gitIgnoreLine?.startsWith?.('**/'))
 					return gitIgnoreLine;
 
-				if(gitIgnoreLine.startsWith('/'))
+				if(gitIgnoreLine?.startsWith?.('/'))
 					return `${gitIgnoreLine}\n**${gitIgnoreLine}`;
 
-				return `${gitIgnoreLine}\n${path.join('**', gitIgnoreLine)}`;
+				return `${gitIgnoreLine}\n${path?.join?.('**', gitIgnoreLine)}`;
 			})
 			.filter((gitIgnoreLine) => {
-				return gitIgnoreLine.length;
+				return gitIgnoreLine?.length;
 			})
 			.join('\n\n');
 
-			debug(`.gitignore used:\n${gitIgnoreFile}`);
-
-			debug(`parsing ${gitIgnorePath}`);
 			const gitIgnoreParser = require('gitignore-parser');
-			const gitIgnore = gitIgnoreParser.compile(gitIgnoreFile);
+			const gitIgnore = gitIgnoreParser?.compile?.(gitIgnoreFile);
 
-			targetFiles = targetFiles.filter(gitIgnore.accepts);
+			ctxt.options.targetFiles = targetFiles?.filter?.(gitIgnore?.accepts);
 
-			if(execMode === 'api')
-				logger?.info?.(`Retrieved target files from ${process.cwd()}`);
-			else
-				logger?.succeed?.(`Retrieved target files from ${process.cwd()}`);
-
-			debug(`applying .gitignore to possible targets`);
+			ctxt?.options?.logger?.info?.(`Files to be modified: ${ctxt?.options?.targetFiles?.length}`);
+			task.title = `Files to be modified: ${ctxt?.options?.targetFiles?.length}`;
 		}
 		catch(err) {
-			if(execMode === 'api')
-				logger?.error?.(`Problem processing .gitignore: ${err.message}.`);
-			else
-				logger?.fail?.(`Problem processing .gitignore: ${err.message}.`);
-
-			debug(`problem processing .gitignore: ${err.message}\n${err.stack}`);
-			targetFiles = [];
+			ctxt?.options?.logger?.error?.(`Problem processing .gitignore: ${err.message}.`);
+			task.title = `Scanning files to be modified: Error`;
+			throw err;
 		}
-
-		return targetFiles;
 	}
 
 	/**
@@ -484,107 +440,107 @@ class PrepareCommandClass {
 	 * @memberof	PrepareCommandClass
 	 * @name		_bumpVersion
 	 *
-	 * @param		{object} options - merged options object returned by the _mergeOptions method
-	 * @param		{object} logger - Logger instance returned by the _setupLogger method
-	 * @param		{string} currentVersion - String representing the current version in package.json that needs to be replaced
-	 * @param		{string} nextVersion - String representing the next version of the package
-	 * @param		{Array} targetFiles - List of files where the current version string should be replaced with the new version string
+	 * @param		{object} ctxt - Task context containing the options object returned by the _mergeOptions method
+	 * @param		{object} task - Reference to the task that is running
 	 *
-	 * @return		{null} Nothing
+	 * @return		{null} Nothing.
 	 *
 	 * @summary  	Replaces the old version string with the new version string.
 	 *
 	 */
-	async _bumpVersion(options, logger, currentVersion, nextVersion, targetFiles) {
-		debug(`modifying version to ${nextVersion} in: ${targetFiles.join(', ')}`);
-		const execMode = options?.execMode ?? 'cli';
+	async _bumpVersion(ctxt, task) {
+		ctxt?.options?.logger?.info(task.title);
 
-		const path = require('path');
 		const replaceInFile = require('replace-in-file');
 		const replaceOptions = {
 			'files': '',
 			'from': '',
-			'to': nextVersion
+			'to': ctxt?.options?.nextVersion
 		};
 
-		if(execMode !== 'api') {
-			logger?.succeed?.(`Modifying target files:`);
-			if(logger) logger.prefixText = '  ';
-		}
-		else {
-			logger?.info?.(`Modifying target files`);
-		}
+		const changedFiles = [];
 
+		let currentCount = 0;
+		let changedCount = 0;
+
+		// eslint-disable-next-line no-useless-escape
+		const currentVersion = ctxt?.options?.currentVersion?.replace?.(/\./g, `\.`);
+		const targetFiles = ctxt?.options?.targetFiles;
 		for(const targetFile of targetFiles) {
-			// eslint-disable-next-line curly
-			if(!options?.quiet) {
-				if(execMode === 'api')
-					logger?.debug?.(`processing ${targetFile}`);
-				else
-					if(logger) logger.text = `processing ${targetFile}...`;
-			}
+			currentCount++;
 
+			task.title = `Processing ${currentCount} / ${targetFiles?.length}, Modified ${changedCount}`;
 			replaceOptions.files = targetFile;
 
+			const path = require('path');
 			const targetFileBaseName = path.basename(targetFile).trim();
 			if(targetFileBaseName.startsWith('package') || targetFileBaseName.startsWith('npm'))
 				replaceOptions.from = new RegExp(currentVersion, 'i');
 			else
 				replaceOptions.from = new RegExp(currentVersion, 'gi');
 
-			const results = await replaceInFile(replaceOptions);
-			if(!results.length) continue;
+			const results = await replaceInFile?.(replaceOptions);
+			if(!results?.length) continue;
 
 			results.forEach((result) => {
-				if(!result.hasChanged)
+				if(!result?.hasChanged)
 					return;
 
-				debug(`${result.file} bumped to ${nextVersion}`);
-				// eslint-disable-next-line curly
-				if(!options?.quiet) {
-					if(execMode === 'api')
-						logger?.debug?.(`${result.file} bumped to ${nextVersion}`);
-					else
-						logger?.succeed?.(`processed ${result.file}`);
-				}
+				changedCount++;
+				changedFiles?.push?.(result?.file);
 			});
+
+			if(this.#execMode === 'cli')
+				await this?._sleep?.(250);
 		}
 
-		if(execMode !== 'api' &amp;&amp; logger)
-			logger.prefixText = '';
+		ctxt?.options?.logger?.info?.(`Bumped version in ${changedCount} files: ${changedFiles?.join?.(',')}`);
+		task.title = `Bumped version in ${changedCount} files:`;
 
-		if(execMode === 'api')
-			logger?.info?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
-		else
-			logger?.succeed?.(`Done bumping version from ${currentVersion} to ${nextVersion}`);
+		if(this.#execMode !== 'cli')
+			return;
 
+		setTimeout(() => {
+			console.info?.(`      ${changedFiles?.join?.('\n      ')}`);
+		}, 500);
+	}
 
-		debug(`done bumping version from ${currentVersion} to ${nextVersion}`);
-		return;
+	async _sleep(ms) {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms);
+		});
 	}
 	// #endregion
 
 	// #region Private Fields
+	#execMode = null;
 	// #endregion
 }
 
 // Add the command to the cli
 exports.commandCreator = function commandCreator(commanderProcess, configuration) {
-	const commandObj = new PrepareCommandClass(configuration?.prepare);
+	const Commander = require('commander');
+	const prepare = new Commander.Command('prepare');
 
-	commanderProcess
-		.command('prepare')
-		.option('-ss, --series &lt;type>', 'Specify the series of the next release (current, next, patch, minor, major)', 'current')
-		.option('-vl, --version-ladder &lt;stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
-		.option('-if, --ignore-folders &lt;folder list>', 'Comma-separated list of folders to ignore when checking for files containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''))
-		.action(commandObj.execute.bind(commandObj));
+	// Setup the command
+	prepare?.alias?.('prep');
+	prepare
+		?.option?.('--current-working-directory &lt;folder>', 'Path to the current working directory', configuration?.prepare?.currentWorkingDirectory?.trim?.() ?? process?.cwd?.())
+		?.option?.('--series &lt;type>', 'Specify the series of the next release (current, next, patch, minor, major)', (configuration?.prepare?.series ?? 'current'))
+		?.option?.('--version-ladder &lt;stages>', 'Specify the series releases used in the project', (configuration?.prepare?.versionLadder ?? 'dev, alpha, beta, rc, patch, minor, major'))
+		?.option?.('--ignore-folders &lt;folder list>', 'Comma-separated list of folders to ignore when checking for files containing the current version string', (configuration?.prepare?.ignoreFolders ?? ''));
 
+	const commandObj = new PrepareCommandClass('cli');
+	prepare?.action?.(commandObj?.execute?.bind?.(commandObj));
+
+	// Add it to the mix
+	commanderProcess?.addCommand?.(prepare);
 	return;
 };
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	const commandObj = new PrepareCommandClass({ 'execMode': 'api' });
+	const commandObj = new PrepareCommandClass('api');
 	return {
 		'name': 'prepare',
 		'method': commandObj.execute.bind(commandObj)
