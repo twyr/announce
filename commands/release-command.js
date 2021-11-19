@@ -950,12 +950,7 @@ class ReleaseCommandClass {
 			const consolidatedMessage = `Changelog for release ${pkg?.version}\n${trailerMessages ?? ''}`;
 
 			await git?.add?.('.');
-			await git?.commit?.(consolidatedMessage, null, {
-				'--all': true,
-				'--allow-empty': true,
-				'--no-verify': true,
-				'--signoff': true
-			});
+			await git?.commit?.(consolidatedMessage, null, ['--all', '--allow-empty', '--no-verify', '--signoff']);
 
 			task.title = 'Commit changelog: Done';
 		}
