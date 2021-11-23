@@ -1,7 +1,25 @@
 #### CHANGE LOG
 
 
+##### 23-Nov-2021
+
+fix(release): upstream remote list truncation ([5850ea106c1ffa679df6586b436e7bb354ea99f4](https://github.com/twyr/announce/commit/5850ea106c1ffa679df6586b436e7bb354ea99f4))
+
+
+
 ##### 19-Nov-2021
+
+fix(release): changelog generation issue ([12918a343341f5341a15bbb1c9964417dccacaba](https://github.com/twyr/announce/commit/12918a343341f5341a15bbb1c9964417dccacaba))
+
+fix(release): wrong check for skipping changelog generation ([1c638c1da480e8ff8e1acfe7e1bbf2b48263901b](https://github.com/twyr/announce/commit/1c638c1da480e8ff8e1acfe7e1bbf2b48263901b))
+
+docs(contrib): add dependency graph for easier code navigation ([672ce8b997e4ff109d4b6c951c73d7ff74a05a78](https://github.com/twyr/announce/commit/672ce8b997e4ff109d4b6c951c73d7ff74a05a78))
+
+docs(all): documentation for all commands ([a9d0ac96d89f7b596cce5d96b13e1fe814585cc4](https://github.com/twyr/announce/commit/a9d0ac96d89f7b596cce5d96b13e1fe814585cc4))
+
+docs(all): modified documentation for commands ([d7c32c069c50aa5cb72b3dc5d5df9a3843899b54](https://github.com/twyr/announce/commit/d7c32c069c50aa5cb72b3dc5d5df9a3843899b54))
+
+feat(command): migrate to ListR ([9caaffadd4f8851668a21d6a02ac3f9ad39f44f1](https://github.com/twyr/announce/commit/9caaffadd4f8851668a21d6a02ac3f9ad39f44f1))
 
 fix(release): changelog generation issue ([12918a343341f5341a15bbb1c9964417dccacaba](https://github.com/twyr/announce/commit/12918a343341f5341a15bbb1c9964417dccacaba))
 
@@ -54,8 +72,14 @@ feat(release): migrated to ListR ([a6fc8f8c37662fe204e14af795e10e202ea0b438](htt
 
 feat(prepare): migrated to ListR ([746ae5b7e2156ada33825e5a10f59685ed392d31](https://github.com/twyr/announce/commit/746ae5b7e2156ada33825e5a10f59685ed392d31))
 
+feat(release): migrated to ListR ([a6fc8f8c37662fe204e14af795e10e202ea0b438](https://github.com/twyr/announce/commit/a6fc8f8c37662fe204e14af795e10e202ea0b438))
+
+feat(prepare): migrated to ListR ([746ae5b7e2156ada33825e5a10f59685ed392d31](https://github.com/twyr/announce/commit/746ae5b7e2156ada33825e5a10f59685ed392d31))
+
 
 ##### 17-Nov-2021
+
+feat(entry-points): removed --debug, --quiet, & --silent options ([87a2aae48508302ef7340ba83a2fd17ce1ac5254](https://github.com/twyr/announce/commit/87a2aae48508302ef7340ba83a2fd17ce1ac5254))
 
 feat(entry-points): removed --debug, --quiet, & --silent options ([87a2aae48508302ef7340ba83a2fd17ce1ac5254](https://github.com/twyr/announce/commit/87a2aae48508302ef7340ba83a2fd17ce1ac5254))
 
