@@ -189,7 +189,6 @@ class ReleaseCommandClass {
 			'skip': (ctxt) => {
 				if(ctxt?.execError) return `Error in one of the previous steps`;
 				if(!ctxt?.options?.git) return `No Git client found.`;
-				if(!ctxt?.options?.createTag) return `No changelog generated, so nothing to tag`;
 				if(!ctxt?.options?.tag) return `--no-tag option specified.`;
 				if(ctxt?.options?.useTag?.length) return `Using previous tag ${ctxt?.options?.useTag}`;
 
@@ -380,7 +379,6 @@ class ReleaseCommandClass {
 				const branchStatus = await git?.status?.();
 				if(branchStatus?.files?.length) return false;
 
-				ctxt.options.createTag = false;
 				return `Nothing to commit.`;
 			}
 		}, {
