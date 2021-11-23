@@ -1,18 +1,6 @@
 #### CHANGE LOG
 
 
-##### 23-Nov-2021
-
-fix(release): tag without changelog generation ([22e4ddffa0e4b0c3e7f49b81ae7b9069bc5f7b39](https://github.com/twyr/announce/commit/22e4ddffa0e4b0c3e7f49b81ae7b9069bc5f7b39))
-
-fix(release): upstream remote list truncation ([5850ea106c1ffa679df6586b436e7bb354ea99f4](https://github.com/twyr/announce/commit/5850ea106c1ffa679df6586b436e7bb354ea99f4))
-
-fix(release): upstream remote list truncation ([5850ea106c1ffa679df6586b436e7bb354ea99f4](https://github.com/twyr/announce/commit/5850ea106c1ffa679df6586b436e7bb354ea99f4))
-
-fix(release): upstream remote list truncation ([5850ea106c1ffa679df6586b436e7bb354ea99f4](https://github.com/twyr/announce/commit/5850ea106c1ffa679df6586b436e7bb354ea99f4))
-
-
-
 ##### 19-Nov-2021
 
 fix(release): changelog generation issue ([12918a343341f5341a15bbb1c9964417dccacaba](https://github.com/twyr/announce/commit/12918a343341f5341a15bbb1c9964417dccacaba))
