@@ -94,14 +94,14 @@ class GitLabWrapper {
 	async fetchReleaseInformation(repository, releaseName) {
 		const allReleases = await this.#client?.Releases?.all?.(`${repository?.user}/${repository?.project}`);
 
-		if(releaseName && releaseName?.trim?.()?.length) {
+		if(releaseName?.trim?.()?.length) {
 			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
 			return {
 				'name': releaseInfo?.name,
 				'prerelease': releaseInfo?.upcoming_release,
 				'published': releaseInfo?.created_at,
-				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tarball_url': releaseInfo?.assets?.sources?.filter?.((source) => { return source?.format === 'tar.gz'; })?.[0]?.['url'],
 				'tag': releaseInfo?.tag_name
 			};
 		}
@@ -111,7 +111,7 @@ class GitLabWrapper {
 				'name': release?.name,
 				'prerelease': release?.upcoming_release,
 				'published': release?.created_at,
-				'tarball_url': release?.assets?.sources?.filter?.((source) => { return source.format === 'tar.gz'; })?.[0]?.['url'],
+				'tarball_url': release?.assets?.sources?.filter?.((source) => { return source?.format === 'tar.gz'; })?.[0]?.['url'],
 				'tag': release?.tag_name
 			};
 		})
@@ -138,7 +138,7 @@ class GitLabWrapper {
 	 *
 	 */
 	async createRelease(releaseData) {
-		const repository = releaseData['REPO'];
+		const repository = releaseData?.['REPO'];
 		await this.#client?.Releases?.create?.(`${repository?.user}/${repository?.project}`, {
 			'name': releaseData?.['RELEASE_NAME'],
 			'tag_name': releaseData?.['RELEASE_TAG'],

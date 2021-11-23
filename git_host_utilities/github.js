@@ -69,7 +69,7 @@ class GitHubWrapper {
 		const ghRepo = this.#client?.repo?.(`${repository?.user}/${repository?.project}`);
 
 		let commit = await ghRepo?.commitAsync?.(commitLog?.hash);
-		commit = commit[0];
+		commit = commit?.[0];
 
 		return {
 			'name': commit?.commit?.author?.name,
@@ -98,9 +98,9 @@ class GitHubWrapper {
 		const ghRepo = this.#client?.repo?.(`${repository?.user}/${repository?.project}`);
 
 		let allReleases = await ghRepo?.releasesAsync?.();
-		allReleases = allReleases[0];
+		allReleases = allReleases?.[0];
 
-		if(releaseName && releaseName?.trim?.()?.length) {
+		if(releaseName?.trim?.()?.length) {
 			const releaseInfo = allReleases?.filter?.((release) => { return (release?.name === releaseName); })?.shift?.();
 
 			return {
@@ -145,7 +145,7 @@ class GitHubWrapper {
 	 */
 	async createRelease(releaseData) {
 		return new Promise((resolve, reject) => {
-			const repository = releaseData['REPO'];
+			const repository = releaseData?.['REPO'];
 			this.#client?.post?.(`https://api.${repository.domain}/repos/${repository.user}/${repository.project}/releases`, {
 				'accept': 'application/vnd.github.v3+json',
 				'tag_name': releaseData?.['RELEASE_TAG'],
@@ -163,7 +163,7 @@ class GitHubWrapper {
 					return;
 				}
 
-				resolve(status);
+				resolve?.(status);
 			});
 		});
 	}
@@ -210,7 +210,7 @@ class GitHubWrapper {
 					return;
 				}
 
-				if(status !== 200) {
+				if(status >= 300) {
 					reject?.(status);
 					return;
 				}
