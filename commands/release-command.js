@@ -835,7 +835,7 @@ class ReleaseCommandClass {
 
 			// Step 1: Get the upstream to use...
 			const upstreamRemoteList = ctxt?.options?.upstream;
-			const upstreamForLinks = upstreamRemoteList?.shift?.();
+			const upstreamForLinks = upstreamRemoteList?.[0];
 
 			// Step 2: Get the upstream type...
 			const hostedGitInfo = require('hosted-git-info');
