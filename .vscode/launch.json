@@ -24,7 +24,7 @@
             ],
             "program": "${workspaceFolder}/bin/announce.js",
             "cwd": "${workspaceFolder}",
-            "args": ["release", "--upstream", "github,gitlab"]
+            "args": ["release", "--no-release"]
         },
         {
             "type": "pwa-node",
