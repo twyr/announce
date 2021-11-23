@@ -18,6 +18,8 @@ module.exports = {
 				'test',
 				'wip'
 			]
-		]
+		],
+
+		'body-max-length': [2, "always", Infinity]
 	}
 };
