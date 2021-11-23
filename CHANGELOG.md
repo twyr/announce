@@ -1,6 +1,14 @@
 #### CHANGE LOG
 
 
+##### 23-Nov-2021
+
+docs(changelog): reverting to previous day changes ([42df0c394a36f01b39786c23bf66f8808a7647de](https://github.com/twyr/announce/commit/42df0c394a36f01b39786c23bf66f8808a7647de))
+
+fix(github-utility): create release status code - wrong check ([8ad86769d8eb6c268e758113d8827cb5e8acd38e](https://github.com/twyr/announce/commit/8ad86769d8eb6c268e758113d8827cb5e8acd38e))
+
+
+
 ##### 19-Nov-2021
 
 fix(release): changelog generation issue ([12918a343341f5341a15bbb1c9964417dccacaba](https://github.com/twyr/announce/commit/12918a343341f5341a15bbb1c9964417dccacaba))
