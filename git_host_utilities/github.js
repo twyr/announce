@@ -158,7 +158,7 @@ class GitHubWrapper {
 					return;
 				}
 
-				if(status !== 200) {
+				if(status >= 300) {
 					reject?.(status);
 					return;
 				}
