@@ -28,8 +28,8 @@
  */
 class PrepareCommandClass {
 	// #region Constructor
-	constructor(execMode) {
-		this.#execMode = execMode;
+	constructor(mode) {
+		this.#execMode = mode;
 	}
 	// #endregion
 

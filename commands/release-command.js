@@ -28,7 +28,7 @@
 class ReleaseCommandClass {
 	// #region Constructor
 	constructor(mode) {
-		this.#execMode = mode?.execMode;
+		this.#execMode = mode;
 	}
 	// #endregion
 
@@ -1277,41 +1277,51 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
 	const projectPackageJson = path.join((configuration?.release?.currentWorkingDirectory?.trim?.() ?? process.cwd()), 'package.json');
-	const pkg = require(projectPackageJson);
 
-	// Get the dynamic template filler - use it for configuration substitution
-	const fillTemplate = require('es6-dynamic-template');
-
-	if(configuration?.release?.currentWorkingDirectory) {
-		configuration.release.currentWorkingDirectory = fillTemplate?.(configuration?.release?.currentWorkingDirectory, pkg);
+	let pkg = null;
+	try {
+		pkg = require(projectPackageJson);
+	}
+	catch(err) {
+		// Do nothing
+		pkg = null;
 	}
 
-	if(configuration?.release?.commitMessage) {
-		configuration.release.commitMessage = fillTemplate?.(configuration?.release?.commitMessage, pkg);
-	}
+	if(pkg) {
+		// Get the dynamic template filler - use it for configuration substitution
+		const fillTemplate = require('es6-dynamic-template');
 
-	if(configuration?.release?.useTag) {
-		configuration.release.useTag = fillTemplate?.(configuration?.release?.useTag, pkg);
-	}
+		if(configuration?.release?.currentWorkingDirectory) {
+			configuration.release.currentWorkingDirectory = fillTemplate?.(configuration?.release?.currentWorkingDirectory, pkg);
+		}
 
-	if(configuration?.release?.tagName) {
-		configuration.release.tagName = fillTemplate?.(configuration?.release?.tagName, pkg);
-	}
+		if(configuration?.release?.commitMessage) {
+			configuration.release.commitMessage = fillTemplate?.(configuration?.release?.commitMessage, pkg);
+		}
 
-	if(configuration?.release?.tagMessage) {
-		configuration.release.tagMessage = fillTemplate?.(configuration?.release?.tagMessage, pkg);
-	}
+		if(configuration?.release?.useTag) {
+			configuration.release.useTag = fillTemplate?.(configuration?.release?.useTag, pkg);
+		}
 
-	if(configuration?.release?.releaseName) {
-		configuration.release.releaseName = fillTemplate?.(configuration?.release?.releaseName, pkg);
-	}
+		if(configuration?.release?.tagName) {
+			configuration.release.tagName = fillTemplate?.(configuration?.release?.tagName, pkg);
+		}
 
-	if(configuration?.release?.releaseMessage) {
-		configuration.release.releaseMessage = fillTemplate?.(configuration?.release?.releaseMessage, pkg);
-	}
+		if(configuration?.release?.tagMessage) {
+			configuration.release.tagMessage = fillTemplate?.(configuration?.release?.tagMessage, pkg);
+		}
 
-	if(configuration?.release?.outputPath) {
-		configuration.release.outputPath = fillTemplate?.(configuration?.release?.outputPath, pkg);
+		if(configuration?.release?.releaseName) {
+			configuration.release.releaseName = fillTemplate?.(configuration?.release?.releaseName, pkg);
+		}
+
+		if(configuration?.release?.releaseMessage) {
+			configuration.release.releaseMessage = fillTemplate?.(configuration?.release?.releaseMessage, pkg);
+		}
+
+		if(configuration?.release?.outputPath) {
+			configuration.release.outputPath = fillTemplate?.(configuration?.release?.outputPath, pkg);
+		}
 	}
 
 	// Setup the command
@@ -1324,11 +1334,11 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 		?.option?.('--no-tag', 'Don\'t tag now. Use last tag when cutting this release', configuration?.release?.tag ?? false)
 		?.option?.('--use-tag <name>', 'Use the (existing) tag specified when cutting this release', configuration?.release?.useTag?.trim?.() ?? '')
-		?.option?.('--tag-name <name>', 'Tag Name to use for this release', configuration?.release?.tagName?.trim?.() ?? `V${pkg?.version}`)
-		?.option?.('--tag-message <message>', 'Message to use when creating the tag.', configuration?.release?.tagMessage?.trim?.() ?? `The spaghetti recipe at the time of releasing V${pkg.version}`)
+		?.option?.('--tag-name <name>', 'Tag Name to use for this release', configuration?.release?.tagName?.trim?.() ?? `V${(pkg ? pkg.version : '') ?? ''}`)
+		?.option?.('--tag-message <message>', 'Message to use when creating the tag.', configuration?.release?.tagMessage?.trim?.() ?? `The spaghetti recipe at the time of releasing V${(pkg ? pkg.version : '') ?? ''}`)
 
 		?.option?.('--no-release', 'Don\'t release now. Simply tag and exit', configuration?.release?.release ?? false)
-		?.option?.('--release-name <name>', 'Name to use for this release', configuration?.release?.releaseName?.trim?.() ?? `V${pkg.version} Release`)
+		?.option?.('--release-name <name>', 'Name to use for this release', configuration?.release?.releaseName?.trim?.() ?? `V${(pkg ? pkg.version : '') ?? ''} Release`)
 		?.option?.('--release-message <path to release notes EJS>', 'Path to EJS file containing the release message/notes, with/without a placeholder for auto-generated metrics', configuration?.release?.releaseMessage?.trim?.() ?? '')
 
 		?.option?.('--output-format <json|pdf|all>', 'Format(s) to output the generated release notes', configuration?.release?.outputFormat?.trim?.() ?? 'none')
@@ -1336,11 +1346,11 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 		?.option?.('--upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream?.trim?.() ?? 'upstream')
 
-		?.option?.('--github-token <token>', 'Token to use for creating the release on GitHub', configuration?.release?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN)
-		?.option?.('--gitlab-token <token>', 'Token to use for creating the release on GitLab', configuration?.release?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN)
+		?.option?.('--github-token <token>', 'Token to use for creating the release on GitHub', configuration?.release?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN ?? 'PROCESS.ENV.GITHUB_TOKEN')
+		?.option?.('--gitlab-token <token>', 'Token to use for creating the release on GitLab', configuration?.release?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN ?? 'PROCESS.ENV.GITLAB_TOKEN')
 	;
 
-	const commandObj = new ReleaseCommandClass({ 'execMode': 'cli' });
+	const commandObj = new ReleaseCommandClass('cli');
 	release?.action?.(commandObj?.execute?.bind?.(commandObj, configuration?.release));
 
 	// Add it to the mix
@@ -1350,7 +1360,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 
 // Export the API for usage by downstream programs
 exports.apiCreator = function apiCreator() {
-	const commandObj = new ReleaseCommandClass({ 'execMode': 'api' });
+	const commandObj = new ReleaseCommandClass('api');
 	return {
 		'name': 'release',
 		'method': commandObj?.execute?.bind?.(commandObj)
