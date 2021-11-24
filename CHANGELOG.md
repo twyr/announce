@@ -1,6 +1,12 @@
 #### CHANGE LOG
 
 
+##### 24-Nov-2021
+
+docs(all): updated for the current release ([19b6f1d77b5fb099977735952e9033d68b35d5a3](https://github.com/twyr/announce/commit/19b6f1d77b5fb099977735952e9033d68b35d5a3))
+
+
+
 ##### 23-Nov-2021
 
 docs(changelog): reverting to previous day changes ([42df0c394a36f01b39786c23bf66f8808a7647de](https://github.com/twyr/announce/commit/42df0c394a36f01b39786c23bf66f8808a7647de))
