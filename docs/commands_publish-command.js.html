@@ -125,8 +125,8 @@
  */
 class PublishCommandClass {
 	// #region Constructor
-	constructor(execMode) {
-		this.#execMode = execMode;
+	constructor(mode) {
+		this.#execMode = mode;
 	}
 	// #endregion
 
@@ -375,17 +375,27 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
 	const projectPackageJson = path.join((configuration?.publish?.currentWorkingDirectory?.trim?.() ?? process.cwd()), 'package.json');
-	const pkg = require(projectPackageJson);
 
-	// Get the dynamic template filler - use it for configuration substitution
-	const fillTemplate = require('es6-dynamic-template');
-
-	if(configuration?.publish?.currentWorkingDirectory) {
-		configuration.publish.currentWorkingDirectory = fillTemplate?.(configuration?.publish?.currentWorkingDirectory, pkg);
+	let pkg = null;
+	try {
+		pkg = require(projectPackageJson);
+	}
+	catch(err) {
+		// Do nothing
+		pkg = null;
 	}
 
-	if(configuration?.publish?.releaseName) {
-		configuration.publish.releaseName = fillTemplate?.(configuration?.publish?.releaseName, pkg);
+	if(pkg) {
+		// Get the dynamic template filler - use it for configuration substitution
+		const fillTemplate = require('es6-dynamic-template');
+
+		if(configuration?.publish?.currentWorkingDirectory) {
+			configuration.publish.currentWorkingDirectory = fillTemplate?.(configuration?.publish?.currentWorkingDirectory, pkg);
+		}
+
+		if(configuration?.publish?.releaseName) {
+			configuration.publish.releaseName = fillTemplate?.(configuration?.publish?.releaseName, pkg);
+		}
 	}
 
 	// Setup the command
@@ -397,11 +407,11 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		.option('--dist-tag &lt;tag>', 'Tag to use for the published release', configuration?.publish?.distTag?.trim?.() ?? 'latest')
 		.option('--dry-run', 'Dry run publish', configuration?.publish?.dryRun ?? false)
 
-		.option('--github-token &lt;token>', 'Token to use for accessing the release on GitHub', configuration?.publish?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN)
-		.option('--gitlab-token &lt;token>', 'Token to use for accessing the release on GitLab', configuration?.publish?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN)
-		.option('--npm-token &lt;token>', 'Automation Token to use for publishing the release to NPM', configuration?.publish?.npmToken?.trim?.() ?? process.env.NPM_TOKEN)
+		.option('--github-token &lt;token>', 'Token to use for accessing the release on GitHub', configuration?.publish?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN ?? 'PROCESS.ENV.GITHUB_TOKEN')
+		.option('--gitlab-token &lt;token>', 'Token to use for accessing the release on GitLab', configuration?.publish?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN ?? 'PROCESS.ENV.GITLAB_TOKEN')
+		.option('--npm-token &lt;token>', 'Automation Token to use for publishing the release to NPM', configuration?.publish?.npmToken?.trim?.() ?? process.env.NPM_TOKEN ?? 'PROCESS.ENV.NPM_TOKEN')
 
-		.option('--release-name &lt;name>', 'Release name on the Git Host for fetching the compressed assets', configuration?.publish?.releaseName?.trim?.() ?? `V${pkg?.version} Release`)
+		.option('--release-name &lt;name>', 'Release name on the Git Host for fetching the compressed assets', configuration?.publish?.releaseName?.trim?.() ?? (pkg ? `V${pkg?.version} Release` : 'Release'))
 		.option('--upstream &lt;remote>', 'Git remote to use for accessing the release', configuration?.publish?.upstream ?? 'upstream')
 	;
 
