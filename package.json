@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "34.6.0",
+		"@gitbeaker/node": "34.7.0",
 		"commander": "8.3.0",
 		"cosmiconfig": "7.0.1",
 		"date-fns": "2.26.0",
