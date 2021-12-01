@@ -65,10 +65,10 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "34.6.0",
+		"@gitbeaker/node": "34.7.0",
 		"commander": "8.3.0",
 		"cosmiconfig": "7.0.1",
-		"date-fns": "2.26.0",
+		"date-fns": "2.27.0",
 		"ejs": "3.1.6",
 		"es6-dynamic-template": "2.0.0",
 		"execa": "5.1.1",
@@ -84,7 +84,7 @@
 		"prepend-file": "2.0.0",
 		"replace-in-file": "6.3.2",
 		"semver": "7.3.5",
-		"simple-git": "2.47.0"
+		"simple-git": "2.47.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "15.0.0",
@@ -93,15 +93,15 @@
 		"cli-table": "0.3.9",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
-		"dependency-cruiser": "10.7.0",
+		"dependency-cruiser": "11.0.0",
 		"docdash": "1.2.0",
 		"eslint": "8.3.0",
-		"eslint-plugin-jsdoc": "37.0.3",
+		"eslint-plugin-jsdoc": "37.1.0",
 		"eslint-plugin-mocha": "9.0.0",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.0.14",
-		"eslintcc": "0.7.4",
+		"eslintcc": "0.7.5",
 		"grunt": "1.4.1",
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
