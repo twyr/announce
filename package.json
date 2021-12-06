@@ -90,7 +90,7 @@
 		"@commitlint/cli": "15.0.0",
 		"@commitlint/config-conventional": "15.0.0",
 		"chai": "4.3.4",
-		"cli-table": "0.3.9",
+		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
 		"dependency-cruiser": "11.0.0",
