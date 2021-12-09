@@ -96,7 +96,7 @@
 		"dependency-cruiser": "11.0.0",
 		"docdash": "1.2.0",
 		"eslint": "8.3.0",
-		"eslint-plugin-jsdoc": "37.1.0",
+		"eslint-plugin-jsdoc": "37.2.0",
 		"eslint-plugin-mocha": "9.0.0",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
