@@ -88,7 +88,7 @@
 	},
 	"devDependencies": {
 		"@commitlint/cli": "15.0.0",
-		"@commitlint/config-conventional": "15.0.0",
+		"@commitlint/config-conventional": "16.0.0",
 		"chai": "4.3.4",
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
