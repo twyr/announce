@@ -74,7 +74,7 @@
 		"execa": "5.1.1",
 		"fdir": "5.1.0",
 		"gitignore-parser": "0.0.2",
-		"hosted-git-info": "4.0.2",
+		"hosted-git-info": "4.1.0",
 		"humanize-string": "2.1.0",
 		"listr": "0.14.3",
 		"md-to-pdf": "5.0.1",
