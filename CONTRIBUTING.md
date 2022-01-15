@@ -30,7 +30,7 @@ Please follow the Github guide on [Managing commit signature verification](https
 ##### Setting up Git Config Locally
 
 ```
-git config commit.gpgsign true`
+git config commit.gpgsign true
 
 git config trailer.sign.key "\nSigned-off-by: "
 git config trailer.sign.ifmissing add
