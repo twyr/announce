@@ -203,8 +203,7 @@ class PublishCommandClass {
 	 *
 	 */
 	_setupLogger(options) {
-		if(this.#execMode === 'api')
-			return options?.logger;
+		if(this.#execMode === 'api') return options?.logger;
 
 		return null;
 	}
@@ -222,31 +221,38 @@ class PublishCommandClass {
 	 */
 	_setupTasks() {
 		const Listr = require('listr');
-		const taskList = new Listr([{
-			'title': 'Initializing Git Client...',
-			'task': this?._initializeGit?.bind?.(this)
-		}, {
-			'title': 'Fetching upstream repository info...',
-			'task': this?._getUpstreamRepositoryInfo?.bind?.(this),
-			'skip': (ctxt) => {
-				if(ctxt?.options?.git)
-					return false;
+		const taskList = new Listr(
+			[{
+					'title': 'Initializing Git Client...',
+					'task': this?._initializeGit?.bind?.(this)
+				},
+				{
+					'title': 'Fetching upstream repository info...',
+					'task': this?._getUpstreamRepositoryInfo?.bind?.(this),
+					'skip': (ctxt) => {
+						if(ctxt?.options?.git) return false;
 
-				return `No Git client found.`;
-			}
-		}, {
-			'title': 'Publishing to npm...',
-			'task': this?._publishToNpm?.bind?.(this),
-			'skip': (ctxt) => {
-				if(!ctxt?.options?.npmToken?.trim?.()?.length) return `Cannot publish without an NPM token.`;
-				if(!ctxt?.options?.releaseToBePublished) return `Cannot publish without a release on the Git host.`;
-				if(!ctxt?.options?.releaseToBePublished?.tarball_url) return `Cannot publish a release without a tarball.`;
+						return `No Git client found.`;
+					}
+				},
+				{
+					'title': 'Publishing to npm...',
+					'task': this?._publishToNpm?.bind?.(this),
+					'skip': (ctxt) => {
+						if(!ctxt?.options?.npmToken?.trim?.()?.length)
+							return `Cannot publish without an NPM token.`;
+						if(!ctxt?.options?.releaseToBePublished)
+							return `Cannot publish without a release on the Git host.`;
+						if(!ctxt?.options?.releaseToBePublished?.tarball_url)
+							return `Cannot publish a release without a tarball.`;
 
-				return false;
+						return false;
+					}
+				}
+			], {
+				'collapse': false
 			}
-		}], {
-			'collapse': false
-		});
+		);
 
 		return taskList;
 	}
@@ -271,7 +277,9 @@ class PublishCommandClass {
 			'baseDir': ctxt?.options?.currentWorkingDirectory
 		});
 
-		ctxt?.options?.logger?.info?.(`Initialized Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}`);
+		ctxt?.options?.logger?.info?.(
+			`Initialized Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}`
+		);
 		task.title = `Initialize Git for the repository @ ${ctxt?.options?.currentWorkingDirectory}: Done`;
 
 		ctxt.options.git = git;
@@ -293,17 +301,29 @@ class PublishCommandClass {
 	 *
 	 */
 	async _getUpstreamRepositoryInfo(ctxt, task) {
-		const gitRemote = await ctxt?.options?.git?.remote?.(['get-url', '--push', ctxt?.options?.upstream]);
+		const gitRemote = await ctxt?.options?.git?.remote?.([
+			'get-url',
+			'--push',
+			ctxt?.options?.upstream
+		]);
 
 		const hostedGitInfo = require('hosted-git-info');
 		const repository = hostedGitInfo?.fromUrl?.(gitRemote);
 		repository.project = repository?.project?.replace?.('.git\n', '');
 
-		const GitHostWrapper = require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
-		const gitHostWrapper = new GitHostWrapper(ctxt?.options?.[`${repository?.type}Token`]);
+		const GitHostWrapper =
+			require(`./../git_host_utilities/${repository?.type}`)?.GitHostWrapper;
+		const gitHostWrapper = new GitHostWrapper(
+			ctxt?.options?.[`${repository?.type}Token`]
+		);
 
-		const releaseToBePublished = await gitHostWrapper?.fetchReleaseInformation?.(repository, ctxt?.options?.releaseName);
-		if(!releaseToBePublished) throw new Error(`Unknown Release: ${ctxt?.options.releaseName}`);
+		const releaseToBePublished =
+			await gitHostWrapper?.fetchReleaseInformation?.(
+				repository,
+				ctxt?.options?.releaseName
+			);
+		if(!releaseToBePublished)
+			throw new Error(`Unknown Release: ${ctxt?.options.releaseName}`);
 
 		ctxt.options.repository = repository;
 		ctxt.options.releaseToBePublished = releaseToBePublished;
@@ -329,20 +349,24 @@ class PublishCommandClass {
 	 */
 	async _publishToNpm(ctxt, task) {
 		let distTag = null;
-		if((ctxt?.options?.distTag ?? 'version_default') === 'version_default') {
+		if(
+			(ctxt?.options?.distTag ?? 'version_default') === 'version_default'
+		) {
 			if(ctxt?.options?.releaseToBePublished?.prerelease)
 				distTag = 'next';
-			else
-				distTag = 'latest';
+			else distTag = 'latest';
 		}
 
 		const publishOptions = ['publish'];
-		publishOptions?.push?.(ctxt?.options?.releaseToBePublished?.tarball_url);
+		publishOptions?.push?.(
+			ctxt?.options?.releaseToBePublished?.tarball_url
+		);
 		publishOptions?.push?.(`--tag ${distTag}`);
 		publishOptions?.push?.(`--access ${ctxt?.options?.access}`);
 		if(ctxt?.options?.dryRun) publishOptions?.push?.('--dry-run');
 
-		const execa = require('execa');
+		// eslint-disable-next-line node/no-unsupported-features/es-syntax
+		const { execa } = await import('execa');
 
 		const publishProcess = execa?.('npm', publishOptions, { 'all': true });
 		// publishProcess?.stdout?.pipe?.(process.stdout);
@@ -368,13 +392,20 @@ class PublishCommandClass {
 }
 
 // Add the command to the cli
-exports.commandCreator = function commandCreator(commanderProcess, configuration) {
+exports.commandCreator = function commandCreator(
+	commanderProcess,
+	configuration
+) {
 	const Commander = require('commander');
 	const publish = new Commander.Command('publish');
 
 	// Get package.json into memory... we'll use it in multiple places here
 	const path = require('path');
-	const projectPackageJson = path.join((configuration?.publish?.currentWorkingDirectory?.trim?.() ?? process.cwd()), 'package.json');
+	const projectPackageJson = path.join(
+		configuration?.publish?.currentWorkingDirectory?.trim?.() ??
+		process.cwd(),
+		'package.json'
+	);
 
 	let pkg = null;
 	try {
@@ -390,30 +421,79 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		const fillTemplate = require('es6-dynamic-template');
 
 		if(configuration?.publish?.currentWorkingDirectory) {
-			configuration.publish.currentWorkingDirectory = fillTemplate?.(configuration?.publish?.currentWorkingDirectory, pkg);
+			configuration.publish.currentWorkingDirectory = fillTemplate?.(
+				configuration?.publish?.currentWorkingDirectory,
+				pkg
+			);
 		}
 
 		if(configuration?.publish?.releaseName) {
-			configuration.publish.releaseName = fillTemplate?.(configuration?.publish?.releaseName, pkg);
+			configuration.publish.releaseName = fillTemplate?.(
+				configuration?.publish?.releaseName,
+				pkg
+			);
 		}
 	}
 
 	// Setup the command
 	publish?.alias?.('pub');
 	publish
-		?.option?.('--current-working-directory &lt;folder>', 'Path to the current working directory', configuration?.release?.currentWorkingDirectory?.trim?.() ?? process?.cwd?.())
+		?.option?.(
+			'--current-working-directory &lt;folder>',
+			'Path to the current working directory',
+			configuration?.release?.currentWorkingDirectory?.trim?.() ??
+			process?.cwd?.()
+		)
 
-		.option('--access &lt;level>', 'Public / Restricted', configuration?.publish?.access?.trim?.() ?? 'public')
-		.option('--dist-tag &lt;tag>', 'Tag to use for the published release', configuration?.publish?.distTag?.trim?.() ?? 'latest')
-		.option('--dry-run', 'Dry run publish', configuration?.publish?.dryRun ?? false)
+		.option(
+			'--access &lt;level>',
+			'Public / Restricted',
+			configuration?.publish?.access?.trim?.() ?? 'public'
+		)
+		.option(
+			'--dist-tag &lt;tag>',
+			'Tag to use for the published release',
+			configuration?.publish?.distTag?.trim?.() ?? 'latest'
+		)
+		.option(
+			'--dry-run',
+			'Dry run publish',
+			configuration?.publish?.dryRun ?? false
+		)
 
-		.option('--github-token &lt;token>', 'Token to use for accessing the release on GitHub', configuration?.publish?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN ?? 'PROCESS.ENV.GITHUB_TOKEN')
-		.option('--gitlab-token &lt;token>', 'Token to use for accessing the release on GitLab', configuration?.publish?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN ?? 'PROCESS.ENV.GITLAB_TOKEN')
-		.option('--npm-token &lt;token>', 'Automation Token to use for publishing the release to NPM', configuration?.publish?.npmToken?.trim?.() ?? process.env.NPM_TOKEN ?? 'PROCESS.ENV.NPM_TOKEN')
+		.option(
+			'--github-token &lt;token>',
+			'Token to use for accessing the release on GitHub',
+			configuration?.publish?.githubToken?.trim?.() ??
+			process.env.GITHUB_TOKEN ??
+			'PROCESS.ENV.GITHUB_TOKEN'
+		)
+		.option(
+			'--gitlab-token &lt;token>',
+			'Token to use for accessing the release on GitLab',
+			configuration?.publish?.gitlabToken?.trim?.() ??
+			process.env.GITLAB_TOKEN ??
+			'PROCESS.ENV.GITLAB_TOKEN'
+		)
+		.option(
+			'--npm-token &lt;token>',
+			'Automation Token to use for publishing the release to NPM',
+			configuration?.publish?.npmToken?.trim?.() ??
+			process.env.NPM_TOKEN ??
+			'PROCESS.ENV.NPM_TOKEN'
+		)
 
-		.option('--release-name &lt;name>', 'Release name on the Git Host for fetching the compressed assets', configuration?.publish?.releaseName?.trim?.() ?? (pkg ? `V${pkg?.version} Release` : 'Release'))
-		.option('--upstream &lt;remote>', 'Git remote to use for accessing the release', configuration?.publish?.upstream ?? 'upstream')
-	;
+		.option(
+			'--release-name &lt;name>',
+			'Release name on the Git Host for fetching the compressed assets',
+			configuration?.publish?.releaseName?.trim?.() ??
+			(pkg ? `V${pkg?.version} Release` : 'Release')
+		)
+		.option(
+			'--upstream &lt;remote>',
+			'Git remote to use for accessing the release',
+			configuration?.publish?.upstream ?? 'upstream'
+		);
 
 	const commandObj = new PublishCommandClass('cli');
 	publish?.action?.(commandObj?.execute?.bind?.(commandObj));
@@ -437,7 +517,7 @@ exports.apiCreator = function apiCreator() {
 		</div>
 		<br class="clear">
 		<footer>
-			Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.7</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+			Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 		</footer>
 		<script>
 			prettyPrint();
