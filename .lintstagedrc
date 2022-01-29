@@ -1,3 +1,5 @@
 {
-	"*.js": "npx eslint --fix"
+	"*.css": ["npx js-beautify --replace", "npx stylelint --fix"],
+	"*.html": "npx js-beautify --replace",
+	"*.js": ["npx js-beautify --replace", "npx eslint --fix"]
 }

@@ -1041,11 +1041,11 @@ class ReleaseCommandClass {
 
 			authorProfiles = await Promise?.allSettled?.(authorProfiles);
 			authorProfiles = authorProfiles.map((authorProfile) => {
-				return authorProfile?.value;
-			})
-			.filter((authorProfile) => {
-				return !!authorProfile?.email?.trim?.()?.length;
-			});
+					return authorProfile?.value;
+				})
+				.filter((authorProfile) => {
+					return !!authorProfile?.email?.trim?.()?.length;
+				});
 
 			ctxt.options.authorProfiles = authorProfiles;
 			task.title = 'Fetch author information for the relevant git log events: Done';
@@ -1065,7 +1065,8 @@ class ReleaseCommandClass {
 			const bugfixSet = [];
 			const documentationSet = [];
 
-			const humanizeString = require('humanize-string');
+			// eslint-disable-next-line node/no-unsupported-features/es-syntax
+			const { 'default': humanizeString } = await import('humanize-string');
 			ctxt?.options?.gitLogsInRange?.forEach?.((commitLog) => {
 				const commitObject = {
 					'hash': commitLog?.hash,
@@ -1347,8 +1348,7 @@ exports.commandCreator = function commandCreator(commanderProcess, configuration
 		?.option?.('--upstream <remotes-list>', 'Comma separated list of git remote(s) to push the release to', configuration?.release?.upstream?.trim?.() ?? 'upstream')
 
 		?.option?.('--github-token <token>', 'Token to use for creating the release on GitHub', configuration?.release?.githubToken?.trim?.() ?? process.env.GITHUB_TOKEN ?? 'PROCESS.ENV.GITHUB_TOKEN')
-		?.option?.('--gitlab-token <token>', 'Token to use for creating the release on GitLab', configuration?.release?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN ?? 'PROCESS.ENV.GITLAB_TOKEN')
-	;
+		?.option?.('--gitlab-token <token>', 'Token to use for creating the release on GitLab', configuration?.release?.gitlabToken?.trim?.() ?? process.env.GITLAB_TOKEN ?? 'PROCESS.ENV.GITLAB_TOKEN');
 
 	const commandObj = new ReleaseCommandClass('cli');
 	release?.action?.(commandObj?.execute?.bind?.(commandObj, configuration?.release));
