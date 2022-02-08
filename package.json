@@ -65,7 +65,7 @@
 		"test": "tests"
 	},
 	"dependencies": {
-		"@gitbeaker/node": "35.3.0",
+		"@gitbeaker/node": "35.4.0",
 		"commander": "9.0.0",
 		"cosmiconfig": "7.0.1",
 		"date-fns": "2.28.0",
@@ -96,7 +96,7 @@
 		"dependency-cruiser": "11.3.0",
 		"docdash": "1.2.0",
 		"eslint": "8.8.0",
-		"eslint-plugin-jsdoc": "37.7.1",
+		"eslint-plugin-jsdoc": "37.8.0",
 		"eslint-plugin-mocha": "10.0.3",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
