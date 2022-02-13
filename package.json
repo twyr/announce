@@ -71,7 +71,7 @@
 		"date-fns": "2.28.0",
 		"ejs": "3.1.6",
 		"es6-dynamic-template": "2.0.0",
-		"execa": "6.0.0",
+		"execa": "6.1.0",
 		"fdir": "5.2.0",
 		"gitignore-parser": "0.0.2",
 		"hosted-git-info": "4.1.0",
@@ -87,8 +87,8 @@
 		"simple-git": "3.1.1"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "16.1.0",
-		"@commitlint/config-conventional": "16.0.0",
+		"@commitlint/cli": "16.2.1",
+		"@commitlint/config-conventional": "16.2.1",
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
@@ -96,7 +96,7 @@
 		"dependency-cruiser": "11.3.1",
 		"docdash": "1.2.0",
 		"eslint": "8.9.0",
-		"eslint-plugin-jsdoc": "37.9.0",
+		"eslint-plugin-jsdoc": "37.9.1",
 		"eslint-plugin-mocha": "10.0.3",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
