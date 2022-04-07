@@ -83,7 +83,7 @@
 		"please-upgrade-node": "3.2.0",
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.2",
-		"semver": "7.3.5",
+		"semver": "7.3.6",
 		"simple-git": "3.5.0"
 	},
 	"devDependencies": {
@@ -111,7 +111,7 @@
 		"grunt-jsbeautifier": "0.2.13",
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "7.0.4",
-		"ini": "2.0.0",
+		"ini": "3.0.0",
 		"jsdoc": "3.6.10",
 		"lint-staged": "12.3.7",
 		"load-grunt-tasks": "5.1.0",
