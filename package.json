@@ -84,7 +84,7 @@
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.2",
 		"semver": "7.3.6",
-		"simple-git": "3.5.0"
+		"simple-git": "3.6.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "16.2.3",
@@ -93,16 +93,16 @@
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
-		"dependency-cruiser": "11.4.1",
+		"dependency-cruiser": "11.5.0",
 		"docdash": "1.2.0",
 		"eslint": "8.13.0",
-		"eslint-plugin-jsdoc": "39.0.1",
+		"eslint-plugin-jsdoc": "39.1.0",
 		"eslint-plugin-mocha": "10.0.3",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.1.1",
 		"eslintcc": "0.7.14",
-		"grunt": "1.4.1",
+		"grunt": "1.5.0",
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
 		"grunt-env": "1.0.1",
