@@ -101,7 +101,7 @@
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.4.0",
 		"eslint-plugin-security-node": "1.1.1",
-		"eslintcc": "0.7.14",
+		"eslintcc": "0.7.15",
 		"grunt": "1.5.2",
 		"grunt-contrib-clean": "2.0.0",
 		"grunt-coveralls": "2.0.0",
