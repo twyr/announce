@@ -84,7 +84,7 @@
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.2",
 		"semver": "7.3.7",
-		"simple-git": "3.7.0"
+		"simple-git": "3.7.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "16.2.3",
