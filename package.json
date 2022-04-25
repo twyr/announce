@@ -84,7 +84,7 @@
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.2",
 		"semver": "7.3.7",
-		"simple-git": "3.7.0"
+		"simple-git": "3.7.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "16.2.3",
@@ -95,8 +95,8 @@
 		"cz-customizable": "6.3.0",
 		"dependency-cruiser": "11.6.0",
 		"docdash": "1.2.0",
-		"eslint": "8.13.0",
-		"eslint-plugin-jsdoc": "39.2.6",
+		"eslint": "8.14.0",
+		"eslint-plugin-jsdoc": "39.2.8",
 		"eslint-plugin-mocha": "10.0.4",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.5.0",
@@ -112,6 +112,7 @@
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "7.0.4",
 		"ini": "3.0.0",
+		"is-ci": "3.0.1",
 		"jsdoc": "3.6.10",
 		"lint-staged": "12.4.0",
 		"load-grunt-tasks": "5.1.0",
@@ -138,7 +139,7 @@
 		"test": "npm run test:run && npm run test:coverage",
 		"test:coverage": "NODE_ENV=test npx nyc --reporter=cobertura --reporter=lcovonly --reporter=text --reporter=text-summary mocha",
 		"test:run": "NODE_ENV=test npx mocha --reporter=spec",
-		"prepare": "husky install"
+		"prepare": "is-ci || npx --no-install husky install"
 	},
 	"bin": {
 		"announce": "./bin/announce.js"

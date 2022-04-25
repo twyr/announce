@@ -1,8 +1,3 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
-if [ -t 1 ]
-then
-	exec < /dev/tty && npx --no-install git-cz --hook || true
-else
-	echo "No terminal for old men"
-fi
+exec < /dev/tty && npx --no-install git-cz --hook || true
