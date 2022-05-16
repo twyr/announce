@@ -87,13 +87,13 @@
 		"simple-git": "3.7.1"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "16.2.4",
+		"@commitlint/cli": "16.3.0",
 		"@commitlint/config-conventional": "16.2.4",
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
-		"dependency-cruiser": "11.7.0",
+		"dependency-cruiser": "11.7.1",
 		"docdash": "1.2.0",
 		"eslint": "8.15.0",
 		"eslint-plugin-jsdoc": "39.2.9",
