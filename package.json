@@ -93,7 +93,7 @@
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
 		"cz-customizable": "6.3.0",
-		"dependency-cruiser": "11.9.0",
+		"dependency-cruiser": "11.10.0",
 		"docdash": "1.2.0",
 		"eslint": "8.17.0",
 		"eslint-plugin-jsdoc": "39.3.2",
