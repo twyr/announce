@@ -87,8 +87,8 @@
 		"simple-git": "3.9.0"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "17.0.2",
-		"@commitlint/config-conventional": "17.0.2",
+		"@commitlint/cli": "17.0.3",
+		"@commitlint/config-conventional": "17.0.3",
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
@@ -114,7 +114,7 @@
 		"ini": "3.0.0",
 		"is-ci": "3.0.1",
 		"jsdoc": "3.6.10",
-		"lint-staged": "13.0.2",
+		"lint-staged": "13.0.3",
 		"load-grunt-tasks": "5.1.0",
 		"mocha": "10.0.0",
 		"mocha-junit-reporter": "2.0.2",
