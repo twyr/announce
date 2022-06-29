@@ -516,7 +516,7 @@ class ReleaseCommandClass {
 
 			const git = ctxt?.options?.git;
 			let lastCommit = await git?.raw?.(['rev-parse', 'HEAD']);
-			lastCommit = lastCommit?.replace?.(/\\n/g, '')?.trim?.();
+			lastCommit = lastCommit?.replace?._tag(/\\n/g, '')?.trim?.();
 
 			if(!lastCommit) {
 				task.title = 'Tag the commit: No commits found';
