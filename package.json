@@ -92,7 +92,7 @@
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.4",
-		"cz-customizable": "6.7.0",
+		"cz-customizable": "6.9.0",
 		"dependency-cruiser": "11.11.0",
 		"docdash": "1.2.0",
 		"eslint": "8.18.0",
