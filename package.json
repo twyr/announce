@@ -91,7 +91,7 @@
 		"@commitlint/config-conventional": "17.0.3",
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
-		"commitizen": "4.2.4",
+		"commitizen": "4.2.5",
 		"cz-customizable": "6.9.1",
 		"dependency-cruiser": "11.11.0",
 		"docdash": "1.2.0",
