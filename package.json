@@ -84,7 +84,7 @@
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.5",
 		"semver": "7.3.7",
-		"simple-git": "3.10.0"
+		"simple-git": "3.11.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "17.0.3",
@@ -93,10 +93,10 @@
 		"cli-table": "0.3.11",
 		"commitizen": "4.2.5",
 		"cz-customizable": "6.9.1",
-		"dependency-cruiser": "11.13.0",
+		"dependency-cruiser": "11.14.0",
 		"docdash": "1.2.0",
-		"eslint": "8.20.0",
-		"eslint-plugin-jsdoc": "39.3.3",
+		"eslint": "8.21.0",
+		"eslint-plugin-jsdoc": "39.3.4",
 		"eslint-plugin-mocha": "10.1.0",
 		"eslint-plugin-node": "11.1.0",
 		"eslint-plugin-security": "1.5.0",
