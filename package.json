@@ -111,7 +111,7 @@
 		"grunt-jsbeautifier": "0.2.13",
 		"grunt-xmlstoke": "0.7.1",
 		"husky": "8.0.1",
-		"ini": "3.0.0",
+		"ini": "3.0.1",
 		"is-ci": "3.0.1",
 		"jsdoc": "3.6.11",
 		"lint-staged": "13.0.3",
