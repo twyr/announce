@@ -87,7 +87,7 @@
 		"simple-git": "3.13.0"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "17.0.3",
+		"@commitlint/cli": "17.1.1",
 		"@commitlint/config-conventional": "17.0.3",
 		"chai": "4.3.6",
 		"cli-table": "0.3.11",
