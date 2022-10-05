@@ -66,7 +66,7 @@
 	},
 	"dependencies": {
 		"@gitbeaker/node": "35.7.0",
-		"commander": "9.4.0",
+		"commander": "9.4.1",
 		"cosmiconfig": "7.0.1",
 		"date-fns": "2.29.3",
 		"ejs": "3.1.8",
@@ -83,7 +83,7 @@
 		"please-upgrade-node": "3.2.0",
 		"prepend-file": "2.0.1",
 		"replace-in-file": "6.3.5",
-		"semver": "7.3.7",
+		"semver": "7.3.8",
 		"simple-git": "3.14.1"
 	},
 	"devDependencies": {
