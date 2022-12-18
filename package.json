@@ -77,7 +77,7 @@
 		"hosted-git-info": "6.0.0",
 		"humanize-string": "3.0.0",
 		"listr": "0.14.3",
-		"md-to-pdf": "5.1.0",
+		"md-to-pdf": "5.2.1",
 		"mkdirp": "1.0.4",
 		"octonode": "0.10.2",
 		"please-upgrade-node": "3.2.0",
