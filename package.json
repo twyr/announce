@@ -110,7 +110,7 @@
 		"grunt-exec": "3.0.0",
 		"grunt-jsbeautifier": "0.2.13",
 		"grunt-xmlstoke": "0.7.1",
-		"husky": "8.0.1",
+		"husky": "8.0.3",
 		"ini": "3.0.1",
 		"is-ci": "3.0.1",
 		"jsdoc": "3.6.11",
